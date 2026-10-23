@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-10-23T17:21:03.999Z",
+  "tests": {
+    "passed": 31,
+    "failed": 0,
+    "command": "node --test tests/*.test.mjs"
+  },
+  "syntax": {
+    "files": 54,
+    "compiler": "TypeScript 6.0.3",
+    "passed": true
+  },
+  "domainTypes": {
+    "passed": true,
+    "command": "node scripts/check-domain-types.mjs"
+  },
+  "workbook": {
+    "records": 411,
+    "publishedAtReview": 233,
+    "historical": 168,
+    "drafts": 10,
+    "uniqueFlyers": 97
+  },
+  "blocked": {
+    "dependencyInstall": "EACCES: registry.npmjs.org",
+    "imageDownload": "EACCES: i.imgur.com",
+    "browser": "No enabled browsers"
+  },
+  "notExecuted": [
+    "Full application typecheck",
+    "Next.js production build",
+    "Payload integration suite",
+    "Desktop/mobile visual and keyboard verification",
+    "PostgreSQL initial migration",
+    "Backup restore drill",
+    "Railway deployment"
+  ]
+}

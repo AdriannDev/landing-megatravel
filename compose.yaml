@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports: ["127.0.0.1:5432:5432"]
+    environment:
+      POSTGRES_USER: megatravel
+      POSTGRES_PASSWORD: megatravel
+      POSTGRES_DB: megatravel
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U megatravel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+volumes:
+  postgres_data:

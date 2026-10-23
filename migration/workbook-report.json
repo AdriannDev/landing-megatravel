@@ -1,0 +1,594 @@
+{
+  "workbook": "Bloqueos aereos (1).xlsx",
+  "generatedAt": "2026-10-23T17:15:57.539Z",
+  "assumptions": {
+    "currency": "USD",
+    "priceCondition": "Por persona en habitación doble",
+    "confirmedByUser": true,
+    "defaultAdvanceDays": 30
+  },
+  "sheets": [
+    {
+      "name": "BLOQUEOS AEREOS 2026 - 2027",
+      "accepted": 243,
+      "skipped": 0,
+      "backupExcluded": false
+    },
+    {
+      "name": "HISTORICO POR 30 DIAS",
+      "accepted": 143,
+      "skipped": 0,
+      "backupExcluded": false
+    },
+    {
+      "name": "ANULADOS",
+      "accepted": 2,
+      "skipped": 0,
+      "backupExcluded": false
+    },
+    {
+      "name": "SOLD OUT",
+      "accepted": 8,
+      "skipped": 0,
+      "backupExcluded": false
+    },
+    {
+      "name": "RETIRADOS",
+      "accepted": 15,
+      "skipped": 0,
+      "backupExcluded": false
+    },
+    {
+      "name": "BACKUP BLOQUEOS 1808",
+      "accepted": 0,
+      "skipped": 215,
+      "backupExcluded": true
+    }
+  ],
+  "errors": [
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 119,
+      "program": "ISLAS GRIEGAS & EL CORAZON DE LOS BALCANES",
+      "message": "Enlaces de reserva/descriptivo incompletos o no HTTPS. Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    },
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 135,
+      "program": "ESPAÑA, PORTUGAL & MARRUECOS",
+      "message": "Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    },
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 139,
+      "program": "ESPAÑA, PORTUGAL & MARRUECOS",
+      "message": "Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    },
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 168,
+      "program": "SANTUARIOS MARIANOS",
+      "message": "Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    },
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 183,
+      "program": "SANTUARIOS MARIANOS",
+      "message": "Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    },
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 196,
+      "program": "SANTUARIOS MARIANOS",
+      "message": "Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    },
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 219,
+      "program": "SANTUARIOS MARIANOS",
+      "message": "Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    },
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 228,
+      "program": "SANTUARIOS MARIANOS",
+      "message": "Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    },
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 243,
+      "program": "ISLAS GRIEGAS & EL CORAZON DE LOS BALCANES",
+      "message": "Enlaces de reserva/descriptivo incompletos o no HTTPS. Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    },
+    {
+      "sheet": "BLOQUEOS AEREOS 2026 - 2027",
+      "row": 244,
+      "program": "ISLAS GRIEGAS & EL CORAZON DE LOS BALCANES",
+      "message": "Enlaces de reserva/descriptivo incompletos o no HTTPS. Falta un enlace HTTPS de flyer.",
+      "importedAs": "draft"
+    }
+  ],
+  "warnings": [
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 2,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 3,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 4,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 5,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 6,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 7,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 8,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 9,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 10,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 11,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 12,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 13,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 14,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 15,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 16,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 17,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 18,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 19,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 20,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 21,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 22,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 23,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 24,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 25,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 26,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 27,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 28,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 29,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 30,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 31,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 32,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 33,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 34,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 35,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 36,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 37,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 38,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 39,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 40,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 41,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 42,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 43,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 44,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 45,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 46,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 47,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 48,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 49,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 50,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 51,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 52,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 53,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 54,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 55,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 56,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 57,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 58,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 59,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 60,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 61,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 62,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "HISTORICO POR 30 DIAS",
+      "row": 63,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "ANULADOS",
+      "row": 2,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "ANULADOS",
+      "row": 3,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "RETIRADOS",
+      "row": 2,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "RETIRADOS",
+      "row": 3,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "RETIRADOS",
+      "row": 4,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "RETIRADOS",
+      "row": 5,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "RETIRADOS",
+      "row": 8,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "RETIRADOS",
+      "row": 13,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "RETIRADOS",
+      "row": 14,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "RETIRADOS",
+      "row": 15,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    },
+    {
+      "sheet": "RETIRADOS",
+      "row": 16,
+      "message": "Sin motivo histórico disponible. Se conserva vacío."
+    }
+  ],
+  "duplicates": [],
+  "assets": [
+    "https://i.imgur.com/F8iofE2.png",
+    "https://i.imgur.com/5XXvOMK.png",
+    "https://i.imgur.com/0G84hnN.png",
+    "https://i.imgur.com/iyVRQyG.png",
+    "https://i.imgur.com/3gfd76z.png",
+    "https://i.imgur.com/E91I76N.png",
+    "https://i.imgur.com/qArEHRQ.png",
+    "https://i.imgur.com/T8wfsk2.png",
+    "https://i.imgur.com/cIYsnwX.png",
+    "https://i.imgur.com/FrsapDz.png",
+    "https://i.imgur.com/p0XHXgI.png",
+    "https://i.imgur.com/2i1j9IV.png",
+    "https://i.imgur.com/IYr22hl.png",
+    "https://i.imgur.com/dCdmdUH.png",
+    "https://i.imgur.com/bMOQRVX.png",
+    "https://i.imgur.com/3qITv8t.png",
+    "https://i.imgur.com/r3keyj5.png",
+    "https://i.imgur.com/yBYlhkG.png",
+    "https://i.imgur.com/vdxq6tp.png",
+    "https://i.imgur.com/y9r5xRw.png",
+    "https://i.imgur.com/V5M2SrW.jpeg",
+    "https://i.imgur.com/wd9BgLL.png",
+    "https://i.imgur.com/H2G2jc0.png",
+    "https://i.imgur.com/h7y8XLM.png",
+    "https://i.imgur.com/8c3l52K.png",
+    "https://i.imgur.com/Oj617yI.png",
+    "https://i.spread.name/7fdb8631-60d2-4f6d-84f9-f8d8d92d05ea_RRSS_PostalSinPrecio_MTPE10146-ESTAMBUL-CAPADOCIA-Y-CIUDADES-IMPERIALES_1080x1080.png",
+    "https://i.imgur.com/VH7eePl.png",
+    "https://i.imgur.com/90ELKQn.png",
+    "https://i.imgur.com/LvvXkKX.png",
+    "https://i.imgur.com/eI60N2n.png",
+    "https://i.imgur.com/90NOodT.png",
+    "https://i.imgur.com/g1ETA0p.png",
+    "https://i.imgur.com/FNWUHtJ.png",
+    "https://i.imgur.com/1ql3SB2.png",
+    "https://i.imgur.com/QRiR7f0.png",
+    "https://i.imgur.com/PcjCoEF.png",
+    "https://i.imgur.com/knO6Qvr.png",
+    "https://i.imgur.com/HvNcnJo.png",
+    "https://i.imgur.com/luRLYBa.png",
+    "https://i.imgur.com/d5Wgm4D.png",
+    "https://i.imgur.com/IYCFl6I.png",
+    "https://i.spread.name/0a0988fc-499b-44e7-98f0-a2ab01db6882_RRSS_Postal_-SIN-PRECIO_MTPE52077-MEDELLIN-Y-LAS-TRES-PERLAS-DEL-CARIBE_1080x1080.png",
+    "https://i.imgur.com/I2d7dly.png",
+    "https://i.imgur.com/0qeTOIi.png",
+    "https://i.imgur.com/yIAnhsL.png",
+    "https://i.spread.name/80cb32e5-602a-4961-8786-1c520b4f5f14_RRSS_Postal_SIN-PRECIO_MTPE52128-CARTAGENA-DE-INDIAS-and-SAN-ANDRES_1080x1080.png",
+    "https://i.spread.name/57bd1f3b-04c4-4615-867f-6ec102e12284_RRSS_Postal-Sin-Precio_MTPE-30082-TRIANGULO-ASIATICO_1080x1080.png",
+    "https://i.imgur.com/bycvJRv.png",
+    "https://i.spread.name/da9f5a55-d782-413e-9daf-feef9c9b116e_RRSS_Postal_SIN-PRECIO_MTPE10134-EUROPA-RADIANTE-_1.png",
+    "https://i.spread.name/d944ca46-f3b9-4d3d-b4aa-2b174f4bd25c_RRSS_PostalSinPrecio_MTPE30082-TRIANGULO-ASIATICO-COREA-JAPON-CHINA_1080x1080.png",
+    "https://i.spread.name/d42d7864-12d1-4eb3-9cfe-196ac01cba76_RRSS_PostalSinPrecio_MTPE20205-TESOROS_DE_TURKIYE_and_4N_CRUCERO-POR-LAS-ISLAS-GRIEGAS_1080x1080.png",
+    "https://i.imgur.com/Xl1Hm0Y.jpeg",
+    "https://i.spread.name/989f4e5c-b9c3-4415-8817-e67ea581dc09_RRSS_PostalSinPrecio_-AURORAS-BOREALES-CON-ISLANDIA-Y-NORUEGA_1080x1080.png",
+    "https://i.spread.name/49e47cbd-fd30-4fa0-8a8b-61adc865dc83_RRSS_Postal_SIN-PRECIO_MTPE10048-EUROPA-PERFECTA_1080x1080-_1.png",
+    "https://i.spread.name/a42d2567-c9fe-41f6-866f-eab9e0a66081_RRSS_Postal_SIN-PRECIO_MTPE-42025-GRAN-TRIANGULO-DEL-ESTE_1080x1080.png",
+    "https://i.imgur.com/L73t08p.png",
+    "https://i.spread.name/c474b918-383f-4585-bd8d-9d86cf6d26a6_RRSS_Postal_MTPEMTPE51046-ARUBA-LA-ISLA-FELIZ-_1080x1080.png",
+    "https://i.spread.name/186ae3eb-6363-476e-bb5f-b6b4e876992b_RRSS_Postal_SIN-PRECIO_MTPE10137-MEGA-EUROPA-BY-EXA-TRAVEL_1080x1080_ai.png",
+    "https://i.imgur.com/OeoOeKd.png",
+    "https://i.imgur.com/rFSQciM.png",
+    "https://i.spread.name/3e230a87-817a-4de3-aa84-220c9f35efa9_RRSS_Postal-Sin-Precio_MTPE51008-PUNTA-CANA_1080x1080.png",
+    "https://i.spread.name/9a76c78a-751b-42ee-a533-9e28611946be_RRSS_Postal_MTPEMTPE51046-ARUBA-LA-ISLA-FELIZ-_1080x1080-_1.png",
+    "https://i.imgur.com/ALtuewS.png",
+    "https://i.imgur.com/wEofm4o.jpeg",
+    "https://i.imgur.com/Wv1XFim.png",
+    "https://i.imgur.com/hm4c6ft.png",
+    "https://i.imgur.com/o1XAZ6q.jpeg",
+    "https://i.imgur.com/MqJNZo4.png",
+    "https://i.imgur.com/D8n9ros.png",
+    "https://i.imgur.com/Y17gNoi.png",
+    "https://i.imgur.com/NvS4cZU.png",
+    "https://i.imgur.com/18h6DET.png",
+    "https://i.imgur.com/GUFAhGh.png",
+    "https://i.imgur.com/90dQ28K.png",
+    "https://i.imgur.com/eCMK9Az.png",
+    "https://i.imgur.com/ZrQXaGy.jpeg",
+    "https://i.imgur.com/FT0Qfwx.png",
+    "https://i.imgur.com/biAx87J.png",
+    "https://i.imgur.com/luT1D2f.png",
+    "https://i.imgur.com/5H87h46.png",
+    "https://i.imgur.com/zJ9RfGU.jpeg",
+    "https://i.imgur.com/Q6ETV8V.png",
+    "https://i.imgur.com/Pj1Xiyn.png",
+    "https://i.imgur.com/6imUEzl.jpeg",
+    "https://i.imgur.com/lcQBJ4o.png",
+    "https://i.imgur.com/EQcZNhP.png",
+    "https://i.imgur.com/FkydRp5.png",
+    "https://i.imgur.com/9RyVt7U.png",
+    "https://i.imgur.com/6W0TUuQ.png",
+    "https://i.imgur.com/Rk4v7QZ.png",
+    "https://i.imgur.com/ejmpCps.png",
+    "https://i.imgur.com/VQRd9p1.jpeg",
+    "https://i.imgur.com/N7xsfo7.png",
+    "https://i.imgur.com/CGbISQM.jpeg",
+    "https://i.imgur.com/kf0FWDD.png",
+    "https://i.imgur.com/n4COZer.png"
+  ],
+  "summary": {
+    "total": 411,
+    "publicNow": 233,
+    "errors": 10,
+    "duplicates": 0,
+    "images": 97
+  }
+}
