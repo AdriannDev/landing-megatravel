@@ -1,4 +1,5 @@
-import type { Payload, PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest, RequiredDataFromCollectionSlug } from 'payload'
+import type { Campaign, Destination, Media } from '../payload-types'
 import { parseCSV } from '../lib/csv.ts'
 import { planImport } from '../lib/import-records.ts'
 import { validateTransition } from '../lib/lifecycle.ts'
@@ -10,7 +11,7 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
   if (rows.length > 5000) throw new Error('El límite por archivo es de 5000 filas.')
   const plan = planImport(rows, { historical: options.historical })
   const results: { row: number; status: string; id?: string | number; message?: string }[] = plan.errors.map(e => ({ row: e.row, status: 'error', message: e.error }))
-  const references = new Map<string, string | number>(), media = new Map<string, string | number>(), failedMedia = new Map<string, string>()
+  const references = new Map<string, Destination['id']>(), media = new Map<string, Media['id']>(), failedMedia = new Map<string, string>()
   async function reference(collection: 'destinations' | 'origins' | 'cruise-lines', name: string) {
     const key = collection + ':' + name
     if (references.has(key)) return references.get(key)!
@@ -32,7 +33,7 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
       const destination = await reference('destinations', item.destination)
       const origin = await reference('origins', item.origin)
       const cruiseLine = item.cruiseLine ? await reference('cruise-lines', item.cruiseLine) : null
-      const promotionIds: (string | number)[] = []
+      const promotionIds: Campaign['id'][] = []
       for (const promo of item.promotions) {
         const found = await payload.find({ collection: 'campaigns', overrideAccess: false, req, limit: 1, where: { slug: { equals: promo.id } } })
         const doc = found.docs[0] || await payload.create({ collection: 'campaigns', overrideAccess: false, req, data: { slug: promo.id, name: promo.name, label: promo.label } })
@@ -46,7 +47,7 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
           flyer = media.get(item.flyerUrl)!
         } catch (error) { warning = (error as Error).message; failedMedia.set(item.flyerUrl, warning) }
       }
-      const data = {
+      const data: RequiredDataFromCollectionSlug<'departures'> = {
         program: item.program, mtpe: item.mtpe, destination, origin, zone: item.zone, cruiseLine, days: item.days, nights: item.nights,
         travelDate: item.travelDate, price: item.price, currency: item.currency, priceCondition: item.priceCondition,
         flyer, flyerSourceUrl: item.flyerUrl.startsWith('https://') ? item.flyerUrl : '', flyerDownloadWarning: warning ? 'Se conserva el enlace original. ' + warning : '', bookingUrl: item.bookingUrl, descriptionUrl: item.descriptionUrl,

@@ -8,12 +8,15 @@ import { DEFAULT_CONTACT_URL, DEFAULT_CONTACT_LABEL } from '../lib/brand-config'
 const urlValidation = (value: unknown) => !value || safeExternalUrl(value) || 'Usa un enlace HTTPS completo, sin usuario ni contraseña.'
 const period: Field[] = [
   { name: 'startsAt', label: 'Visible desde', type: 'date', admin: { description: 'Instante de inicio. El panel utiliza America/Lima.' } },
-  { name: 'endsAt', label: 'Visible hasta (exclusivo)', type: 'date', validate: (value, { siblingData }) => !value || !siblingData?.startsAt || Date.parse(String(value)) > Date.parse(String(siblingData.startsAt)) || 'El fin debe ser posterior al inicio.' },
+  { name: 'endsAt', label: 'Visible hasta (exclusivo)', type: 'date', validate: (value, { siblingData }) => {
+    const start = siblingData && 'startsAt' in siblingData ? siblingData.startsAt : undefined
+    return !value || !start || Date.parse(String(value)) > Date.parse(String(start)) || 'El fin debe ser posterior al inicio.'
+  } },
 ]
 export const Media: CollectionConfig = {
   slug: 'media', labels: { singular: 'Imagen', plural: 'Imágenes' },
   access: { ...contentAccess, read: () => true }, admin: { group: 'Contenido', useAsTitle: 'alt' },
-  upload: { staticDir: path.resolve('media'), mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], crop: false, focalPoint: false },
+  upload: { staticDir: path.resolve(process.env.MEDIA_DIR || 'media'), mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], crop: false, focalPoint: false },
   fields: [
     { name: 'alt', label: 'Texto alternativo', type: 'text', required: true },
     { name: 'sourceUrl', label: 'Enlace original', type: 'text', unique: true, index: true, access: { read: ({ req }) => !!req.user }, admin: { readOnly: true } },
@@ -31,7 +34,7 @@ export const Campaigns: CollectionConfig = {
   admin: { group: 'Contenido', useAsTitle: 'name', defaultColumns: ['name', 'label', 'startsAt', 'endsAt'] },
   fields: [
     { name: 'name', label: 'Nombre', type: 'text', required: true },
-    { name: 'slug', label: 'Identificador', type: 'text', required: true, unique: true, validate: value => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(value)) || 'Usa minúsculas, números y guiones.' },
+    { name: 'slug', label: 'Identificador', type: 'text', required: true, unique: true, validate: (value: unknown) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(value)) || 'Usa minúsculas, números y guiones.' },
     { name: 'label', label: 'Etiqueta pública', type: 'text', required: true }, ...period,
   ],
 }
@@ -83,11 +86,11 @@ export const Departures: CollectionConfig = {
         { name: 'priority', label: 'Prioridad en destacados', type: 'number', defaultValue: 0, admin: { description: 'Un valor mayor aparece primero.' } },
       ] },
       { label: 'Salida y retiro', fields: [
-        { name: 'travelDate', label: 'Fecha de salida (AAAA-MM-DD)', type: 'text', required: true, index: true, validate: value => isDateOnly(value) || 'Indica una fecha válida con formato AAAA-MM-DD.' },
+        { name: 'travelDate', label: 'Fecha de salida (AAAA-MM-DD)', type: 'text', required: true, index: true, validate: (value: unknown) => isDateOnly(value) || 'Indica una fecha válida con formato AAAA-MM-DD.' },
         { type: 'row', fields: [
-          { name: 'days', label: 'Días', type: 'number', min: 1, required: true, validate: value => Number.isInteger(value) && Number(value) > 0 || 'Indica días enteros.' },
+          { name: 'days', label: 'Días', type: 'number', min: 1, required: true, validate: (value: unknown) => Number.isInteger(value) && Number(value) > 0 || 'Indica días enteros.' },
           { name: 'nights', label: 'Noches', type: 'number', min: 0 },
-          { name: 'advanceDays', label: 'Retirar con anticipación (días)', type: 'number', required: true, defaultValue: 30, min: 0, max: 3650, validate: value => Number.isInteger(value) || 'Indica un número entero.' },
+          { name: 'advanceDays', label: 'Retirar con anticipación (días)', type: 'number', required: true, defaultValue: 30, min: 0, max: 3650, validate: (value: unknown) => Number.isInteger(value) || 'Indica un número entero.' },
         ] },
         { name: 'withdrawalAt', label: 'Fecha de retiro calculada', type: 'date', index: true, admin: { readOnly: true, description: 'Se retira a las 00:00 de Lima. Guarda el borrador para actualizar este valor.' }, access: { create: () => false, update: () => false } },
         { name: 'cutoffPreview', type: 'ui', admin: { components: { Field: '/components/admin/cutoff-preview#CutoffPreview' } } },

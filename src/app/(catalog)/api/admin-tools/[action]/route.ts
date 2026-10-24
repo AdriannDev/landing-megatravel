@@ -46,8 +46,13 @@ export async function POST(request: Request, context: Context) {
         if (!isDateOnly(departure.date) || !Number.isFinite(departure.price) || departure.price <= 0) throw new Error('Cada salida necesita una fecha válida y un precio mayor que cero.')
       }
       const source = await payload.findByID({ collection: 'departures', id: body.sourceId, overrideAccess: false, req, depth: 0 })
-      const fields = ['program', 'mtpe', 'destination', 'zone', 'origin', 'cruiseLine', 'days', 'nights', 'currency', 'priceCondition', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'descriptionUrl', 'promotions', 'priority', 'advanceDays']
-      const template = Object.fromEntries(fields.map(key => [key, source[key]]))
+      const template = {
+        program: source.program, mtpe: source.mtpe, destination: source.destination, zone: source.zone, origin: source.origin,
+        cruiseLine: source.cruiseLine, days: source.days, nights: source.nights, currency: source.currency,
+        priceCondition: source.priceCondition, flyer: source.flyer, flyerSourceUrl: source.flyerSourceUrl,
+        bookingUrl: source.bookingUrl, descriptionUrl: source.descriptionUrl, promotions: source.promotions,
+        priority: source.priority, advanceDays: source.advanceDays,
+      }
       const created = []
       for (const row of body.departures) {
         const exists = await payload.find({ collection: 'departures', req, overrideAccess: false, limit: 1, where: { and: [{ mtpe: { equals: source.mtpe } }, { origin: { equals: source.origin } }, { destination: { equals: source.destination } }, { travelDate: { equals: row.date } }] } })
@@ -65,6 +70,7 @@ export async function POST(request: Request, context: Context) {
       const results = []
       for (const doc of docs.docs.slice(0, 50)) {
         try {
+          if (!doc.flyerSourceUrl) throw new Error('Esta salida no tiene un enlace de imagen para copiar.')
           const image = await importRemoteMedia(payload, doc.flyerSourceUrl, doc.program, req)
           await payload.update({ collection: 'departures', id: doc.id, req, overrideAccess: false, data: { flyer: image.id } })
           results.push({ id: doc.id, status: 'downloaded' })
