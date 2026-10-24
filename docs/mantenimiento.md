@@ -61,7 +61,7 @@ Ejemplo: incorporar un dato adicional que debe aparecer en la tarjeta.
 5. Mostrarlo en `package-card.tsx` y ajustar estilos.
 6. Revisar ambos previews: el del formulario y el de la salida guardada.
 7. Añadirlo al listado `tracked` de `server/hooks.ts` si debe registrarse como cambio comercial.
-8. Si debe copiarse al duplicar una salida, añadirlo al listado `fields` de la acción `duplicate`. Este listado es explícito.
+8. Si debe copiarse al duplicar una salida, añadirlo al objeto `template` de la acción `duplicate`. Su selección de campos es explícita y conserva los tipos generados por Payload.
 9. Si se importará/exportará, actualizar normalización, escritura y encabezados CSV.
 10. Preparar y revisar la migración de PostgreSQL correspondiente antes del despliegue.
 
@@ -111,7 +111,7 @@ La clave de una salida procedente del Excel combina MTPE, fecha, origen y destin
 | Camino | Destino del archivo | Uso |
 | --- | --- | --- |
 | `scripts/download-assets.mjs` | `public/flyers/`, con manifiesto en `migration/assets.json` | Preparación/revisión de la instantánea del Excel |
-| `server/media-import.ts` mediante CMS/importador | Colección Imágenes y R2 si está configurado; almacenamiento local en desarrollo | Contenido administrado |
+| `server/media-import.ts` mediante CMS/importador | Colección Imágenes y R2 si está configurado; en otro caso `MEDIA_DIR` o `media/` | Contenido administrado; requiere persistencia si se usa disco en producción |
 
 Una descarga local a `public/flyers/` no carga por sí sola el archivo a R2. El cambio de un enlace en el formulario intenta copiar la imagen automáticamente; si falla, conserva su URL y muestra una advertencia.
 
@@ -136,3 +136,15 @@ Al cambiar tamaños, comprobar que las condiciones del precio, fechas, códigos 
 | Contenedor o despliegue | Build e inicio en staging cuando se retome esa etapa |
 
 Los comandos completos están en [configuración](configuracion.md). Una revisión de sintaxis no valida permisos reales, consultas PostgreSQL ni aspecto visual.
+
+## Documentación de cada cambio
+
+Cada parte desarrollada debe incorporar su documentación en la misma entrega, según la indicación del usuario. Antes de considerarla terminada:
+
+1. Actualizar la guía funcional o técnica afectada con el comportamiento resultante y cómo utilizarlo.
+2. Registrar variables nuevas en `.env.example` y [configuración](configuracion.md), sin valores privados. Documentar comandos, migraciones y pasos operativos si cambian.
+3. Actualizar [continuidad](continuidad.md) cuando se complete un pendiente, aparezca otro o cambie el orden de trabajo.
+4. Registrar comprobaciones realmente ejecutadas, fecha, resultado y límites. Distinguir una implementación local de una integración validada en producción.
+5. Añadir documentos nuevos al [índice](README.md) y mantener coherentes los enlaces y ejemplos existentes.
+
+La documentación debe describir el estado final del cambio, con instrucciones reproducibles. Los reportes históricos se conservan con su fecha; no se usan como prueba de verificaciones posteriores.

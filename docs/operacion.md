@@ -4,7 +4,7 @@ Para entender qué servicio contratar y por qué no hace falta un hosting web ad
 
 ## Servicios y variables
 
-Crear en la cuenta del proyecto una aplicación Railway con PostgreSQL, un bucket R2 y un servicio programado para los retiros. La configuración incluida no crea servicios ni compromete gastos. Cotizar el coste recurrente con las tarifas vigentes y el consumo estimado antes de contratar o desplegar.
+Preparar en la cuenta del proyecto una aplicación Railway con PostgreSQL, almacenamiento persistente y una tarea programada de retiros. El almacenamiento puede ser R2 o un volumen de la aplicación en `/app/media` con `MEDIA_DIR=/app/media` y `R2_BUCKET` vacío. La configuración incluida no crea servicios ni compromete gastos. Comparar el [presupuesto recurrente](costos-railway.md) y validar la opción elegida antes del corte.
 
 La aplicación necesita `DATABASE_URL`, una clave `PAYLOAD_SECRET` aleatoria de 32 caracteres o más y `NEXT_PUBLIC_SITE_URL` con la URL definitiva HTTPS. Para R2: `R2_BUCKET`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` y `R2_PUBLIC_URL`. El bucket debe servir los archivos en una URL pública o dominio de medios. Los permisos de la clave R2 se limitan al bucket correspondiente. `NEXT_PUBLIC_GA4_ID` es opcional y se proporciona al build.
 
@@ -25,11 +25,11 @@ El contacto por defecto utiliza el enlace de WhatsApp publicado en [la web ofici
 9. Activar el dominio y comprobar `/api/health`, búsqueda por código/destino/fecha, URL compartida, reservas/descriptivos y ausencia de datos privados en `/api/public/catalog`.
 10. Mantener SpreadSimple operativo durante la aceptación para volver al origen si la validación falla. Capacitar a editores con `docs/editores.md`.
 
-No hay una migración SQL inicial generada y validada. En la primera implementación la red impidió instalar Payload; en la revisión documental ya existen dependencias locales, pero no se retoman los pendientes por instrucción del usuario. La migración, el build y las comprobaciones de staging siguen siendo condiciones del lanzamiento.
+No hay una migración SQL inicial generada y validada. El 24 de octubre de 2026 se actualizó Node a 24.22.1 LTS, con npm 11.19.1, y se repitieron correctamente tipos, 31 pruebas, 14 comprobaciones de Payload con SQLite/medios aislados y build; este último terminó sin advertencias de compilación. Next 16.4.3 se confirmó como versión estable vigente. Siguen pendientes PostgreSQL y su migración, validación del contenedor y staging, correo, archivos de producción y restauración. Ver [estado actual](continuidad.md) y [arranque del CMS](cms.md).
 
 ## Retiro programado
 
-Configura un cron Railway `0 5 * * *` (UTC): equivale a las 00:00 de Lima. Usa el mismo código y base que la aplicación; comando `npm run retire`. La agenda debe configurarse en el servicio de tareas, sin mantenerlo como un servidor HTTP permanente. Alternativamente, un programador de confianza puede enviar `POST /api/cron/retire` con el bearer `CRON_SECRET` (mínimo 32 caracteres) desde su almacén de secretos. [Tareas cron de Railway](https://docs.railway.com/cron-jobs).
+Configura un cron Railway `0 5 * * *` (UTC): equivale a las 00:00 de Lima. Usa el mismo código y base que la aplicación; comando `npm run retire`. La agenda debe configurarse en el servicio de tareas, sin mantenerlo como un servidor HTTP permanente. Usar configuración de despliegue propia, sin heredar el healthcheck `/api/health` de la aplicación en `railway.toml`. Alternativamente, un programador de confianza puede enviar `POST /api/cron/retire` con el bearer `CRON_SECRET` (mínimo 32 caracteres) desde su almacén de secretos. [Tareas cron de Railway](https://docs.railway.com/cron-jobs).
 
 La consulta pública también calcula vigencia y no depende del cron. Una pestaña abierta refresca datos cada 30 segundos; el catálogo del servidor no tiene caché. Registrar y alertar sobre fallos del cron. La tarea solo retira registros todavía publicados y vencidos, y escribe historial con responsable Sistema.
 
@@ -44,7 +44,7 @@ node --env-file=.env.local scripts/backup.mjs
 node --env-file=.env.local scripts/backup.mjs --restore backups/megatravel-FECHA.dump
 ```
 
-La restauración rechaza la URL de origen y exige que el destino termine en `_restore`. Después, iniciar una instancia de prueba contra ese destino y verificar recuentos por estado, acceso por rol, historial, filtros y archivos. Los dumps no incluyen binarios de R2: mantener una copia independiente del bucket y del manifiesto, y probar que los enlaces almacenados siguen resolviendo. No se ejecutó una restauración en este entorno.
+La restauración rechaza la URL de origen y exige que el destino termine en `_restore`. Después, iniciar una instancia de prueba contra ese destino y verificar recuentos por estado, acceso por rol, historial, filtros y archivos. Los dumps no incluyen los binarios de imágenes: mantener una copia independiente del bucket R2 o del volumen de `MEDIA_DIR`, y probar que los enlaces almacenados siguen resolviendo. No se ejecutó una restauración en este entorno.
 
 ## Seguimiento
 

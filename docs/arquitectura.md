@@ -164,7 +164,7 @@ Los componentes que usan estado, eventos o APIs del navegador tienen comportamie
 | `backup.mjs` | Ejecuta dump o restauración de prueba con credenciales en variables de entorno |
 | `check-source.mjs` | Comprobación sintáctica de fuentes mediante TypeScript |
 | `check-domain-types.mjs` | Comprobación de tipos limitada al dominio independiente |
-| `verify-cms.ts` | Pruebas con Payload y SQLite aislada, pendientes de ejecución |
+| `verify-cms.ts` | 14 comprobaciones con Payload, SQLite y cargas aisladas bajo `.qa/`; verificadas el 24 de octubre |
 | `check-repository.mjs` | Revisa archivos candidatos/preparados para evitar incluir rutas locales y patrones conocidos de claves |
 | `prepare-commits.mjs` | Prepara los dos commits iniciales, o describe el plan sin escribir; no gestiona remotos |
 
@@ -206,7 +206,7 @@ Que `migration/departures.csv` esté en Git no significa que esas filas estén c
 
 Todo lo situado en `public/` puede servirse sin autenticar. `public/icon.svg` responde en `/icon.svg`; un archivo de `public/flyers/` responde en `/flyers/nombre.png`. No se deben colocar allí exportaciones privadas, contraseñas ni copias de base.
 
-`media/` es el almacenamiento local de cargas de Payload cuando no se usa R2. Se genera durante el uso y está excluido de Git. En producción con R2, los archivos deben persistir en el bucket, no depender del disco temporal del contenedor.
+`media/` es el almacenamiento local por defecto de Payload cuando no se usa R2. `MEDIA_DIR` permite fijar otra ruta; el Dockerfile utiliza `/app/media` para mantenerla común entre scripts y servidor standalone. Las cargas están excluidas de Git. En producción deben persistir en R2 o en un volumen montado en esa ruta; no depender del disco temporal del contenedor. La opción de volumen sigue pendiente de validación en Railway.
 
 ## Docker y archivos raíz
 

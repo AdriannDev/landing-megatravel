@@ -2,9 +2,11 @@
 
 ## Respuesta para este proyecto
 
-**No necesitas comprar otro hosting si utilizas Railway para ejecutar la aplicación.** Railway aloja el proceso Next.js/Payload y puede alojar PostgreSQL y el servicio programado. El dominio puede seguir registrado donde lo compraste, incluido Hostinger. Conectarlo mediante DNS es diferente de trasladar su registro. Railway ofrece dominios propios y conexión de dominios personalizados con HTTPS. [Red pública y dominios de Railway](https://docs.railway.com/networking/public-networking).
+El usuario confirmó la arquitectura **Next.js con Payload como CMS, PostgreSQL y Railway**. Primero se debe configurar y validar el entorno local; después completar migraciones, persistencia, tareas y copias antes de publicar. Ver [configuración del CMS](cms.md), [pruebas locales](pruebas-locales.md) y [presupuesto](costos-railway.md).
 
-La arquitectura preparada utiliza además Cloudflare R2 para las imágenes. Por tanto, la elección actual es Railway para aplicación/base/tarea y R2 para archivos; no dos hostings web para la misma aplicación.
+**No necesitas comprar otro hosting si utilizas Railway para ejecutar la aplicación.** Railway aloja el proceso Next.js/Payload y puede alojar PostgreSQL y el servicio programado. El dominio puede seguir en su registrador actual. Conectarlo mediante DNS es diferente de trasladar su registro. Railway ofrece dominios propios y conexión de dominios personalizados con HTTPS. [Red pública y dominios de Railway](https://docs.railway.com/networking/public-networking).
+
+La arquitectura preparada admite Cloudflare R2 para las imágenes, como muestra el diagrama. También se puede utilizar un volumen persistente de la aplicación en Railway. La elección del almacenamiento se configura sin cambiar el CMS; el editor continúa subiendo archivos desde Payload.
 
 ```mermaid
 flowchart LR
@@ -17,7 +19,7 @@ flowchart LR
 
 La flecha de GitHub representa una integración futura. Hacer un commit o un push no publica este proyecto mientras no se configure el alojamiento para desplegarlo.
 
-## Qué necesitas contratar o tener disponible
+## Servicios para producción
 
 | Elemento | Función | Situación/decisión |
 | --- | --- | --- |
@@ -33,25 +35,13 @@ La flecha de GitHub representa una integración futura. Hacer un commit o un pus
 
 No hace falta un servidor separado para el frontend y otro para el CMS. Ya comparten la aplicación. El almacenamiento de imágenes y la base siguen siendo recursos persistentes diferentes al código.
 
-## ¿Se puede usar Hostinger?
-
-Sí, pero hay que elegir un producto adecuado. Hostinger declara soporte Node.js en Business Web Hosting y planes Cloud, y también VPS para configuraciones con mayor control. Un plan orientado únicamente a archivos estáticos o WordPress no garantiza los requisitos de esta aplicación. [Opciones Node.js de Hostinger](https://www.hostinger.com/support/node-js-hosting-options-at-hostinger/).
-
-| Opción | Encaje con el código actual | Trabajo que queda por verificar |
-| --- | --- | --- |
-| Railway | Configuración Docker y salud ya preparadas; PostgreSQL puede convivir en el proyecto | Build, esquema, almacenamiento, tareas, copias, dominio y validación |
-| Hostinger con Node administrado | Puede alojar Node; no se ha probado esta aplicación allí | Versión mínima, proceso persistente, recursos, paquetes nativos como Sharp, conexión PostgreSQL y ejecución de tareas |
-| Hostinger VPS | Permite controlar Node, Docker y servicios | Administrar sistema, despliegues, HTTPS/proxy, actualizaciones, base, tareas y backups |
-
-La recomendación para este código es mantener Railway y R2, porque es la arquitectura ya preparada y requiere menos administración de un servidor propio. Es una elección de proyecto, no una afirmación de que Hostinger sea incompatible.
-
-Si solo usas Hostinger como registrador de dominio, no necesitas contratar allí también un hosting web para conectarlo a Railway.
-
 ## ¿Puede estar todo en Railway?
 
-La aplicación y PostgreSQL pueden concentrarse allí. Para imágenes, el código actual activa un adaptador S3 configurado con variables `R2_*` y genera una URL pública. Sustituir R2 por otro almacenamiento requiere comprobar compatibilidad de carga, URLs públicas, permisos, persistencia y respaldos; no se considera integrado solo por contratarlo.
+Sí: aplicación y CMS juntos, PostgreSQL y un volumen persistente de imágenes. Para esa opción, dejar `R2_BUCKET` vacío, mantener `MEDIA_DIR=/app/media` y montar el volumen de la aplicación en `/app/media`, además del volumen propio de PostgreSQL. La ruta está preparada en el código y Dockerfile; faltan comprobar montaje, permisos del usuario `node`, cargas, copias y persistencia después de desplegar. El disco temporal del contenedor no sustituye al volumen.
 
-También habría que resolver el directorio persistente si se optara por guardar imágenes en disco. El disco temporal de un contenedor no sustituye un almacenamiento de archivos permanente. Mantener R2 conserva la separación que ya contempla el proyecto.
+Railway también ofrece buckets S3 privados, sin URL pública directa equivalente a `R2_PUBLIC_URL`. Usarlos requiere adaptar la entrega mediante URLs firmadas o proxy, por lo que no son un reemplazo integrado de R2 con solo cambiar credenciales. [Archivos en Railway](https://docs.railway.com/guides/storage-buckets-guide).
+
+Mantener R2 permite servir flyers desde su dominio público y aprovechar su franquicia y salida de datos sin cargo. El [presupuesto Railway](costos-railway.md) compara este camino con concentrar todo mediante volúmenes; la [guía CMS](cms.md) reúne las variables de ambas opciones.
 
 ## Conectar el dominio cuando llegue el lanzamiento
 
@@ -69,17 +59,17 @@ Para las imágenes puede usarse un subdominio como `imagenes.tudominio.com`. En 
 
 ## Costes: cómo interpretarlos
 
-Consulta de tarifas realizada el 23 de octubre de 2026; hay que revisarlas antes de contratar.
+Consulta de tarifas actualizada el 24 de octubre de 2026; hay que revisarlas antes de contratar. El cálculo completo con supuestos y ejemplos está en [costos aproximados de Railway](costos-railway.md).
 
 - Railway publica un mínimo de uso de USD 5 para Hobby y USD 20 para Pro, con crédito de consumo incluido en cada nivel. El coste final depende de recursos y uso: no se debe interpretar el mínimo como una cotización completa de aplicación, base y backups. [Precios de Railway](https://railway.com/pricing).
 - R2 cobra almacenamiento y operaciones; su clase Standard tiene una franquicia mensual y el tráfico de salida no tiene cargo de egress según su tabla. Estar dentro de la franquicia depende del consumo real. [Precios de R2](https://developers.cloudflare.com/r2/pricing/).
 - El dominio mantiene su renovación con el registrador. Mover el alojamiento de la aplicación no elimina ese coste.
-- Las tarifas de un VPS o plan Node de Hostinger se deben comparar con su periodo de renovación, recursos y trabajo de administración, no solo con un precio promocional inicial.
+- El presupuesto con Payload incluye aplicación, base, medios, tareas y copias. Las cuentas del CMS no añaden una tarifa de licencia por editor en esta implementación.
 
-Para cotizar se necesitan tráfico previsto, tamaño total de archivos, recursos medidos de aplicación/base, política de copias y plan del proveedor. No se contrataron servicios ni se emitió una cotización cerrada durante la documentación.
+El usuario informa unas 1,000 personas mensuales. Con RAM media conjunta de app/base de 0.60–0.90 GB y CPU baja, se calcula un escenario pequeño de USD 7–12/mes en Hobby y un presupuesto inicial con margen de USD 15. Diez GB de tráfico representarían solo USD 0.50; el gasto principal del ejemplo es la memoria permanente. Son supuestos sin métricas del despliegue: más memoria, tráfico o entornos permanentes pueden superar USD 20. Pro ya tiene un mínimo de USD 20. El [desglose actualizado](costos-railway.md) explica el catálogo dinámico actual y las opciones para servir contenido estático. No se contrataron servicios ni se emitió una cotización cerrada.
 
 ## Lo que falta antes de publicar
 
-El repositorio tiene instrucciones y configuración, pero no una migración PostgreSQL inicial aprobada. También se deben completar build, integración real con CMS, validación de escritorio/móvil, descarga de imágenes, credenciales de servicios y restauración de prueba. La presencia de `node_modules/` o `.next/` no equivale a aceptación de producción.
+El 24 de octubre se actualizó Node a 24.22.1 LTS y se repitieron correctamente tipos, pruebas, integración con Payload/SQLite y build local. El último build terminó sin advertencias de compilación. El repositorio todavía no tiene una migración PostgreSQL inicial aprobada. Quedan validación PostgreSQL y contenedor, escritorio/móvil, correo, imágenes persistentes, credenciales de servicios y restauración de prueba. Los resultados y su alcance se registran en [continuidad](continuidad.md).
 
-Los pasos operativos están en [operación y lanzamiento](operacion.md). Se mantienen pendientes porque el usuario pidió resolver primero documentación y preparación del repositorio.
+Los pasos operativos están en [operación y lanzamiento](operacion.md). Documentar esos pasos no equivale a ejecutarlos ni a validar servicios externos.

@@ -10,11 +10,15 @@ Empieza por el [índice de documentación](docs/README.md). Las guías están or
 
 | Necesito… | Guía |
 | --- | --- |
+| Saber qué está validado y qué falta para continuar | [Estado y próximos pasos](docs/continuidad.md) |
+| Activar el CMS y crear la primera cuenta | [Configuración y uso del CMS](docs/cms.md) |
+| Probar las funciones antes de desplegar en Railway | [Validación local](docs/pruebas-locales.md) |
+| Comparar el alojamiento con el presupuesto de USD 20/mes | [Costos aproximados de Railway](docs/costos-railway.md) |
 | Entender para qué sirve cada carpeta y archivo | [Arquitectura](docs/arquitectura.md) |
 | Encontrar dónde cambiar diseño, filtros, tarjetas o reglas | [Mantenimiento](docs/mantenimiento.md) |
 | Conocer campos, permisos, estados, CSV y endpoints | [Datos y API](docs/datos-y-api.md) |
 | Configurar un equipo y entender las variables/comandos | [Configuración](docs/configuracion.md) |
-| Elegir alojamiento y conectar mi dominio | [Producción: Railway y Hostinger](docs/produccion.md) |
+| Elegir alojamiento y conectar mi dominio | [Producción y proveedores](docs/produccion.md) |
 | Crear commits, hacer push y trabajar en varios equipos | [Git y GitHub](docs/github.md) |
 | Realizar el corte y mantener el servicio | [Operación](docs/operacion.md) |
 | Administrar las salidas sin editar código | [Guía de editores](docs/editores.md) |
@@ -25,9 +29,9 @@ Empieza por el [índice de documentación](docs/README.md). Las guías están or
 - Excel leído sin modificarlo. Preparados **411 registros**: 233 publicados, 10 borradores incompletos y 168 retirados históricos. Las 215 filas de la hoja BACKUP se conservan en el archivo de extracción y no se republican.
 - Los 10 borradores conservan sus datos; faltan flyers y, en tres casos, el descriptivo. Detalles en [el reporte](migration/workbook-report.json).
 - Se encontraron **97 enlaces únicos de imágenes**. Se conserva el origen de cada archivo y se reutiliza una sola copia por URL.
-- En la implementación inicial, este entorno bloqueó dependencias y descarga de imágenes con `EACCES`. Se registraron 31 pruebas aprobadas, sintaxis y tipos del dominio en [el reporte de verificación](migration/verification.json). Ahora existen dependencias instaladas, lockfile, tipos generados y `.next/`; su presencia no acredita la validación completa del proyecto. **Build, integración, inspección visual, migración PostgreSQL, restauración y despliegue permanecen pendientes de validación** y no se ejecutan en la etapa de documentación/repositorio.
+- El 24 de octubre de 2026 se corrigieron 13 errores de TypeScript y se verificaron 31 pruebas, tipos, sintaxis, 14 comprobaciones de integración del CMS con SQLite/medios aislados y un build local de producción. Las verificaciones se repitieron con Node 24.22.1 LTS y npm 11.19.1; el último build terminó sin advertencias de compilación. Next 16.4.3 se confirmó como última versión estable compatible con Payload. Quedan inspección visual, migración PostgreSQL, R2/volumen real, restauración y despliegue. El [estado de desarrollo](docs/continuidad.md) distingue resultados actuales del [reporte histórico](migration/verification.json).
 - No se configuraron servicios de pago ni se publicó el sitio. La migración inicial de PostgreSQL debe generarse y probarse con las dependencias instaladas antes del lanzamiento.
-- En la sesión documental del 23 de octubre de 2026 se inicializó el repositorio local en `main`. La escritura del índice Git fue bloqueada al crear `.git/index.lock`, por lo que el asistente no creó commits. El usuario creó el remoto y realizará su vinculación/push. Está preparado `npm run prepare:commits` para crear los dos commits locales en una terminal con permiso de escritura; después, consultar el estado vigente con `git log` y `git status`.
+- El repositorio se gestiona en `main` con el remoto `origin`. Los cambios se registran con la identidad Git configurada y sin coautorías. Consultar `git log` y `git status` para el estado vigente; publicar commits en GitHub no equivale a desplegar la aplicación.
 
 ## Arranque local
 
@@ -49,6 +53,8 @@ npm.cmd run dev
 Abre `http://localhost:3000`. `CATALOG_SOURCE=workbook` activa explícitamente la instantánea preparada. El servidor comprueba en cada consulta la fecha de retiro. Las imágenes se leen desde sus URLs originales hasta que se descarguen.
 
 Para probar el CMS completo con SQLite local, deja `DATABASE_URL` vacío, cambia `USE_SQLITE=true` y `CATALOG_SOURCE=cms`. Para PostgreSQL local, usa `docker compose up -d`, deja `USE_SQLITE=false` y configura `DATABASE_URL` como en el ejemplo.
+
+El procedimiento completo de primera cuenta, variables privadas, importación, acceso y archivos está en [configuración del CMS](docs/cms.md). Cada parte desarrollada debe actualizar su documentación y sus resultados de validación; ver [mantenimiento](docs/mantenimiento.md#documentación-de-cada-cambio).
 
 ```powershell
 # Define ADMIN_EMAIL y ADMIN_PASSWORD en .env.local; contraseña de al menos 14 caracteres.
@@ -105,9 +111,11 @@ npm.cmd run build
 
 Consulta [la guía de Railway, R2 y lanzamiento](docs/operacion.md) y [la guía del editor](docs/editores.md). `Dockerfile`, `railway.toml` y `compose.yaml` preparan los servicios; se necesitan las credenciales propias del proyecto y una migración inicial verificada. Después del corte a CMS, establece `CATALOG_SOURCE=cms` y deja de editar el Excel como fuente principal.
 
-Railway ya cumple la función de alojamiento de la aplicación; no hace falta comprar además otro hosting web en Hostinger. El dominio puede permanecer en su registrador. La arquitectura prevista utiliza Railway para aplicación, PostgreSQL y tarea, y Cloudflare R2 para imágenes. Las alternativas de Hostinger y los requisitos están en [producción](docs/produccion.md).
+La arquitectura elegida utiliza Next.js con Payload como CMS, PostgreSQL para producción y Railway como alojamiento, con imágenes en R2 o un volumen persistente mediante `MEDIA_DIR=/app/media`. El dominio puede permanecer en su registrador. Empieza por [configuración del CMS](docs/cms.md) y [pruebas locales](docs/pruebas-locales.md); los requisitos de lanzamiento están en [producción](docs/produccion.md) y el [presupuesto](docs/costos-railway.md) recoge los supuestos frente a USD 20/mes.
 
 ## Commits iniciales y GitHub
+
+Los dos commits iniciales ya existen en esta copia. El siguiente script se conserva como herramienta de inicialización; no repetirlo para guardar los cambios actuales. Para continuar con commits normales, consultar [Git y GitHub](docs/github.md).
 
 ```powershell
 # Revisión sin escrituras en el índice.

@@ -7,4 +7,4 @@ npm run migrate:create -- inicial
 npm run migrate
 ```
 
-Revisar y versionar los archivos generados antes de ejecutar en producción. La aplicación usa `push: false` en producción; no modifica el esquema automáticamente. En la implementación inicial no se generó ni verificó una migración inicial. Su preparación y prueba siguen pendientes; no se ejecutan en la etapa de documentación y repositorio. El despliegue queda condicionado a validarlas en staging.
+Revisar y versionar los archivos generados antes de ejecutar en producción. La aplicación usa `push: false` en producción; no modifica el esquema automáticamente. Al 24 de octubre de 2026 no se generó ni verificó una migración inicial PostgreSQL. Las pruebas locales de Payload con SQLite no validan ese esquema. Su preparación y prueba siguen pendientes de disponer del entorno PostgreSQL; el despliegue queda condicionado a validarlas en staging. Consultar [el estado actual](../../docs/continuidad.md).

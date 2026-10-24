@@ -2,11 +2,13 @@
 
 ## Qué está preparado y qué sigue pendiente
 
-Se inicializó un repositorio local con rama `main`. El usuario creó el repositorio de GitHub y realizará su vinculación y push. No se configuró `origin` ni se contactó ese repositorio desde esta preparación.
+El repositorio usa la rama `main` y el remoto `origin`. Los dos commits iniciales separaron la base de la aplicación y su documentación. Para el estado vigente de las siguientes entregas, consultar `git status`, `git log` y la rama remota.
 
-El intento de preparar archivos fue rechazado por el entorno al escribir `.git/index.lock`. Por ello **todavía no hay commits creados por el asistente**. El código y la documentación están listos en el directorio de trabajo, y el script siguiente permite crear los dos commits desde una terminal normal con permisos de escritura.
+Los commits deben utilizar la identidad Git configurada, sin coautorías, conforme a la indicación del usuario. Los cambios funcionales y su documentación se incluyen en la misma entrega y pueden organizarse en commits separados.
 
-Este estado corresponde al cierre de la sesión documental del 23 de octubre de 2026. Después de ejecutar el script, el estado vigente se consulta con `git log` y `git status`, no con este registro histórico.
+En la sesión documental del 23 de octubre, el intento del asistente de preparar archivos fue rechazado al escribir `.git/index.lock`. Se dejó el script siguiente para crear los dos commits desde una terminal normal. Es un procedimiento de inicialización: no debe repetirse ahora que esos commits ya existen.
+
+La creación del remoto y el despliegue son acciones diferentes. Los resultados de implementación y los pendientes actuales están en [continuidad](continuidad.md).
 
 ## Crear los dos commits locales
 
@@ -58,7 +60,7 @@ git remote -v
 git push -u origin main
 ```
 
-Si ya existe un `origin`, inspeccionarlo antes de modificarlo. El push debe ejecutarse con la cuenta que tiene permiso en el repositorio. No colocar un token o contraseña dentro de la URL ni pegarlo en el código. El asistente deja la vinculación al usuario conforme a su instrucción.
+Si ya existe un `origin`, inspeccionarlo antes de modificarlo. El push debe ejecutarse con la cuenta que tiene permiso en el repositorio. No colocar un token o contraseña dentro de la URL ni pegarlo en el código. El remoto de esta copia ya está configurado; no repetir `git remote add origin` para las actualizaciones normales.
 
 GitHub explica este flujo para añadir código local a un repositorio existente. Si el remoto se creó con README u otros commits iniciales, hay que integrar su historial antes de publicar; no se debe resolver sobrescribiéndolo con `push --force`. [Añadir código local a GitHub](https://docs.github.com/en/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github).
 
