@@ -2,6 +2,16 @@
 
 Revisión del 24 de octubre de 2026. Este documento describe lo comprobado en el repositorio local; no acredita servicios ni despliegues en cuentas externas.
 
+## Actualización del 26 de octubre: filtros del catálogo
+
+Se corrigió la distribución del panel lateral: más ancho en escritorio/tablet, fechas con etiqueta encima y campo de ancho completo, y nombres largos de opciones que se ajustan dentro del panel. En móvil, las fechas tienen 44 px de altura, texto de 16 px y un panel desplazable con el botón de resultados accesible. También se corrigió el margen de las pestañas de promoción a 360 px o menos y se adaptaron los precios de las tarjetas al espacio disponible.
+
+La prueba de interacción detectó que la sincronización inicial de la URL podía borrar la primera fecha elegida. Se eliminó esa sincronización redundante: el estado inicial ya llega en la consulta del servidor y el evento `popstate` sigue restaurando los filtros al navegar atrás/adelante.
+
+Verificado con el navegador de gstack en una instancia local aislada y código idéntico al de la carpeta principal: 13 anchos (320, 360, 390, 480, 760, 761, 768, 900, 1000, 1024, 1100, 1280 y 1440 px), siete grupos de filtros accesibles, fechas legibles y ausencia de desbordamiento horizontal. Se probaron fechas + zona, URL, limpieza, atrás/adelante y cierre/reapertura del diálogo móvil. Pasaron las 31 pruebas existentes, TypeScript y la comprobación de sintaxis de 57 archivos. Las capturas y recorridos locales se conservan en `.qa/filter-layout/`, que no se versiona.
+
+Esta revisión cubre los filtros y la distribución contigua del catálogo. El recorrido completo del editor, el resto de la aceptación visual y las comprobaciones de servicios de producción de las secciones siguientes continúan pendientes. Algunos flyers externos respondieron HTTP 403 durante la prueba; su descarga no forma parte de esta corrección.
+
 ## Qué está implementado y qué se verificó
 
 El catálogo y Payload CMS comparten una aplicación Next.js. El panel está en `/admin`, en español, con administradores y editores. Ya existen salidas, publicación/retiro/reactivación, historial, promociones, banners, importación/exportación CSV y herramientas para duplicar programas y crear fechas. No hace falta desarrollar otro panel ni contratar un servidor independiente para el CMS.

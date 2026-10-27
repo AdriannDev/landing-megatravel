@@ -60,7 +60,8 @@ export function Catalog({ data, initialQuery = '' }: { data: CatalogData; initia
   const result = useMemo(() => filterCatalog(packages, filters), [packages, filters])
   useEffect(() => {
     const back = () => { const next = parseFilters(new URLSearchParams(window.location.search)); setFilters(next); setQuery(next.q) }
-    back(); window.addEventListener('popstate', back)
+    // Initial filters already come from the server query; do not overwrite the first interaction.
+    window.addEventListener('popstate', back)
     return () => window.removeEventListener('popstate', back)
   }, [])
   const update = (patch: Partial<CatalogFilters>, resetPage = true) => {
