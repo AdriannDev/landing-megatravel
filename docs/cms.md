@@ -2,6 +2,16 @@
 
 Payload ya está integrado en la aplicación. Su panel es `http://localhost:3000/admin` en local y `https://tu-dominio/admin` después del despliegue. No hay una cuenta ni una contraseña predeterminadas. Esta guía prepara el acceso; el uso diario está en [editores](editores.md).
 
+## Acceso preparado en este ordenador: 27 de octubre de 2026
+
+Se configuró `.env.local` con un secreto propio, SQLite en `megatravel.db` y `CATALOG_SOURCE=cms`, y se creó la primera cuenta administradora mediante el bootstrap privado. La contraseña temporal se conserva únicamente en `.qa/admin-access/acceso-local.txt`, excluido de Git. `ADMIN_PASSWORD` se retiró del entorno después de crear la cuenta. Abrir ese archivo en el ordenador para consultar el acceso y cambiar la contraseña desde la cuenta al entrar.
+
+Con `npm.cmd run dev` activo, entrar en [el panel local](http://localhost:3000/admin). En **Salidas** se pueden editar programas existentes o crear uno; en **Imágenes**, subir el archivo y seleccionarlo como Flyer. Guardar como borrador durante la preparación y publicar cuando los datos y la fecha estén completos. El [catálogo local](http://localhost:3000) ya consulta el CMS.
+
+La carga inicial aceptó 409 de las 411 filas: dos salidas publicadas ya habían alcanzado su fecha de retiro y quedaron excluidas, sin alterar fechas ni plazos del archivo original. El detalle está en `migration/import-report-commit.json`, también privado. Los flyers conservan sus enlaces de origen; esta carga se hizo con `--skip-images` y no acredita la disponibilidad de esos enlaces.
+
+Esta configuración pertenece a este ordenador. PostgreSQL, almacenamiento persistente y correo transaccional siguen siendo requisitos pendientes del entorno de producción; la recuperación de contraseña por correo todavía no está habilitada.
+
 ## CMS del proyecto: Payload
 
 El usuario confirmó **Payload como CMS del proyecto**. La configuración y el desarrollo continúan sobre su panel, adaptado a los usuarios no técnicos y al trabajo del equipo comercial: precios, fechas, imágenes, publicación, retiros, permisos e historial privado.

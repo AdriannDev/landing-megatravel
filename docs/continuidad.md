@@ -2,6 +2,16 @@
 
 Revisión del 24 de octubre de 2026. Este documento describe lo comprobado en el repositorio local; no acredita servicios ni despliegues en cuentas externas.
 
+## Actualización del 27 de octubre: acceso al administrador local
+
+Se reprodujo el error de `/admin`: `.env.local` existía vacío y Payload intentaba conectarse a PostgreSQL sin una conexión configurada. Se preparó SQLite local en `megatravel.db`, un `PAYLOAD_SECRET` aleatorio y la primera cuenta administradora con el correo indicado por el usuario. La contraseña temporal está en `.qa/admin-access/acceso-local.txt`, excluido de Git, y se eliminó `ADMIN_PASSWORD` del entorno después del bootstrap. No se modificaron los permisos ni el mecanismo de autenticación.
+
+Se activó `CATALOG_SOURCE=cms` y se validó/importó el CSV histórico con `--skip-images`: 409 registros aceptados de 411; las filas 2 y 3 quedaron excluidas por haber alcanzado su fecha de retiro. Los reportes privados están en `migration/import-report-dry-run.json` y `migration/import-report-commit.json`. Se conservaron los datos originales y los enlaces de los flyers.
+
+El navegador de gstack comprobó el fallo original y la pantalla de inicio de sesión corregida, sin errores nuevos de consola (queda una advertencia de precarga CSS en desarrollo). Una comprobación local de API confirmó inicio de sesión HTTP 200 con rol Administrador, 231 salidas en el catálogo público y HTTP 403 para lectura anónima de la colección privada. La base contiene diez borradores, 231 publicados y 168 retirados. Las 31 pruebas del proyecto pasaron. El recorrido completo de edición/carga por navegador sigue pendiente de la sesión del usuario; no se introdujeron contraseñas en el navegador automatizado. La guía de [CMS](cms.md) incluye el acceso preparado y el flujo para crear programas.
+
+Quedan pendientes PostgreSQL, migraciones de producción, almacenamiento persistente, correo transaccional y despliegue. Las afirmaciones sobre ausencia de `.env.local`, cuenta e importación de la revisión del 24 de octubre que aparece debajo describen el estado anterior a esta actualización.
+
 ## Actualización del 26 de octubre: filtros del catálogo
 
 Se corrigió la distribución del panel lateral: más ancho en escritorio/tablet, fechas con etiqueta encima y campo de ancho completo, y nombres largos de opciones que se ajustan dentro del panel. En móvil, las fechas tienen 44 px de altura, texto de 16 px y un panel desplazable con el botón de resultados accesible. También se corrigió el margen de las pestañas de promoción a 360 px o menos y se adaptaron los precios de las tarjetas al espacio disponible.
