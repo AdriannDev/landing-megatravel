@@ -1,6 +1,7 @@
 import { parseSourceDate, parsePrice } from './csv.ts'
 import { retirementAt, safeExternalUrl, validateTransition } from './lifecycle.ts'
 import type { Departure, Status, WithdrawalReason } from './types.ts'
+import { departureKey, normalizeMTPE } from './programs.ts'
 
 export function rowToDeparture(row: Record<string, string>, options: { now?: Date; historical?: boolean } = {}): Departure {
   const sourceKey = row.source_key || (row.source_sheet && row.source_ref ? `csv:${encodeURIComponent(row.source_sheet)}:${encodeURIComponent(row.source_ref)}` : '')
@@ -19,7 +20,7 @@ export function rowToDeparture(row: Record<string, string>, options: { now?: Dat
   if (reason && !['request', 'sold-out', 'price-change', 'other', 'automatic'].includes(reason)) throw new Error('Motivo de retiro no reconocido.')
   const item: Departure = {
     id: sourceKey, sourceKey, sourceSheet: row.source_sheet || '', sourceRef: row.source_ref || '',
-    program: row.program, mtpe: row.mtpe, destination: row.destination || '', zone: row.zone || '', origin: row.origin || '', cruiseLine: row.cruise_line || null,
+    program: row.program.trim(), mtpe: normalizeMTPE(row.mtpe), destination: row.destination || '', zone: row.zone || '', origin: row.origin || '', cruiseLine: row.cruise_line || null,
     days: Number(row.days), nights: row.nights ? Number(row.nights) : null, travelDate,
     price: parsePrice(row.price || ''), currency: currency as 'USD' | 'PEN', priceCondition: row.price_condition || 'Por persona en habitación doble',
     flyerUrl: row.flyer_url || '', bookingUrl: row.booking_url || '', descriptionUrl: row.description_url || '',
@@ -38,12 +39,26 @@ export function rowToDeparture(row: Record<string, string>, options: { now?: Dat
 
 export function planImport(rows: Record<string, string>[], options: { now?: Date; historical?: boolean } = {}) {
   const seen = new Set<string>()
+  const dates = new Set<string>()
+  const signatures = new Map<string, string>(), inconsistent = new Set<string>()
+  // Include invalid and duplicate source rows so a skipped row cannot hide a conflict.
+  for (const row of rows) {
+    const mtpe = normalizeMTPE(row.mtpe)
+    const signature = JSON.stringify([row.program?.trim(), row.destination || '', row.zone || '', Number(row.days), row.nights ? Number(row.nights) : null, row.cruise_line || null, row.flyer_url || '', row.booking_url || '', row.description_url || ''])
+    if (signatures.has(mtpe) && signatures.get(mtpe) !== signature) inconsistent.add(mtpe)
+    signatures.set(mtpe, signature)
+  }
   const accepted: { row: number; item: Departure }[] = [], errors: { row: number; error: string }[] = []
   for (let index = 0; index < rows.length; index++) {
     try {
+      const mtpe = normalizeMTPE(rows[index].mtpe)
+      if (inconsistent.has(mtpe)) throw new Error(`MTPE ${mtpe}: valores compartidos contradictorios dentro del archivo.`)
       const item = rowToDeparture(rows[index], options)
       if (seen.has(item.sourceKey!)) throw new Error('Clave de importación repetida dentro del archivo.')
+      const dateKey = departureKey(item.mtpe, item.origin.trim().toLocaleLowerCase('es'), item.travelDate)
+      if (dates.has(dateKey)) throw new Error('Fecha repetida para el mismo MTPE y origen dentro del archivo.')
       seen.add(item.sourceKey!)
+      dates.add(dateKey)
       accepted.push({ row: index + 2, item })
     } catch (error) { errors.push({ row: index + 2, error: (error as Error).message }) }
   }

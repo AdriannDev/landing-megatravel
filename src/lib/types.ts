@@ -41,8 +41,17 @@ export interface Departure {
 export type PublicPackage = Pick<Departure,
   'id' | 'program' | 'mtpe' | 'destination' | 'zone' | 'origin' | 'cruiseLine' | 'days' | 'nights' |
   'travelDate' | 'price' | 'currency' | 'priceCondition' | 'flyerUrl' | 'bookingUrl' | 'descriptionUrl' | 'promotions' | 'priority'>
+export type BannerPlacement = 'hero' | 'between-results' | 'catalog-end' | 'popup'
 export interface Banner {
   id: string
+  title?: string | null
+  message?: string | null
+  buttonLabel?: string | null
+  popupKind?: 'promotion' | 'news' | null
+  popupFrequency?: 'session' | 'daily' | 'always' | null
+  popupDelay?: number | null
+  placement?: BannerPlacement
+  order?: number
   imageUrl: string
   mobileUrl?: string | null
   staticUrl: string

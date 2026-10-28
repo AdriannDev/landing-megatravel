@@ -5,6 +5,8 @@ import { serializeCSV } from '@/lib/csv'
 import { cmsToDeparture, mediaUrl } from '@/server/normalize'
 import { importRemoteMedia } from '@/server/media-import'
 import { isDateOnly } from '@/lib/lifecycle'
+import { createDepartures, duplicateDepartures } from '@/server/departure-service'
+import { resolveProgram } from '@/lib/programs'
 
 export const dynamic = 'force-dynamic'
 type Context = { params: Promise<{ action: string }> }
@@ -14,12 +16,16 @@ export async function GET(request: Request, context: Context) {
   try {
     const { payload, req } = await requireEditor(request)
     const { action } = await context.params
+    if (action === 'programs') {
+      const programs = await payload.find({ collection: 'programs', req, overrideAccess: false, depth: 0, pagination: false, sort: 'program' })
+      return NextResponse.json({ programs: programs.docs.map(p => ({ id: p.id, program: p.program, mtpe: p.mtpe })) }, { headers: { 'Cache-Control': 'no-store' } })
+    }
     if (action !== 'options' && action !== 'export') throw new AdminError('Operación no encontrada.', 404)
     const docs = await payload.find({ collection: 'departures', req, overrideAccess: false, depth: 1, pagination: false, sort: 'program' })
     if (action === 'options') return NextResponse.json({ departures: docs.docs.map(doc => ({ id: doc.id, program: doc.program, mtpe: doc.mtpe, price: doc.price, date: doc.travelDate, flyerUrl: mediaUrl(doc.flyer) || doc.flyerSourceUrl, status: doc.status })) }, { headers: { 'Cache-Control': 'no-store' } })
     const rows = docs.docs.map(doc => {
       const p = cmsToDeparture(doc)
-      const flyerUrl = doc.flyerSourceUrl || (p.flyerUrl ? new URL(p.flyerUrl, process.env.NEXT_PUBLIC_SITE_URL || request.url).toString() : '')
+      const flyerUrl = resolveProgram(doc).flyerSourceUrl || (p.flyerUrl ? new URL(p.flyerUrl, process.env.NEXT_PUBLIC_SITE_URL || request.url).toString() : '')
       return { source_key: p.sourceKey || `cms:${p.id}`, source_sheet: p.sourceSheet || '', source_ref: p.sourceRef || '', program: p.program, mtpe: p.mtpe, destination: p.destination, zone: p.zone, origin: p.origin, days: p.days, nights: p.nights, travel_date: p.travelDate, price: p.price, currency: p.currency, price_condition: p.priceCondition, flyer_url: flyerUrl, booking_url: p.bookingUrl, description_url: p.descriptionUrl, promotions: p.promotions.map(p => p.name).join('|'), cruise_line: p.cruiseLine, advance_days: p.advanceDays, status: p.status, withdrawal_reason: p.withdrawalReason, withdrawal_note: p.withdrawalNote, retired_at: p.retiredAt, source_retirement_date: p.sourceRetirementDate, source_retirement_raw: p.sourceRetirementRaw }
     })
     const headers = ['source_key', 'source_sheet', 'source_ref', 'program', 'mtpe', 'destination', 'zone', 'origin', 'days', 'nights', 'travel_date', 'price', 'currency', 'price_condition', 'flyer_url', 'booking_url', 'description_url', 'promotions', 'cruise_line', 'advance_days', 'status', 'withdrawal_reason', 'withdrawal_note', 'retired_at', 'source_retirement_date', 'source_retirement_raw']
@@ -39,40 +45,28 @@ export async function POST(request: Request, context: Context) {
       if (historical && user.role !== 'admin') throw new AdminError('Solo un administrador puede importar históricos incompletos.', 403)
       return NextResponse.json(await importCSV(payload, await file.text(), req, { dryRun: body.get('dryRun') !== 'false', downloadImages: body.get('downloadImages') === 'true', historical }), { headers: { 'Cache-Control': 'no-store' } })
     }
+    if (action === 'create-departures') {
+      if (Number(request.headers.get('content-length')) > 13 * 1024 * 1024) throw new Error('La solicitud supera el límite de 13 MB.')
+      let body, flyer: File | undefined
+      if (request.headers.get('content-type')?.includes('multipart/form-data')) {
+        const form = await request.formData(), file = form.get('flyer')
+        body = JSON.parse(String(form.get('data') || '{}'))
+        if (file instanceof File && file.size) flyer = file
+      } else body = await request.json()
+      return NextResponse.json(await createDepartures(payload, req, body, flyer), { status: 201, headers: { 'Cache-Control': 'no-store' } })
+    }
     const body = await request.json()
     if (action === 'duplicate') {
-      if (!Array.isArray(body.departures) || !body.departures.length || body.departures.length > 30) throw new Error('Puedes crear entre 1 y 30 salidas por operación.')
-      for (const departure of body.departures) {
-        if (!isDateOnly(departure.date) || !Number.isFinite(departure.price) || departure.price <= 0) throw new Error('Cada salida necesita una fecha válida y un precio mayor que cero.')
-      }
-      const source = await payload.findByID({ collection: 'departures', id: body.sourceId, overrideAccess: false, req, depth: 0 })
-      const template = {
-        program: source.program, mtpe: source.mtpe, destination: source.destination, zone: source.zone, origin: source.origin,
-        cruiseLine: source.cruiseLine, days: source.days, nights: source.nights, currency: source.currency,
-        priceCondition: source.priceCondition, flyer: source.flyer, flyerSourceUrl: source.flyerSourceUrl,
-        bookingUrl: source.bookingUrl, descriptionUrl: source.descriptionUrl, promotions: source.promotions,
-        priority: source.priority, advanceDays: source.advanceDays,
-      }
-      const created = []
-      for (const row of body.departures) {
-        const exists = await payload.find({ collection: 'departures', req, overrideAccess: false, limit: 1, where: { and: [{ mtpe: { equals: source.mtpe } }, { origin: { equals: source.origin } }, { destination: { equals: source.destination } }, { travelDate: { equals: row.date } }] } })
-        if (exists.docs.length) throw new Error(`Ya existe una salida de este programa el ${row.date}.`)
-      }
-      if (new Set(body.departures.map((row: { date: string }) => row.date)).size !== body.departures.length) throw new Error('Hay fechas repetidas en la solicitud.')
-      for (const row of body.departures) {
-        const doc = await payload.create({ collection: 'departures', req, overrideAccess: false, data: { ...template, travelDate: row.date, price: row.price, status: 'draft' } })
-        created.push({ id: doc.id, date: doc.travelDate, href: `/admin/collections/departures/${doc.id}` })
-      }
-      return NextResponse.json({ created }, { status: 201, headers: { 'Cache-Control': 'no-store' } })
+      return NextResponse.json(await duplicateDepartures(payload, req, body.sourceId, body.departures), { status: 201, headers: { 'Cache-Control': 'no-store' } })
     }
     if (action === 'images') {
-      const docs = await payload.find({ collection: 'departures', overrideAccess: false, req, depth: 0, pagination: false, where: body.id ? { id: { equals: body.id } } : { and: [{ flyer: { exists: false } }, { flyerSourceUrl: { exists: true } }] } })
+      const docs = await payload.find({ collection: 'programs', overrideAccess: false, req, depth: 0, pagination: false, where: body.id ? { id: { equals: body.id } } : { and: [{ flyer: { exists: false } }, { flyerSourceUrl: { exists: true } }] } })
       const results = []
       for (const doc of docs.docs.slice(0, 50)) {
         try {
           if (!doc.flyerSourceUrl) throw new Error('Esta salida no tiene un enlace de imagen para copiar.')
           const image = await importRemoteMedia(payload, doc.flyerSourceUrl, doc.program, req)
-          await payload.update({ collection: 'departures', id: doc.id, req, overrideAccess: false, data: { flyer: image.id } })
+          await payload.update({ collection: 'programs', id: doc.id, req, overrideAccess: false, data: { flyer: image.id } })
           results.push({ id: doc.id, status: 'downloaded' })
         } catch (error) { results.push({ id: doc.id, status: 'error', message: (error as Error).message }) }
       }

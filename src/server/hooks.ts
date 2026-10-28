@@ -3,24 +3,30 @@ import type { CollectionAfterChangeHook, CollectionBeforeChangeHook } from 'payl
 import { APIError } from 'payload'
 import { retirementAt, validateTransition, isPublishable } from '../lib/lifecycle'
 import { cmsToDeparture } from './normalize'
-import { importRemoteMedia } from './media-import'
+import { departureKey, normalizeMTPE, relationID, sharedData } from '../lib/programs.ts'
 
 export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, originalDoc, operation, req, context }) => {
   if (operation === 'create') {
     data.stableId = randomUUID()
     data.sourceKey ||= 'cms:' + data.stableId
   }
-  const sourceChanged = data.flyerSourceUrl !== undefined && data.flyerSourceUrl !== originalDoc?.flyerSourceUrl
-  const explicitNewUpload = data.flyer && JSON.stringify(compact(data.flyer)) !== JSON.stringify(compact(originalDoc?.flyer))
-  if (sourceChanged && !explicitNewUpload) {
-    data.flyer = null
-    if (!context.skipMediaDownload) data.flyerDownloadWarning = ''
-    if (data.flyerSourceUrl && req.user && !context.skipMediaDownload) {
-      try { data.flyer = (await importRemoteMedia(req.payload, data.flyerSourceUrl, data.program || originalDoc?.program || 'Flyer de programa', req)).id }
-      catch (error) { data.flyerDownloadWarning = 'Se conserva el enlace original. No se pudo copiar la imagen: ' + (error as Error).message }
+  if (!context.sharedProjection) {
+    const combined = { ...originalDoc, ...data }
+    let programID = relationID(combined.programRef)
+    if (!programID) {
+      const found = await req.payload.find({ collection: 'programs', req, overrideAccess: true, depth: 0, limit: 1, where: { mtpe: { equals: normalizeMTPE(combined.mtpe) } } })
+      const program = found.docs[0] || await req.payload.create({ collection: 'programs', req, overrideAccess: true, data: sharedData(combined) as any, context: { skipMediaDownload: context.skipMediaDownload } })
+      programID = program.id
     }
+    const program = await req.payload.findByID({ collection: 'programs', id: programID, req, overrideAccess: true, depth: 0 })
+    Object.assign(data, sharedData(program), { programRef: program.id })
+    const key = departureKey(program.mtpe, combined.origin, combined.travelDate)
+    const duplicates = await req.payload.find({ collection: 'departures', req, overrideAccess: true, depth: 0, limit: 1, where: { and: [{ mtpe: { equals: program.mtpe } }, { origin: { equals: relationID(combined.origin) } }, { travelDate: { equals: combined.travelDate } }, ...(originalDoc?.id ? [{ id: { not_equals: originalDoc.id } }] : [])] } })
+    if (duplicates.docs.length && (operation === 'create' || key !== departureKey(originalDoc?.mtpe, originalDoc?.origin, originalDoc?.travelDate))) throw new APIError('Ya existe una salida para este MTPE, origen y fecha.', 409)
+    data.departureKey = duplicates.docs.length ? originalDoc?.departureKey ?? null : key
   }
   const combined = { ...originalDoc, ...data }
+  if (context.sharedProjection) return data
   if (context.automaticRetirement && isPublishable({ ...combined, status: 'published' })) throw new APIError('La salida volvió a estar vigente; no se retiró.', 409)
   if (combined.travelDate) data.withdrawalAt = retirementAt(combined.travelDate, combined.advanceDays ?? 30)
   const errors = validateTransition(originalDoc ? cmsToDeparture(originalDoc) : undefined, cmsToDeparture(combined), {

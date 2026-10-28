@@ -45,7 +45,7 @@ export function validatePublication(item: Partial<Departure>, now = new Date()):
   if (!Number.isInteger(item.days) || Number(item.days) < 1) errors.push('La duración debe ser un número entero positivo.')
   if (!Number.isFinite(item.price) || Number(item.price) <= 0) errors.push('El precio debe ser mayor que cero.')
   if (!['USD', 'PEN'].includes(item.currency || '')) errors.push('Indica una moneda válida.')
-  if (!item.flyerUrl || (!item.flyerUrl.startsWith('/') && !safeExternalUrl(item.flyerUrl))) errors.push('Falta un flyer válido.')
+  if (item.flyerUrl && (!item.flyerUrl.startsWith('/') && !safeExternalUrl(item.flyerUrl))) errors.push('El enlace del flyer no es válido.')
   if (!safeExternalUrl(item.bookingUrl)) errors.push('El enlace de reserva debe usar HTTPS.')
   if (!safeExternalUrl(item.descriptionUrl)) errors.push('El enlace de descriptivo debe usar HTTPS.')
   try {

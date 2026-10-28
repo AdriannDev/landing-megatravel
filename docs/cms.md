@@ -6,7 +6,7 @@ Payload ya está integrado en la aplicación. Su panel es `http://localhost:3000
 
 Se configuró `.env.local` con un secreto propio, SQLite en `megatravel.db` y `CATALOG_SOURCE=cms`, y se creó la primera cuenta administradora mediante el bootstrap privado. La contraseña temporal se conserva únicamente en `.qa/admin-access/acceso-local.txt`, excluido de Git. `ADMIN_PASSWORD` se retiró del entorno después de crear la cuenta. Abrir ese archivo en el ordenador para consultar el acceso y cambiar la contraseña desde la cuenta al entrar.
 
-Con `npm.cmd run dev` activo, entrar en [el panel local](http://localhost:3000/admin). En **Salidas** se pueden editar programas existentes o crear uno; en **Imágenes**, subir el archivo y seleccionarlo como Flyer. Guardar como borrador durante la preparación y publicar cuando los datos y la fecha estén completos. El [catálogo local](http://localhost:3000) ya consulta el CMS.
+Con `npm.cmd run dev` activo, entrar en [el panel local](http://localhost:3000/admin): abre Salidas publicadas y vigentes. **Nueva salida** permite seleccionar o crear un programa y añadir hasta 30 fechas/precios. **Programas** concentra nombre, destino, duración, flyer y enlaces para todas sus fechas. Sin flyer se muestra la imagen de Megatravel; el arte se puede añadir después. Revisar los borradores y publicar cuando los demás datos y la fecha estén completos. El [catálogo local](http://localhost:3000) consulta el CMS.
 
 La carga inicial aceptó 409 de las 411 filas: dos salidas publicadas ya habían alcanzado su fecha de retiro y quedaron excluidas, sin alterar fechas ni plazos del archivo original. El detalle está en `migration/import-report-commit.json`, también privado. Los flyers conservan sus enlaces de origen; esta carga se hizo con `--skip-images` y no acredita la disponibilidad de esos enlaces.
 
@@ -92,7 +92,7 @@ Como administrador:
 3. Revisar Destinos, Orígenes, Navieras y Promociones. Configurar Banners con su alternativa estática y texto alternativo.
 4. Revisar los diez borradores incompletos y los avisos de copia de flyers antes de publicarlos.
 
-En **Salidas**, crear el primer registro desde el formulario o usar una salida importada como plantilla con «Duplicar un programa y crear salidas». Completar programa, MTPE, destino, zona, origen, duración, fecha, precio, moneda, condición, flyer y enlaces HTTPS de reserva/descriptivo. Guardar como borrador durante la preparación y cambiar a Publicado al terminar.
+En **Nueva salida**, seleccionar un programa o crear uno con MTPE único y datos compartidos. Completar origen, fechas y precios; la moneda inicial es USD, la condición es por persona en habitación doble y el retiro es 30 días antes. El flyer es opcional; los enlaces HTTPS de reserva/descriptivo y la vigencia son necesarios para publicar. La duplicación reutiliza el programa compartido. Consultar [la guía de editores](editores.md).
 
 El retiro por defecto ocurre 30 días antes de viajar, a las 00:00 de Lima. Se puede cambiar la anticipación por salida. Retirar exige motivo; «Otro» exige observación. Reactivar exige revisar precio, enlaces y vigencia y marcar la confirmación. Los cambios quedan en el historial. Más detalle en [la guía del equipo comercial](editores.md).
 

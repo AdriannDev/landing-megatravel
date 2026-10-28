@@ -17,6 +17,7 @@ No se debe sustituir la proyección pública por una expansión del documento co
 | Slug | Nombre en el panel | Uso |
 | --- | --- | --- |
 | `departures` | Salidas | Registro independiente por fecha de viaje |
+| `programs` | Programas | Un MTPE único con contenido comercial compartido y versiones privadas |
 | `media` | Imágenes | Archivo, texto alternativo y referencia al enlace de origen |
 | `campaigns` | Promociones | Nombre, etiqueta, identificador y periodo |
 | `banners` | Banners | Imágenes de campaña, enlace, periodo y orden |
@@ -27,7 +28,7 @@ No se debe sustituir la proyección pública por una expansión del documento co
 | `users` | Usuarios | Cuentas, nombres y roles |
 | `settings` | Configuración del catálogo | Global único de contacto; no es una colección de múltiples filas |
 
-El campo `zone` de Salidas es texto. No existe una colección independiente de zonas ni una colección separada de programas en esta versión. La herramienta de varias fechas copia una salida existente como plantilla de programa.
+`programs` guarda `program`, `mtpe` único normalizado (sin espacios extremos, en mayúsculas), `destination`, `zone`, `days`, `nights`, `cruiseLine`, `flyer`, `flyerSourceUrl`, `flyerDownloadWarning`, `bookingUrl` y `descriptionUrl`. `departures.programRef` vincula cada fecha. Los campos compartidos antiguos se conservan como proyecciones de lectura y búsqueda para las columnas, exportación y versiones; las escrituras derivan sus valores del programa. Las actualizaciones del programa sincronizan las proyecciones en la misma transacción. Las versiones conservan sus valores históricos.
 
 ## Campos de Salidas
 
@@ -36,9 +37,11 @@ El campo `zone` de Salidas es texto. No existe una colección independiente de z
 | `id` | ID de base de Payload | Se usa para abrir/actualizar el documento en el panel |
 | `stableId` | UUID generado al crear | Identidad comercial estable; no editable por el cliente |
 | `sourceKey` | Clave única de importación | Se conserva para actualizar sin duplicar; no se actualiza mediante la edición normal |
-| `program`, `mtpe` | Textos requeridos | Nombre y código del programa |
-| `destination`, `origin` | Relaciones requeridas | IDs en Payload; nombres en la representación normalizada |
-| `zone` | Texto requerido | Zona usada para filtrar |
+| `programRef` | Relación a Programas | Fuente del contenido común; los campos compartidos de esta tabla son proyecciones |
+| `departureKey` | Clave privada única | MTPE + origen + fecha; protege contra duplicados, incluso con solicitudes simultáneas |
+| `program`, `mtpe` | Proyecciones del programa | Nombre y código compartidos |
+| `destination`, `origin` | Relaciones | Destino del programa y origen de cada salida; nombres en la representación normalizada |
+| `zone` | Proyección del programa | Zona usada para filtrar |
 | `cruiseLine` | Relación opcional | Naviera, si aplica |
 | `days`, `nights` | Números | Días requeridos; noches opcionales |
 | `travelDate` | Texto de fecha `AAAA-MM-DD` | Evita reinterpretar una fecha de salida por cambios de huso horario |
@@ -78,7 +81,7 @@ stateDiagram-v2
 
 No se permite volver desde Publicado o Retirado a Borrador, porque permitiría eludir el motivo de retiro o la revisión de reactivación. Para preparar una alternativa se puede duplicar una salida y crear otro borrador.
 
-La publicación valida programa, MTPE, destino, origen, duración entera positiva, precio, moneda, condición, flyer, enlaces HTTPS y vigencia. La comprobación de URL valida formato y protocolo; no certifica disponibilidad, precio externo ni stock en Meganet. La revisión comercial sigue siendo responsabilidad del editor.
+La publicación valida programa, MTPE, destino, origen, duración entera positiva, precio, moneda, condición, enlaces HTTPS y vigencia. Un flyer vacío permite publicar y se representa con `/megatravel-default.svg`, sin escribir ese respaldo en el programa ni en el CSV. Un enlace de flyer informado debe ser válido. La comprobación de URL valida formato y protocolo; no certifica disponibilidad, precio externo ni stock en Meganet. La revisión comercial sigue siendo responsabilidad del editor.
 
 ### Cálculo del corte
 
@@ -95,7 +98,7 @@ Los periodos de promociones y banners tienen inicio incluido y fin excluido. Si 
 
 ### Guardado e historial
 
-El hook `prepareDeparture` genera los identificadores nuevos, procesa cambios del enlace de flyer, calcula el retiro, valida la transición y registra fecha/responsable del retiro cuando corresponde. Después, `recordDepartureAudit` guarda diferencias en Historial. Una reactivación registra la revisión confirmada aunque el checkbox se limpie al terminar.
+`prepareDeparture` genera identificadores, resuelve el programa, rechaza fechas duplicadas, calcula el retiro y valida la transición. `prepareProgram` procesa el flyer y valida los cambios compartidos de programas con salidas vigentes. `syncProgramSnapshots` propaga el contenido común. `recordDepartureAudit` registra las diferencias y transiciones. Los contextos internos de sincronización se restauran al salir del hook para no alterar operaciones posteriores. Una reactivación registra la revisión confirmada aunque el checkbox se limpie al terminar.
 
 Salidas conserva hasta 50 versiones por documento según su configuración actual. Historial y versiones tienen acceso privado. El proyecto bloquea el borrado de Salidas desde el acceso normal; para dejar de mostrar una salida se utiliza el estado Retirado.
 
@@ -160,6 +163,8 @@ Todas las herramientas requieren sesión de editor o administrador. En POST tamb
 | Método y ruta | Entrada | Resultado |
 | --- | --- | --- |
 | `GET /api/admin-tools/options` | Sin cuerpo | Datos resumidos de salidas para elegir una plantilla |
+| `GET /api/admin-tools/programs` | Sin cuerpo | Programas para el formulario Nueva salida |
+| `POST /api/admin-tools/create-departures` | JSON con programa nuevo o `programId`, condiciones y fechas | Programa y 1–30 borradores en una transacción; enlaces de edición y preview |
 | `GET /api/admin-tools/export` | Sin cuerpo | CSV de gestión completo y privado |
 | `POST /api/admin-tools/duplicate` | JSON de plantilla y fechas/precios | Borradores independientes con enlaces para editarlos |
 | `POST /api/admin-tools/import` | Formulario multipart con CSV y opciones | Reporte por fila, en validación o escritura |
@@ -177,7 +182,13 @@ Ejemplo de estructura para duplicar; los valores son ilustrativos:
 }
 ```
 
-Se aceptan entre 1 y 30 fechas por operación. Se comprueban fechas repetidas y salidas existentes con mismo MTPE, origen, destino y fecha. Los registros se crean como borradores, sin copiar motivo de retiro ni procedencia de la plantilla. La operación crea registros secuencialmente; no se documenta como una transacción conjunta de todo el lote.
+Se aceptan entre 1 y 30 fechas por operación. Se comprueban fechas repetidas y salidas existentes con mismo MTPE, origen y fecha. La duplicación reutiliza `programRef`; crea borradores sin copiar motivo de retiro ni procedencia. Programa, referencias nuevas, salidas, auditoría y versiones se guardan en una transacción: cualquier error revierte el lote. SQLite local activa `transactionOptions`; PostgreSQL utiliza las transacciones del adaptador.
+
+El alta acepta `programId` o `program: { program, mtpe, destination, zone, days, nights?, cruiseLine?, flyer?, flyerSourceUrl?, bookingUrl?, descriptionUrl? }`; destino/naviera/origen nuevos se resuelven por nombre. Las condiciones son `origin`, `currency` (USD por defecto), `priceCondition`, `advanceDays` (30), `priority`, `promotions` y `departures: [{ date, price }]`. Las promociones se pueden ajustar por fecha en Payload.
+
+También acepta multipart con `data` (el mismo JSON) y `flyer` (archivo opcional JPEG/PNG/WebP/GIF de hasta 12 MB, solo para programas nuevos). El formulario usa esta variante: el registro de imagen forma parte de la transacción. Límite total de solicitud: 13 MB. Si se revierte una carga, el almacenamiento puede conservar un archivo físico sin registro; se puede limpiar como medio huérfano, sin publicar una salida parcial.
+
+`/admin` redirige a la tabla de Salidas. `mtView=published|expiring|draft|withdrawn` identifica la vista persistente; el filtro base se evalúa en el servidor y se combina con búsqueda/filtros de Payload. Publicadas excluye el corte alcanzado; Próximas incluye el corte futuro hasta siete días; Retiradas combina retiradas explícitas con publicadas vencidas.
 
 ### Importación HTTP
 
@@ -189,6 +200,10 @@ Se aceptan entre 1 y 30 fechas por operación. Se comprueban fechas repetidas y 
 | `historical` | La cadena `true` permite la importación histórica, limitada a administrador |
 
 El reporte contiene `dryRun`, `total`, `accepted`, `errors` y resultados por fila. Las filas inválidas se reportan individualmente. Un fallo de descarga puede conservar el enlace y producir una advertencia sin rechazar la fila completa. La validación sin importar no garantiza la disponibilidad posterior del servidor de imágenes.
+
+La importación agrupa por MTPE y rechaza todo grupo con valores comunes contradictorios en el archivo, conservando los encabezados y `source_key`. Cada grupo aceptado actualiza su programa y fechas dentro de una transacción. La exportación resuelve el contenido vigente del programa y conserva vacío `flyer_url` cuando no hay arte original.
+
+Los banners públicos incluyen `placement` (`hero`, `between-results`, `catalog-end`), `order`, periodo, URLs comerciales y texto alternativo. Los anteriores sin ubicación se proyectan como `hero`. Se carga la imagen visible del hero con prioridad alta; las inferiores se difieren. No se envían campos administrativos adicionales.
 
 La interfaz pide validar antes de habilitar el botón de importación. El servidor vuelve a validar: el botón no reemplaza las reglas de acceso y guardado.
 
@@ -205,6 +220,19 @@ El cron también puede usar `npm run retire`, dentro del servidor y con variable
 ## CSV y traslado desde Excel
 
 Los encabezados de CSV están definidos en el exportador y en `scripts/prepare-workbook.mjs`. Los campos completos aparecen en el README y el código. Las promociones múltiples usan `|`. Los estados son valores internos en inglés; el panel los traduce.
+
+### Migración de salidas existentes a Programas
+
+La migración de datos está en `src/server/program-migration.ts` y su CLI es `npm run migrate:programs`. El CLI prepara la SQLite local antigua con una copia completa y reconstrucción atómica del esquema; verifica todas las columnas originales y evita los índices duplicados que genera Drizzle. Para bases SQLite nuevas sigue disponible el push de desarrollo. Para PostgreSQL están generadas las migraciones de esquema en `src/migrations/`; hay que revisarlas y probarlas en staging antes de usar el código nuevo en producción.
+
+1. Antes del cambio, crea una copia completa de PostgreSQL (`npm run backup`) y conserva medios, versiones e historial. Suspende las escrituras del equipo durante la migración.
+2. Ejecuta `npm run migrate:programs`. Prepara archivos privados `backups/programas-*.backup.json` y `.report.json`: documentos originales, huella de integridad, referencia elegida por MTPE y cada valor común que se reemplazará. Si la SQLite local necesita el esquema nuevo, lo prepara primero con copia completa; todavía no unifica los datos comerciales.
+3. Revisa el reporte. La referencia es la salida publicada y vigente editada más recientemente; en su ausencia, la más recientemente editada. Los empates se resuelven por ID descendente. El MTPE se normaliza; grupos distintos permanecen aislados.
+4. Ejecuta `npm run migrate:programs -- --commit`. Crea un respaldo nuevo y un manifiesto `.applied.json` antes de confirmar la transacción. Vincula las salidas mediante `programRef` y asigna banners antiguos al hero. No modifica IDs, fechas, precios, estados, procedencia, marcas de tiempo, versiones ni Historial. Los campos comunes actuales se sustituyen conforme al reporte. Los duplicados históricos conservan sus IDs y una clave de unicidad nula; no se permiten duplicados nuevos.
+5. Repetir el comando omite salidas ya vinculadas y conserva las ediciones posteriores de Programas. Si los datos cambian entre respaldo y escritura, se rechaza el respaldo desactualizado.
+6. Para revertir, usa `npm run migrate:programs -- --down backups/programas-….backup.json`, junto a su `.applied.json`. Restaura los valores originales y elimina únicamente los programas creados por ese lote. Se niega a sobrescribir ediciones posteriores o programas que ya tengan salidas nuevas. La reversión se puede repetir.
+
+La migración de datos se verificó con SQLite aislada; no equivale a una migración de esquema PostgreSQL ni valida el almacenamiento R2.
 
 El parser admite BOM, comas o punto y coma, campos entrecomillados y saltos dentro de campos. Rechaza encabezados duplicados, columnas inconsistentes y comillas sin cerrar. Las fechas de entrada aceptadas se normalizan desde ISO, día/mes/año o seriales de Excel. No se adivina el año de una fecha incompleta.
 

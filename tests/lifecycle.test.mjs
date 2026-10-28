@@ -40,9 +40,10 @@ test('pasar por borrador no permite eludir retiro o reactivación', () => {
   assert.ok(validateTransition(item, { ...item, status: 'draft' }, { now }).length)
   assert.ok(validateTransition({ ...item, status: 'withdrawn' }, { ...item, status: 'draft' }, { now }).length)
 })
-test('publicación exige precio, enlaces HTTPS, moneda y flyer', () => {
+test('publicación exige precio, enlaces HTTPS y moneda; el flyer es opcional', () => {
   assert.deepEqual(validatePublication(item, now), [])
-  assert.ok(validatePublication({ ...item, price: 0, bookingUrl: 'javascript:alert(1)', flyerUrl: '', currency: '???' }, now).length >= 4)
+  assert.deepEqual(validatePublication({ ...item, flyerUrl: '' }, now), [])
+  assert.ok(validatePublication({ ...item, price: 0, bookingUrl: 'javascript:alert(1)', flyerUrl: 'http://example.com/a.png', currency: '???' }, now).length >= 4)
   assert.equal(safeExternalUrl('https://user:password@example.com'), false)
   assert.equal(safeExternalUrl('http://example.com'), false)
 })

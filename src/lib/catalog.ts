@@ -1,5 +1,6 @@
 import type { CatalogFilters, Departure, PublicPackage } from './types.ts'
 import { isActivePeriod, isDateOnly, isPublishable } from './lifecycle.ts'
+import { DEFAULT_FLYER } from './flyer.ts'
 
 export const PAGE_SIZE = 12
 export const normalize = (value: unknown) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
@@ -35,7 +36,7 @@ export function toPublicPackage(item: Departure, now = new Date()): PublicPackag
     id: item.id, program: item.program, mtpe: item.mtpe, destination: item.destination, zone: item.zone,
     origin: item.origin, cruiseLine: item.cruiseLine || null, days: item.days, nights: item.nights ?? null,
     travelDate: item.travelDate, price: item.price, currency: item.currency, priceCondition: item.priceCondition,
-    flyerUrl: item.flyerUrl, bookingUrl: item.bookingUrl, descriptionUrl: item.descriptionUrl,
+    flyerUrl: item.flyerUrl || DEFAULT_FLYER, bookingUrl: item.bookingUrl, descriptionUrl: item.descriptionUrl,
     priority: item.priority,
     promotions: (item.promotions || []).filter(p => isActivePeriod(p, now)).map(p => ({ id: p.id, name: p.name, label: p.label })),
   }

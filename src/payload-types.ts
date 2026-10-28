@@ -22,6 +22,7 @@ export interface Config {
   collections: {
     users: User;
     departures: Departure;
+    programs: Program;
     media: Media;
     campaigns: Campaign;
     banners: Banner;
@@ -38,6 +39,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     departures: DeparturesSelect<false> | DeparturesSelect<true>;
+    programs: ProgramsSelect<false> | ProgramsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     campaigns: CampaignsSelect<false> | CampaignsSelect<true>;
     banners: BannersSelect<false> | BannersSelect<true>;
@@ -117,19 +119,39 @@ export interface User {
   collection: 'users';
 }
 /**
- * Una tarjeta por salida. Usa las herramientas para duplicar programas o crear varias fechas.
+ * Una tarjeta por fecha. El contenido compartido se edita en Programas.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "departures".
  */
 export interface Departure {
   id: number;
+  /**
+   * Selecciona el programa. Su nombre, duración, flyer y enlaces se reutilizan en todas las fechas.
+   */
+  programRef?: (number | null) | Program;
+  departureKey?: string | null;
   stableId?: string | null;
-  program: string;
-  mtpe: string;
-  destination: number | Destination;
-  zone: string;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
+  program?: string | null;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
+  mtpe?: string | null;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
+  destination?: (number | null) | Destination;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
+  zone?: string | null;
   origin: number | Origin;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
   cruiseLine?: (number | null) | CruiseLine;
   price: number;
   currency: 'USD' | 'PEN';
@@ -140,20 +162,38 @@ export interface Departure {
    */
   priority?: number | null;
   travelDate: string;
-  days: number;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
+  days?: number | null;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
   nights?: number | null;
   advanceDays: number;
   /**
    * Se retira a las 00:00 de Lima. Guarda el borrador para actualizar este valor.
    */
   withdrawalAt?: string | null;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
   flyer?: (number | null) | Media;
   /**
-   * Al guardar se intenta descargar automáticamente. Si falla, se conserva el enlace para mostrar la imagen.
+   * Contenido compartido. Edita este dato en Programas.
    */
   flyerSourceUrl?: string | null;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
   flyerDownloadWarning?: string | null;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
   bookingUrl?: string | null;
+  /**
+   * Contenido compartido. Edita este dato en Programas.
+   */
   descriptionUrl?: string | null;
   status: 'draft' | 'published' | 'withdrawn';
   /**
@@ -179,6 +219,32 @@ export interface Departure {
   createdAt: string;
 }
 /**
+ * Un programa por MTPE. Los cambios se aplican a todas sus salidas.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "programs".
+ */
+export interface Program {
+  id: number;
+  program: string;
+  mtpe: string;
+  destination: number | Destination;
+  zone: string;
+  days: number;
+  nights?: number | null;
+  cruiseLine?: (number | null) | CruiseLine;
+  /**
+   * Opcional. Sin flyer se usa la imagen de Megatravel en todas las fechas.
+   */
+  flyer?: (number | null) | Media;
+  flyerSourceUrl?: string | null;
+  flyerDownloadWarning?: string | null;
+  bookingUrl?: string | null;
+  descriptionUrl?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "destinations".
  */
@@ -190,9 +256,9 @@ export interface Destination {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "origins".
+ * via the `definition` "cruise-lines".
  */
-export interface Origin {
+export interface CruiseLine {
   id: number;
   name: string;
   updatedAt: string;
@@ -200,9 +266,27 @@ export interface Origin {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "cruise-lines".
+ * via the `definition` "media".
  */
-export interface CruiseLine {
+export interface Media {
+  id: number;
+  alt: string;
+  sourceUrl?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "origins".
+ */
+export interface Origin {
   id: number;
   name: string;
   updatedAt: string;
@@ -227,33 +311,37 @@ export interface Campaign {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  sourceUrl?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "banners".
  */
 export interface Banner {
   id: number;
-  image: number | Media;
   /**
-   * Obligatoria para respetar las preferencias de movimiento reducido.
+   * Si hay varios popups vigentes, se muestra solo el de menor orden.
    */
-  staticImage: number | Media;
+  placement: 'hero' | 'between-results' | 'catalog-end' | 'popup';
+  title?: string | null;
+  /**
+   * Puedes publicar una noticia solo con título y texto, sin imagen.
+   */
+  message?: string | null;
+  popupKind?: ('promotion' | 'news') | null;
+  /**
+   * El botón aparece cuando completas el enlace opcional.
+   */
+  buttonLabel?: string | null;
+  popupFrequency?: ('session' | 'daily' | 'always') | null;
+  popupDelay?: number | null;
+  /**
+   * Banners: 1600 × 600 px. Popup: recomendado 1200 × 900 px. Se muestra el arte completo, sin recortarlo.
+   */
+  image?: (number | null) | Media;
+  /**
+   * Obligatoria cuando hay imagen, para respetar las preferencias de movimiento reducido.
+   */
+  staticImage?: (number | null) | Media;
+  /**
+   * Recomendado: imagen cuadrada, 800 × 800 px.
+   */
   mobileImage?: (number | null) | Media;
   alt: string;
   href?: string | null;
@@ -323,6 +411,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'departures';
         value: number | Departure;
+      } | null)
+    | ({
+        relationTo: 'programs';
+        value: number | Program;
       } | null)
     | ({
         relationTo: 'media';
@@ -424,6 +516,8 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "departures_select".
  */
 export interface DeparturesSelect<T extends boolean = true> {
+  programRef?: T;
+  departureKey?: T;
   stableId?: T;
   program?: T;
   mtpe?: T;
@@ -462,6 +556,26 @@ export interface DeparturesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "programs_select".
+ */
+export interface ProgramsSelect<T extends boolean = true> {
+  program?: T;
+  mtpe?: T;
+  destination?: T;
+  zone?: T;
+  days?: T;
+  nights?: T;
+  cruiseLine?: T;
+  flyer?: T;
+  flyerSourceUrl?: T;
+  flyerDownloadWarning?: T;
+  bookingUrl?: T;
+  descriptionUrl?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
@@ -495,6 +609,13 @@ export interface CampaignsSelect<T extends boolean = true> {
  * via the `definition` "banners_select".
  */
 export interface BannersSelect<T extends boolean = true> {
+  placement?: T;
+  title?: T;
+  message?: T;
+  popupKind?: T;
+  buttonLabel?: T;
+  popupFrequency?: T;
+  popupDelay?: T;
   image?: T;
   staticImage?: T;
   mobileImage?: T;

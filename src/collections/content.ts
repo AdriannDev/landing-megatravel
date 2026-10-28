@@ -4,11 +4,14 @@ import { contentAccess, isAdmin, isEditor, never } from '../server/access'
 import { isDateOnly, safeExternalUrl } from '../lib/lifecycle'
 import { prepareDeparture, recordDepartureAudit } from '../server/hooks'
 import { DEFAULT_CONTACT_URL, DEFAULT_CONTACT_LABEL } from '../lib/brand-config'
+import { prepareProgram, resolveDepartureProgram, syncProgramSnapshots } from '../server/program-hooks'
+import { departureViewWhere, parseDepartureView } from '../lib/admin-views'
+import { sharedFields } from '../lib/programs'
 
 const urlValidation = (value: unknown) => !value || safeExternalUrl(value) || 'Usa un enlace HTTPS completo, sin usuario ni contraseña.'
 const period: Field[] = [
   { name: 'startsAt', label: 'Visible desde', type: 'date', admin: { description: 'Instante de inicio. El panel utiliza America/Lima.' } },
-  { name: 'endsAt', label: 'Visible hasta (exclusivo)', type: 'date', validate: (value, { siblingData }) => {
+  { name: 'endsAt', label: 'Visible hasta (exclusivo)', type: 'date', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => {
     const start = siblingData && 'startsAt' in siblingData ? siblingData.startsAt : undefined
     return !value || !start || Date.parse(String(value)) > Date.parse(String(start)) || 'El fin debe ser posterior al inicio.'
   } },
@@ -40,11 +43,18 @@ export const Campaigns: CollectionConfig = {
 }
 export const Banners: CollectionConfig = {
   slug: 'banners', labels: { singular: 'Banner', plural: 'Banners' }, access: contentAccess,
-  admin: { group: 'Contenido', useAsTitle: 'alt', defaultColumns: ['alt', 'enabled', 'order', 'startsAt', 'endsAt'] },
+  admin: { group: 'Contenido', useAsTitle: 'alt', defaultColumns: ['alt', 'placement', 'enabled', 'order', 'startsAt', 'endsAt'] },
   fields: [
-    { name: 'image', label: 'Imagen o GIF de escritorio', type: 'upload', relationTo: 'media', required: true },
-    { name: 'staticImage', label: 'Alternativa estática', type: 'upload', relationTo: 'media', required: true, admin: { description: 'Obligatoria para respetar las preferencias de movimiento reducido.' } },
-    { name: 'mobileImage', label: 'Versión móvil', type: 'upload', relationTo: 'media' },
+    { name: 'placement', label: 'Ubicación', type: 'select', required: true, defaultValue: 'hero', options: [{ label: 'Hero', value: 'hero' }, { label: 'Entre resultados', value: 'between-results' }, { label: 'Final del catálogo', value: 'catalog-end' }, { label: 'Popup (ventana emergente)', value: 'popup' }], admin: { description: 'Si hay varios popups vigentes, se muestra solo el de menor orden.' } },
+    { name: 'title', label: 'Título del popup', type: 'text', maxLength: 120, validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => siblingData?.placement !== 'popup' || !!String(value || '').trim() || 'Escribe un título para el popup.', admin: { condition: data => data.placement === 'popup' } },
+    { name: 'message', label: 'Texto de la noticia o promoción', type: 'textarea', maxLength: 2000, admin: { condition: data => data.placement === 'popup', description: 'Puedes publicar una noticia solo con título y texto, sin imagen.' } },
+    { name: 'popupKind', label: 'Tipo de anuncio', type: 'select', defaultValue: 'promotion', options: [{ label: 'Promoción', value: 'promotion' }, { label: 'Noticia', value: 'news' }], admin: { condition: data => data.placement === 'popup' } },
+    { name: 'buttonLabel', label: 'Texto del botón del popup', type: 'text', maxLength: 60, defaultValue: 'Conocer más', admin: { condition: data => data.placement === 'popup', description: 'El botón aparece cuando completas el enlace opcional.' } },
+    { name: 'popupFrequency', label: 'Frecuencia del popup', type: 'select', defaultValue: 'session', options: [{ label: 'Una vez por sesión', value: 'session' }, { label: 'Una vez cada 24 horas', value: 'daily' }, { label: 'Cada visita al catálogo', value: 'always' }], admin: { condition: data => data.placement === 'popup' } },
+    { name: 'popupDelay', label: 'Espera antes de abrir (segundos)', type: 'number', defaultValue: 2, min: 0, max: 60, admin: { condition: data => data.placement === 'popup' } },
+    { name: 'image', label: 'Imagen o GIF de escritorio', type: 'upload', relationTo: 'media', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => siblingData?.placement === 'popup' || !!value || 'Selecciona una imagen.', admin: { description: 'Banners: 1600 × 600 px. Popup: recomendado 1200 × 900 px. Se muestra el arte completo, sin recortarlo.' } },
+    { name: 'staticImage', label: 'Alternativa estática', type: 'upload', relationTo: 'media', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => (siblingData?.placement === 'popup' && !siblingData?.image) || !!value || 'Selecciona una alternativa estática.', admin: { description: 'Obligatoria cuando hay imagen, para respetar las preferencias de movimiento reducido.' } },
+    { name: 'mobileImage', label: 'Versión móvil', type: 'upload', relationTo: 'media', admin: { description: 'Recomendado: imagen cuadrada, 800 × 800 px.' } },
     { name: 'alt', label: 'Texto alternativo', type: 'text', required: true },
     { name: 'href', label: 'Enlace opcional', type: 'text', validate: urlValidation },
     { name: 'order', label: 'Orden', type: 'number', defaultValue: 0 },
@@ -55,17 +65,22 @@ export const Banners: CollectionConfig = {
 export const Departures: CollectionConfig = {
   slug: 'departures', labels: { singular: 'Salida', plural: 'Salidas' },
   access: { create: isEditor, read: isEditor, update: isEditor, delete: never, readVersions: isEditor },
+  defaultSort: 'travelDate',
   admin: {
     group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'travelDate', 'price', 'origin', 'status', 'withdrawalAt'],
     listSearchableFields: ['program', 'mtpe'],
+    baseFilter: ({ req }) => departureViewWhere(parseDepartureView(req.query?.mtView)),
     preview: data => `/preview/${data.id}`,
     components: { beforeListTable: ['/components/admin/workspace-tools#WorkspaceTools'] },
-    description: 'Una tarjeta por salida. Usa las herramientas para duplicar programas o crear varias fechas.',
+    description: 'Una tarjeta por fecha. El contenido compartido se edita en Programas.',
   },
   disableDuplicate: true,
   versions: { maxPerDoc: 50 },
-  hooks: { beforeChange: [prepareDeparture], afterChange: [recordDepartureAudit] },
+  hooks: { beforeChange: [prepareDeparture], afterChange: [recordDepartureAudit], afterRead: [resolveDepartureProgram] },
   fields: [
+    { name: 'programRef', label: 'Programa compartido (MTPE)', type: 'relationship', relationTo: 'programs', admin: { description: 'Selecciona el programa. Su nombre, duración, flyer y enlaces se reutilizan en todas las fechas.' } },
+    { name: 'programSummary', type: 'ui', admin: { components: { Field: '/components/admin/program-summary#ProgramSummary' } } },
+    { name: 'departureKey', type: 'text', unique: true, index: true, admin: { hidden: true }, access: { create: () => false, update: () => false } },
     { name: 'stableId', label: 'Identificador estable', type: 'text', unique: true, index: true, admin: { hidden: true, readOnly: true }, access: { create: () => false, update: () => false } },
     { type: 'tabs', tabs: [
       { label: 'Información comercial', fields: [
@@ -119,6 +134,49 @@ export const Departures: CollectionConfig = {
         { name: 'sourceRetirementRaw', label: 'Valor original del retiro histórico', type: 'text', admin: { readOnly: true } },
       ] },
     ] },
+  ],
+}
+
+// Keep the old columns and version payloads. New writes derive these fields from Programas.
+function readonlyShared(fields: Field[]) {
+  for (const field of fields) {
+    if ('name' in field && sharedFields.includes(field.name as typeof sharedFields[number])) {
+      Object.assign(field, { required: false, validate: undefined, admin: { ...field.admin, readOnly: true, description: 'Contenido compartido. Edita este dato en Programas.' } })
+    }
+    if ('fields' in field) readonlyShared(field.fields)
+    if (field.type === 'tabs') for (const tab of field.tabs) readonlyShared(tab.fields)
+  }
+}
+readonlyShared(Departures.fields)
+function tableCells(fields: Field[]) {
+  for (const field of fields) {
+    if (field.type === 'relationship' && !field.hasMany) field.admin = { ...field.admin, components: { ...field.admin?.components, Cell: '/components/admin/reference-cell#ReferenceCell' } }
+    if (field.type === 'select' && field.name === 'status') field.admin = { ...field.admin, components: { ...field.admin?.components, Cell: '/components/admin/status-cell#StatusCell' } }
+    if ('fields' in field) tableCells(field.fields)
+    if (field.type === 'tabs') for (const tab of field.tabs) tableCells(tab.fields)
+  }
+}
+tableCells(Departures.fields)
+
+export const Programs: CollectionConfig = {
+  slug: 'programs', labels: { singular: 'Programa', plural: 'Programas' },
+  access: { ...contentAccess, delete: never, readVersions: isEditor },
+  admin: { group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'destination', 'days', 'flyer'], listSearchableFields: ['program', 'mtpe'], description: 'Un programa por MTPE. Los cambios se aplican a todas sus salidas.' },
+  versions: { maxPerDoc: 50 },
+  hooks: { beforeChange: [prepareProgram], afterChange: [syncProgramSnapshots] },
+  fields: [
+    { name: 'program', label: 'Nombre del programa', type: 'text', required: true, index: true },
+    { name: 'mtpe', label: 'Código MTPE', type: 'text', required: true, unique: true, index: true },
+    { name: 'destination', label: 'Destino', type: 'relationship', relationTo: 'destinations', required: true },
+    { name: 'zone', label: 'Zona', type: 'text', required: true },
+    { name: 'days', label: 'Días', type: 'number', required: true, min: 1, validate: (value: unknown) => Number.isInteger(value) && Number(value) > 0 || 'Indica días enteros.' },
+    { name: 'nights', label: 'Noches', type: 'number', min: 0, validate: (value: unknown) => value == null || Number.isInteger(value) && Number(value) >= 0 || 'Indica noches enteras.' },
+    { name: 'cruiseLine', label: 'Naviera (solo cruceros)', type: 'relationship', relationTo: 'cruise-lines' },
+    { name: 'flyer', label: 'Flyer cuadrado', type: 'upload', relationTo: 'media', admin: { description: 'Opcional. Sin flyer se usa la imagen de Megatravel en todas las fechas.' } },
+    { name: 'flyerSourceUrl', label: 'O pegar enlace de imagen (HTTPS)', type: 'text', validate: urlValidation },
+    { name: 'flyerDownloadWarning', label: 'Resultado de copia del flyer', type: 'text', admin: { readOnly: true } },
+    { name: 'bookingUrl', label: 'Reservar en Meganet', type: 'text', validate: urlValidation },
+    { name: 'descriptionUrl', label: 'Descriptivo en Café', type: 'text', validate: urlValidation },
   ],
 }
 

@@ -16,6 +16,7 @@
     "generate:importmap": "payload generate:importmap",
     "migrate:create": "node --env-file-if-exists=.env.local node_modules/payload/bin.js migrate:create",
     "migrate": "node --env-file-if-exists=.env.local node_modules/payload/bin.js migrate",
+    "migrate:programs": "tsx --env-file-if-exists=.env.local scripts/migrate-programs.ts",
     "import:workbook": "node scripts/prepare-workbook.mjs",
     "import:cms": "tsx --env-file-if-exists=.env.local scripts/import-cms.ts",
     "retire": "tsx scripts/retire.ts",

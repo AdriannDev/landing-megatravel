@@ -2,7 +2,7 @@
 
 Catálogo público y administración en español con Next.js, TypeScript, Tailwind, componentes shadcn/ui sobre Radix, Payload y PostgreSQL. Almacenamiento de imágenes compatible con Cloudflare R2. Las reservas y descriptivos continúan en los enlaces originales de Meganet y Café Megatravel.
 
-El catálogo incluye búsqueda por programa, destino y MTPE; filtros combinables; fechas exactas o intervalos; campañas; ordenamiento; 12 tarjetas por página; estado en la URL; filtros móviles; ampliación de flyers sin recortar; enlaces externos accesibles; y eventos GA4 opcionales. Las tarifas de la migración son **USD por persona en habitación doble**, según confirmación del usuario.
+El catálogo incluye búsqueda por programa, destino y MTPE; filtros combinables inicialmente cerrados con fechas siempre visibles; campañas en hero, entre resultados y al final; carrusel accesible; ordenamiento; 12 tarjetas por página; estado en la URL; filtros móviles; ampliación de flyers sin recortar; enlaces externos y eventos GA4 opcionales. Programas comparte el contenido de un MTPE entre sus fechas; Nueva salida crea hasta 30 borradores en una transacción. Los programas sin flyer usan una imagen de Megatravel. Las tarifas iniciales son **USD por persona en habitación doble**, con retiro 30 días antes.
 
 ## Documentación del desarrollo
 
@@ -25,12 +25,13 @@ Empieza por el [índice de documentación](docs/README.md). Las guías están or
 
 ## Estado de la entrega
 
+- El 28 de octubre se incorporaron Programas, alta de hasta 30 fechas, vistas vigentes del administrador y banners en tres ubicaciones. Se migraron 409 salidas locales a 96 programas con respaldo y reversión; versiones e historial verificados intactos. Validación actual: 39 pruebas de dominio, 34 comprobaciones de integración, tipos, fuentes, build y recorrido con gstack browse. Las migraciones PostgreSQL están generadas y pendientes de aplicación en staging. Detalles en [continuidad](docs/continuidad.md).
 - Código del catálogo, CMS, autenticación, roles, historial, duplicación, creación de varias salidas, importación/exportación y descarga automática de imágenes por enlace implementado.
 - Excel leído sin modificarlo. Preparados **411 registros**: 233 publicados, 10 borradores incompletos y 168 retirados históricos. Las 215 filas de la hoja BACKUP se conservan en el archivo de extracción y no se republican.
-- Los 10 borradores conservan sus datos; faltan flyers y, en tres casos, el descriptivo. Detalles en [el reporte](migration/workbook-report.json).
+- El reporte inicial conserva diez borradores sin flyer y tres descriptivos pendientes. El flyer ahora es opcional y puede compartirse desde Programas; los enlaces siguen siendo obligatorios para publicar. Detalles históricos en [el reporte](migration/workbook-report.json).
 - Se encontraron **97 enlaces únicos de imágenes**. Se conserva el origen de cada archivo y se reutiliza una sola copia por URL.
 - El 24 de octubre de 2026 se corrigieron 13 errores de TypeScript y se verificaron 31 pruebas, tipos, sintaxis, 14 comprobaciones de integración del CMS con SQLite/medios aislados y un build local de producción. Las verificaciones se repitieron con Node 24.22.1 LTS y npm 11.19.1; el último build terminó sin advertencias de compilación. Next 16.4.3 se confirmó como última versión estable compatible con Payload. Quedan inspección visual, migración PostgreSQL, R2/volumen real, restauración y despliegue. El [estado de desarrollo](docs/continuidad.md) distingue resultados actuales del [reporte histórico](migration/verification.json).
-- No se configuraron servicios de pago ni se publicó el sitio. La migración inicial de PostgreSQL debe generarse y probarse con las dependencias instaladas antes del lanzamiento.
+- No se configuraron servicios de pago ni se publicó el sitio. Las migraciones PostgreSQL ya generadas deben probarse en staging antes del lanzamiento.
 - El repositorio se gestiona en `main` con el remoto `origin`. Los cambios se registran con la identidad Git configurada y sin coautorías. Consultar `git log` y `git status` para el estado vigente; publicar commits en GitHub no equivale a desplegar la aplicación.
 
 ## Arranque local

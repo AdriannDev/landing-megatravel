@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.next-qa/
 out/
 .env*
 !.env.example
@@ -24,3 +25,4 @@ backups/
 *.log
 .DS_Store
 Thumbs.db
+.gstack/

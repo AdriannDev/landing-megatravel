@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" fill="#e9ebee"/>
+  <rect x="40" y="40" width="1120" height="820" rx="24" fill="none" stroke="#c6cbd2" stroke-width="3" stroke-dasharray="12 12"/>
+  <g fill="none" stroke="#9ba4b1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="536" y="290" width="128" height="104" rx="12"/>
+    <circle cx="575" cy="323" r="11"/>
+    <path d="m540 379 37-34 25 23 22-19 36 34"/>
+  </g>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <text x="600" y="475" fill="#626d7d" font-size="44" font-weight="700" letter-spacing="3">TU BANNER AQUÍ</text>
+    <text x="600" y="532" fill="#8993a1" font-size="25">1200 × 900 px · Imagen de referencia</text>
+    <text x="600" y="796" fill="#8a93a0" font-size="18" letter-spacing="4">MEGATRAVEL · POPUP DE EJEMPLO</text>
+  </g>
+</svg>

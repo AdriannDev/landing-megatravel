@@ -1,6 +1,7 @@
 import { withPayload } from '@payloadcms/next/withPayload'
 
 export default withPayload({
+  distDir: process.env.NEXT_BUILD_DIR || '.next',
   output: 'standalone',
   poweredByHeader: false,
   async headers() {

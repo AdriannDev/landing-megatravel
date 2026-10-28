@@ -7,7 +7,7 @@ import { s3Storage } from '@payloadcms/storage-s3'
 import { es } from '@payloadcms/translations/languages/es'
 import sharp from 'sharp'
 import { Users } from './collections/users'
-import { AuditLog, Banners, Campaigns, CruiseLines, Departures, Destinations, Media, Origins, Settings } from './collections/content'
+import { AuditLog, Banners, Campaigns, CruiseLines, Departures, Destinations, Media, Origins, Programs, Settings } from './collections/content'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const useSqlite = process.env.USE_SQLITE === 'true' && process.env.NODE_ENV !== 'production'
@@ -22,16 +22,16 @@ export default buildConfig({
   admin: {
     user: 'users', importMap: { baseDir: dirname },
     meta: { titleSuffix: ' | Equipo Megatravel' },
-    components: { beforeDashboard: ['/components/admin/workspace-tools#WorkspaceTools'] },
+    components: { views: { dashboard: { Component: '/components/admin/admin-home#AdminHome' }, newDeparture: { Component: '/components/admin/new-departure-view#NewDepartureView', path: '/new-departure', exact: true } } },
     dateFormat: 'dd/MM/yyyy HH:mm',
     timezones: { defaultTimezone: 'America/Lima', supportedTimezones: [{ label: 'Lima (UTC−05:00)', value: 'America/Lima' }] },
   },
   i18n: { fallbackLanguage: 'es', supportedLanguages: { es } },
-  collections: [Users, Departures, Media, Campaigns, Banners, Destinations, Origins, CruiseLines, AuditLog],
+  collections: [Users, Departures, Programs, Media, Campaigns, Banners, Destinations, Origins, CruiseLines, AuditLog],
   globals: [Settings],
   graphQL: { disable: true },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
-  db: useSqlite ? sqliteAdapter({ client: { url: process.env.SQLITE_URL || 'file:./megatravel.db' }, push: true }) : postgresAdapter({ pool: { connectionString: process.env.DATABASE_URL || '' }, push: process.env.NODE_ENV !== 'production', migrationDir: path.resolve(dirname, 'migrations') }),
+  db: useSqlite ? sqliteAdapter({ client: { url: process.env.SQLITE_URL || 'file:./megatravel.db' }, push: true, transactionOptions: { behavior: 'immediate' } }) : postgresAdapter({ pool: { connectionString: process.env.DATABASE_URL || '' }, push: process.env.NODE_ENV !== 'production', migrationDir: path.resolve(dirname, 'migrations') }),
   sharp,
   upload: { limits: { fileSize: 12 * 1024 * 1024 } },
   plugins: process.env.R2_BUCKET ? [s3Storage({
