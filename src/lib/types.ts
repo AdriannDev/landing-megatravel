@@ -1,3 +1,4 @@
+import type { PublicAvailability } from './availability'
 export type Status = 'draft' | 'published' | 'withdrawn'
 export type WithdrawalReason = 'request' | 'sold-out' | 'price-change' | 'other' | 'automatic'
 export interface Promotion {
@@ -26,6 +27,9 @@ export interface Departure {
   descriptionUrl: string
   promotions: Promotion[]
   priority: number
+  availableSeats?: number | null
+  lastSeats?: boolean | null
+  seatsCheckedAt?: string | null
   status: Status
   advanceDays: number
   withdrawalAt: string
@@ -40,7 +44,7 @@ export interface Departure {
 }
 export type PublicPackage = Pick<Departure,
   'id' | 'program' | 'mtpe' | 'destination' | 'zone' | 'origin' | 'cruiseLine' | 'days' | 'nights' |
-  'travelDate' | 'price' | 'currency' | 'priceCondition' | 'flyerUrl' | 'bookingUrl' | 'descriptionUrl' | 'promotions' | 'priority'>
+  'travelDate' | 'price' | 'currency' | 'priceCondition' | 'flyerUrl' | 'bookingUrl' | 'descriptionUrl' | 'promotions' | 'priority'> & { availability?: PublicAvailability | null }
 export type BannerPlacement = 'hero' | 'between-results' | 'catalog-end' | 'popup'
 export interface Banner {
   id: string

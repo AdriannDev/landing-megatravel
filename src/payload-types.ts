@@ -161,6 +161,22 @@ export interface Departure {
    * Un valor mayor aparece primero.
    */
   priority?: number | null;
+  /**
+   * Opcional y exclusivo de esta fecha y origen. Vacío significa sin cantidad informada. Confirma la disponibilidad en Meganet o con un asesor.
+   */
+  availableSeats?: number | null;
+  /**
+   * Puede activarse sin indicar una cantidad. Se desactiva si hay cero sillas.
+   */
+  lastSeats?: boolean | null;
+  /**
+   * La cantidad y la etiqueta caducan según el plazo de Configuración (72 horas por defecto). Cambiar fecha u origen invalida esta referencia.
+   */
+  seatsCheckedAt?: string | null;
+  /**
+   * Verifica en Meganet o con un asesor y marca esta casilla antes de guardar. Renueva la revisión aunque la cantidad sea la misma; se desmarca al guardar.
+   */
+  seatsConfirmed?: boolean | null;
   travelDate: string;
   /**
    * Contenido compartido. Edita este dato en Programas.
@@ -530,6 +546,10 @@ export interface DeparturesSelect<T extends boolean = true> {
   priceCondition?: T;
   promotions?: T;
   priority?: T;
+  availableSeats?: T;
+  lastSeats?: T;
+  seatsCheckedAt?: T;
+  seatsConfirmed?: T;
   travelDate?: T;
   days?: T;
   nights?: T;
@@ -717,6 +737,10 @@ export interface Setting {
   id: number;
   contactUrl: string;
   contactLabel: string;
+  /**
+   * Al vencer se ocultan cantidad y «Últimos cupos» hasta una nueva revisión. La salida sigue publicada.
+   */
+  seatsValidityHours: number;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -727,6 +751,7 @@ export interface Setting {
 export interface SettingsSelect<T extends boolean = true> {
   contactUrl?: T;
   contactLabel?: T;
+  seatsValidityHours?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

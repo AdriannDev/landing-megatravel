@@ -9,10 +9,11 @@ export async function prepareLegacySqliteSchema(filename: string) {
   const db = new DatabaseSync(filename)
   try {
     const additions: Record<string, Record<string, string>> = {
-      departures: { program_ref_id: 'integer', departure_key: 'text' },
-      _departures_v: { version_program_ref_id: 'integer', version_departure_key: 'text' },
+      departures: { program_ref_id: 'integer', departure_key: 'text', available_seats: 'numeric', last_seats: 'integer DEFAULT 0', seats_checked_at: 'text', seats_confirmed: 'integer DEFAULT 0' },
+      _departures_v: { version_program_ref_id: 'integer', version_departure_key: 'text', version_available_seats: 'numeric', version_last_seats: 'integer DEFAULT 0', version_seats_checked_at: 'text', version_seats_confirmed: 'integer DEFAULT 0' },
       banners: { placement: "text DEFAULT 'hero'", title: 'text', message: 'text', button_label: 'text', popup_kind: "text DEFAULT 'promotion'", popup_frequency: "text DEFAULT 'session'", popup_delay: 'numeric DEFAULT 2' },
       payload_locked_documents_rels: { programs_id: 'integer' },
+      settings: { seats_validity_hours: 'numeric DEFAULT 72 NOT NULL' },
     }
     const statements: string[] = []
     for (const [table, fields] of Object.entries(additions)) {
@@ -40,6 +41,8 @@ export async function prepareLegacySqliteSchema(filename: string) {
         ['_departures_v', 'version_program_ref_id', '_departures_v_version_version_program_ref_idx', false],
         ['_departures_v', 'version_departure_key', '_departures_v_version_version_departure_key_idx', false],
         ['payload_locked_documents_rels', 'programs_id', 'payload_locked_documents_rels_programs_id_idx', false],
+        ['departures', 'seats_checked_at', 'departures_seats_checked_at_idx', false],
+        ['_departures_v', 'version_seats_checked_at', '_departures_v_version_version_seats_checked_at_idx', false],
       ] as const) {
         if (db.prepare(`PRAGMA table_info("${table}")`).all().length) db.exec(`CREATE ${unique ? 'UNIQUE ' : ''}INDEX IF NOT EXISTS "${index}" ON "${table}" ("${column}")`)
       }

@@ -1,6 +1,7 @@
 import type { CatalogFilters, Departure, PublicPackage } from './types.ts'
 import { isActivePeriod, isDateOnly, isPublishable } from './lifecycle.ts'
 import { DEFAULT_FLYER } from './flyer.ts'
+import { publicAvailability, DEFAULT_SEATS_VALIDITY_HOURS } from './availability.ts'
 
 export const PAGE_SIZE = 12
 export const normalize = (value: unknown) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
@@ -30,7 +31,7 @@ export function serializeFilters(filters: CatalogFilters): string {
   return params.toString()
 }
 
-export function toPublicPackage(item: Departure, now = new Date()): PublicPackage {
+export function toPublicPackage(item: Departure, now = new Date(), validityHours = DEFAULT_SEATS_VALIDITY_HOURS): PublicPackage {
   // Explicit allowlist: never spread CMS documents into public data.
   return {
     id: item.id, program: item.program, mtpe: item.mtpe, destination: item.destination, zone: item.zone,
@@ -38,11 +39,12 @@ export function toPublicPackage(item: Departure, now = new Date()): PublicPackag
     travelDate: item.travelDate, price: item.price, currency: item.currency, priceCondition: item.priceCondition,
     flyerUrl: item.flyerUrl || DEFAULT_FLYER, bookingUrl: item.bookingUrl, descriptionUrl: item.descriptionUrl,
     priority: item.priority,
+    availability: publicAvailability(item, validityHours, now.getTime()),
     promotions: (item.promotions || []).filter(p => isActivePeriod(p, now)).map(p => ({ id: p.id, name: p.name, label: p.label })),
   }
 }
 
-export const publishedPackages = (items: Departure[], now = new Date()) => items.filter(p => isPublishable(p, now)).map(p => toPublicPackage(p, now))
+export const publishedPackages = (items: Departure[], now = new Date(), validityHours = DEFAULT_SEATS_VALIDITY_HOURS) => items.filter(p => isPublishable(p, now)).map(p => toPublicPackage(p, now, validityHours))
 
 export function filterCatalog(items: PublicPackage[], filters: CatalogFilters) {
   const matches = (selected: string[], value: string) => !selected.length || selected.some(s => normalize(s) === normalize(value))

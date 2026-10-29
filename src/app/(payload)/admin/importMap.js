@@ -1,5 +1,6 @@
 import { ReferenceCell as ReferenceCell_8b0559cdc0a12efe519c68de16b96c03 } from '../../../components/admin/reference-cell'
 import { ProgramSummary as ProgramSummary_42b5294edb0728a8a9cd1d30118d9f6e } from '../../../components/admin/program-summary'
+import { AvailabilityCell as AvailabilityCell_7b7b0c938b5df3c83e938bb258d32c73 } from '../../../components/admin/availability-cell'
 import { CutoffPreview as CutoffPreview_fa78de4706fcabea2e26f6b0511ee94a } from '../../../components/admin/cutoff-preview'
 import { CardPreview as CardPreview_adb63170f4e37b1f448d8f795506a411 } from '../../../components/admin/card-preview'
 import { StatusCell as StatusCell_22956b2ffd088c8a15372659134b37da } from '../../../components/admin/status-cell'
@@ -12,6 +13,7 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 export const importMap = {
   "/components/admin/reference-cell#ReferenceCell": ReferenceCell_8b0559cdc0a12efe519c68de16b96c03,
   "/components/admin/program-summary#ProgramSummary": ProgramSummary_42b5294edb0728a8a9cd1d30118d9f6e,
+  "/components/admin/availability-cell#AvailabilityCell": AvailabilityCell_7b7b0c938b5df3c83e938bb258d32c73,
   "/components/admin/cutoff-preview#CutoffPreview": CutoffPreview_fa78de4706fcabea2e26f6b0511ee94a,
   "/components/admin/card-preview#CardPreview": CardPreview_adb63170f4e37b1f448d8f795506a411,
   "/components/admin/status-cell#StatusCell": StatusCell_22956b2ffd088c8a15372659134b37da,

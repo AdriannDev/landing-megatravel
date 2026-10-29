@@ -26,3 +26,4 @@ backups/
 .DS_Store
 Thumbs.db
 .gstack/
+/[Ii]mages/

@@ -3,6 +3,7 @@ import { isDateOnly, retirementAt } from '../lib/lifecycle.ts'
 import { relationID, sharedData } from '../lib/programs.ts'
 import { inTransaction } from './transactions.ts'
 import { normalize } from '../lib/catalog.ts'
+import { validSeatCount } from '../lib/availability.ts'
 
 export type NewDepartureInput = {
   programId?: string | number
@@ -13,7 +14,7 @@ export type NewDepartureInput = {
   advanceDays?: number
   priority?: number
   promotions?: (number | string)[]
-  departures: { date: string; price: number }[]
+  departures: { date: string; price: number; availableSeats?: number | null; lastSeats?: boolean }[]
 }
 
 export async function createDepartures(payload: Payload, req: PayloadRequest, input: NewDepartureInput, flyerFile?: File) {
@@ -26,6 +27,7 @@ export async function createDepartures(payload: Payload, req: PayloadRequest, in
   if (new Set(input.departures.map(row => row.date)).size !== input.departures.length) throw new Error('Hay fechas repetidas en la solicitud.')
   for (const row of input.departures) {
     if (!isDateOnly(row.date) || !Number.isFinite(row.price) || row.price <= 0) throw new Error('Cada salida necesita una fecha válida y un precio mayor que cero.')
+    if (!validSeatCount(row.availableSeats) || row.lastSeats != null && typeof row.lastSeats !== 'boolean') throw new Error('Revisa los cupos: indica sillas enteras, mayores o iguales que cero.')
     retirementAt(row.date, input.advanceDays ?? 30)
   }
   return inTransaction(req, async () => {
@@ -46,7 +48,7 @@ export async function createDepartures(payload: Payload, req: PayloadRequest, in
     const origin = await reference('origins', input.origin)
     const created = []
     for (const row of input.departures) {
-      const data = { ...sharedData(program), programRef: program.id, origin: origin.id, travelDate: row.date, price: row.price, currency: input.currency || 'USD', priceCondition: input.priceCondition?.trim() || 'Por persona en habitación doble', advanceDays: input.advanceDays ?? 30, priority: input.priority ?? 0, promotions: input.promotions || [], status: 'draft' as const }
+      const data = { ...sharedData(program), programRef: program.id, origin: origin.id, travelDate: row.date, price: row.price, availableSeats: row.availableSeats ?? null, lastSeats: row.lastSeats === true, currency: input.currency || 'USD', priceCondition: input.priceCondition?.trim() || 'Por persona en habitación doble', advanceDays: input.advanceDays ?? 30, priority: input.priority ?? 0, promotions: input.promotions || [], status: 'draft' as const }
       const doc = await payload.create({ collection: 'departures', req, overrideAccess: false, data: data as RequiredDataFromCollectionSlug<'departures'> })
       created.push({ id: doc.id, date: doc.travelDate, href: `/admin/collections/departures/${doc.id}`, preview: `/preview/${doc.id}` })
     }
@@ -57,5 +59,5 @@ export async function createDepartures(payload: Payload, req: PayloadRequest, in
 export async function duplicateDepartures(payload: Payload, req: PayloadRequest, sourceId: string | number, rows: NewDepartureInput['departures']) {
   const source = await payload.findByID({ collection: 'departures', id: sourceId, req, overrideAccess: false, depth: 1 })
   if (!source.programRef) throw new Error('Migra esta salida a Programas antes de duplicarla.')
-  return createDepartures(payload, req, { programId: relationID(source.programRef)!, origin: typeof source.origin === 'object' ? source.origin.name : String(source.origin), currency: source.currency, priceCondition: source.priceCondition, advanceDays: source.advanceDays, priority: source.priority || 0, promotions: (source.promotions || []).map(p => relationID(p)!), departures: rows })
+  return createDepartures(payload, req, { programId: relationID(source.programRef)!, origin: typeof source.origin === 'object' ? source.origin.name : String(source.origin), currency: source.currency, priceCondition: source.priceCondition, advanceDays: source.advanceDays, priority: source.priority || 0, promotions: (source.promotions || []).map(p => relationID(p)!), departures: rows.map(({ date, price }) => ({ date, price })) })
 }

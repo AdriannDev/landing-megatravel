@@ -19,6 +19,7 @@ export function cmsToDeparture(doc: Document): Departure {
     price: doc.price, currency: doc.currency, priceCondition: doc.priceCondition || '',
     flyerUrl: mediaUrl(doc.flyer) || doc.flyerSourceUrl || '',
     bookingUrl: doc.bookingUrl || '', descriptionUrl: doc.descriptionUrl || '', priority: doc.priority || 0,
+    availableSeats: doc.availableSeats ?? null, lastSeats: doc.lastSeats === true, seatsCheckedAt: doc.seatsCheckedAt || null,
     promotions: (doc.promotions || []).filter((p: unknown) => p && typeof p === 'object').map((p: Document): Promotion => ({ id: String(p.slug || p.id), name: p.name, label: p.label, startsAt: p.startsAt, endsAt: p.endsAt })),
     status: doc.status || 'draft', advanceDays: doc.advanceDays ?? 30, withdrawalAt: doc.withdrawalAt || '',
     withdrawalReason: doc.withdrawalReason, withdrawalNote: doc.withdrawalNote,

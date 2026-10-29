@@ -12,6 +12,8 @@ Los datos recorren tres representaciones:
 
 No se debe sustituir la proyección pública por una expansión del documento completo, como `{ ...doc }`. Esa sustitución podría publicar campos de gestión añadidos en el futuro.
 
+Los cupos se proyectan como `availability: { seats, lastSeats, expiresAt } | null`. Solo se incluyen referencias vigentes según `settings.seatsValidityHours` (72 horas por defecto). Cero sillas, ausencia de revisión o revisión vencida producen `null`; `seatsCheckedAt` y los datos internos de auditoría no se publican. El cliente vuelve a comprobar `expiresAt` para ocultar la referencia al vencer, aunque falle el refresco del catálogo. Meganet usa `bookingUrl` y el enlace al asesor utiliza `contactUrl` del catálogo.
+
 ## Colecciones y global
 
 | Slug | Nombre en el panel | Uso |
@@ -55,6 +57,10 @@ No se debe sustituir la proyección pública por una expansión del documento co
 | `descriptionUrl` | URL HTTPS | Enlace externo del descriptivo |
 | `promotions` | Relaciones múltiples | Una salida puede tener varias promociones |
 | `priority` | Número | Valores mayores aparecen antes en Destacados |
+| `availableSeats` | Entero opcional ≥ 0 | Referencia por salida; vacío y cero tienen significados distintos |
+| `lastSeats` | Checkbox | Etiqueta manual; se desactiva con cero sillas |
+| `seatsCheckedAt` | Fecha de revisión privada | Calculada por el servidor al cambiar cupos o confirmarlos; no se renueva con cambios ajenos |
+| `seatsConfirmed` | Checkbox transitorio | Permite reconfirmar la misma cantidad al guardar; vuelve a falso |
 | `advanceDays` | Entero de 0 a 3650 | Anticipación del retiro; default 30 |
 | `withdrawalAt` | Instante calculado | Se recalcula al guardar; no se acepta como valor arbitrario del cliente |
 | `status` | `draft`, `published`, `withdrawn` | Estado comercial propio del proyecto |

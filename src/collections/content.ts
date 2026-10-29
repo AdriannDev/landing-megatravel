@@ -7,6 +7,8 @@ import { DEFAULT_CONTACT_URL, DEFAULT_CONTACT_LABEL } from '../lib/brand-config'
 import { prepareProgram, resolveDepartureProgram, syncProgramSnapshots } from '../server/program-hooks'
 import { departureViewWhere, parseDepartureView } from '../lib/admin-views'
 import { sharedFields } from '../lib/programs'
+import { DEFAULT_SEATS_VALIDITY_HOURS, MAX_SEATS_VALIDITY_HOURS, validSeatCount } from '../lib/availability'
+import { getSeatSettings } from '../server/availability-settings'
 
 const urlValidation = (value: unknown) => !value || safeExternalUrl(value) || 'Usa un enlace HTTPS completo, sin usuario ni contraseña.'
 const period: Field[] = [
@@ -67,9 +69,13 @@ export const Departures: CollectionConfig = {
   access: { create: isEditor, read: isEditor, update: isEditor, delete: never, readVersions: isEditor },
   defaultSort: 'travelDate',
   admin: {
-    group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'travelDate', 'price', 'origin', 'status', 'withdrawalAt'],
+    group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'travelDate', 'price', 'origin', 'status', 'seatsCheckedAt', 'withdrawalAt'],
     listSearchableFields: ['program', 'mtpe'],
-    baseFilter: ({ req }) => departureViewWhere(parseDepartureView(req.query?.mtView)),
+    baseFilter: async ({ req }) => {
+      const view = parseDepartureView(req.query?.mtView)
+      const hours = view === 'seats-review' ? (await getSeatSettings(req.payload, req)).validityHours : DEFAULT_SEATS_VALIDITY_HOURS
+      return departureViewWhere(view, new Date(), hours)
+    },
     preview: data => `/preview/${data.id}`,
     components: { beforeListTable: ['/components/admin/workspace-tools#WorkspaceTools'] },
     description: 'Una tarjeta por fecha. El contenido compartido se edita en Programas.',
@@ -99,6 +105,12 @@ export const Departures: CollectionConfig = {
         { name: 'priceCondition', label: 'Condición del precio', type: 'text', required: true, defaultValue: 'Por persona en habitación doble' },
         { name: 'promotions', label: 'Promociones', type: 'relationship', relationTo: 'campaigns', hasMany: true },
         { name: 'priority', label: 'Prioridad en destacados', type: 'number', defaultValue: 0, admin: { description: 'Un valor mayor aparece primero.' } },
+        { type: 'collapsible', label: 'Cupos referenciales', fields: [
+          { name: 'availableSeats', label: 'Sillas disponibles (referenciales)', type: 'number', min: 0, validate: (value: unknown) => validSeatCount(value) || 'Indica un número entero, mayor o igual que cero.', admin: { step: 1, description: 'Opcional y exclusivo de esta fecha y origen. Vacío significa sin cantidad informada. Confirma la disponibilidad en Meganet o con un asesor.' } },
+          { name: 'lastSeats', label: 'Destacar como «Últimos cupos»', type: 'checkbox', defaultValue: false, admin: { description: 'Puede activarse sin indicar una cantidad. Se desactiva si hay cero sillas.' } },
+          { name: 'seatsCheckedAt', label: 'Última revisión de cupos', type: 'date', index: true, access: { create: () => false, update: () => false }, admin: { readOnly: true, description: 'La cantidad y la etiqueta caducan según el plazo de Configuración (72 horas por defecto). Cambiar fecha u origen invalida esta referencia.', components: { Cell: '/components/admin/availability-cell#AvailabilityCell' } } },
+          { name: 'seatsConfirmed', label: 'Confirmo que estos cupos siguen vigentes', type: 'checkbox', defaultValue: false, admin: { description: 'Verifica en Meganet o con un asesor y marca esta casilla antes de guardar. Renueva la revisión aunque la cantidad sea la misma; se desmarca al guardar.' } },
+        ] },
       ] },
       { label: 'Salida y retiro', fields: [
         { name: 'travelDate', label: 'Fecha de salida (AAAA-MM-DD)', type: 'text', required: true, index: true, validate: (value: unknown) => isDateOnly(value) || 'Indica una fecha válida con formato AAAA-MM-DD.' },
@@ -199,5 +211,6 @@ export const Settings: GlobalConfig = {
   fields: [
     { name: 'contactUrl', label: 'Enlace de contacto comercial', type: 'text', required: true, defaultValue: DEFAULT_CONTACT_URL, validate: urlValidation },
     { name: 'contactLabel', label: 'Texto del botón de contacto', type: 'text', required: true, defaultValue: DEFAULT_CONTACT_LABEL },
+    { name: 'seatsValidityHours', label: 'Vigencia de cupos referenciales (horas)', type: 'number', required: true, defaultValue: DEFAULT_SEATS_VALIDITY_HOURS, min: 1, max: MAX_SEATS_VALIDITY_HOURS, validate: (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_SEATS_VALIDITY_HOURS || 'Indica horas enteras entre 1 y 720.', admin: { step: 1, description: 'Al vencer se ocultan cantidad y «Últimos cupos» hasta una nueva revisión. La salida sigue publicada.' } },
   ],
 }

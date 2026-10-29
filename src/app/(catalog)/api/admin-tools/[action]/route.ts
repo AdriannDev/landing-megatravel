@@ -7,6 +7,7 @@ import { importRemoteMedia } from '@/server/media-import'
 import { isDateOnly } from '@/lib/lifecycle'
 import { createDepartures, duplicateDepartures } from '@/server/departure-service'
 import { resolveProgram } from '@/lib/programs'
+import { getSeatSettings } from '@/server/availability-settings'
 
 export const dynamic = 'force-dynamic'
 type Context = { params: Promise<{ action: string }> }
@@ -16,6 +17,7 @@ export async function GET(request: Request, context: Context) {
   try {
     const { payload, req } = await requireEditor(request)
     const { action } = await context.params
+    if (action === 'availability-settings') return NextResponse.json(await getSeatSettings(payload, req), { headers: { 'Cache-Control': 'no-store' } })
     if (action === 'programs') {
       const programs = await payload.find({ collection: 'programs', req, overrideAccess: false, depth: 0, pagination: false, sort: 'program' })
       return NextResponse.json({ programs: programs.docs.map(p => ({ id: p.id, program: p.program, mtpe: p.mtpe })) }, { headers: { 'Cache-Control': 'no-store' } })

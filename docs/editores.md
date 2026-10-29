@@ -18,6 +18,18 @@ La imagen predeterminada no rellena el campo de flyer: los programas pendientes 
 
 La tarjeta se retira automáticamente 30 días antes de la salida. Puedes cambiar esa anticipación, por ejemplo a 15 días. El formulario muestra el corte calculado antes de publicar. La fecha de salida siempre se escribe como AAAA-MM-DD para evitar cambios por huso horario.
 
+## Cupos referenciales y últimos cupos
+
+En cada salida, abre **Información comercial → Cupos referenciales**. Puedes introducir las sillas disponibles y activar **Destacar como «Últimos cupos»**, incluso sin una cantidad exacta. Estos datos pertenecen únicamente a esa fecha y origen. En «Nueva salida» también puedes completarlos por fila.
+
+La card muestra «Cupos referenciales: 10 sillas» y «Disponibilidad sujeta a cambios. Confirma en Meganet o con un asesor». Ambas opciones tienen enlace: Meganet utiliza el enlace del programa y el asesor utiliza el contacto comercial de Configuración. «Últimos cupos» aparece como una franja naranja bajo el flyer, con icono de llama y la cantidad referencial si está informada; esa cantidad no se repite en el cuerpo de la card. La etiqueta es manual y no cambia el orden de las cards. La promoción «Año Nuevo» utiliza una etiqueta dorada con forma de boleto; debe asociarse a la salida como cualquier otra promoción.
+
+Cambiar la cantidad o la etiqueta registra la revisión automáticamente al guardar. Si los cupos siguen iguales, verifica en Meganet o con un asesor, marca **Confirmo que estos cupos siguen vigentes** y guarda. El panel registra la fecha de revisión y vuelve a desmarcar la casilla. Editar precios, flyers, el programa compartido o importar un CSV no renueva esa fecha.
+
+La vigencia predeterminada es de **72 horas**. Un administrador puede ajustarla entre 1 y 720 horas en **Configuración del catálogo**. Al vencer se ocultan la cifra y «Últimos cupos», y la card invita a consultar en Meganet o con un asesor. La salida y los valores guardados permanecen disponibles. La vista **Cupos por revisar** reúne referencias vencidas de salidas publicadas y vigentes; la columna «Última revisión de cupos» indica Vigente, Por revisar o Sin informar.
+
+Vacío significa sin cantidad informada; cero desactiva la urgencia y muestra la invitación a consultar. Si confirmas que está agotada, retírala con el motivo **Sin stock**. Duplicar para otras fechas comienza sin cupos; cambiar fecha, origen o programa de una salida invalida su referencia anterior. Los CSV conservan su formato actual y no editan cupos.
+
 ## Retirar y reactivar
 
 Para retirar, abre la salida, cambia el estado a Retirado y elige el motivo. Si eliges Otro, explica la causa. Guarda el registro. Se conserva el responsable, la fecha y el cambio de estado en el historial.
@@ -40,12 +52,14 @@ Cada banner tiene imagen de escritorio, alternativa estática y versión móvil 
 
 Las ubicaciones son **Hero**, a todo el ancho del contenido bajo la presentación; **Entre resultados**, después de las primeras seis tarjetas si hay más; y **Final del catálogo**, antes del contacto. Un espacio sin banners vigentes no deja huecos. Los banners anteriores pertenecen al hero.
 
-El hero avanza cada seis segundos y ofrece flechas, indicadores y pausa. Se pausa al interactuar, al ocultar la pestaña y ante movimiento reducido; la alternativa estática evita animaciones. La reproducción se puede reanudar desde su botón cuando la preferencia lo permite. Las otras ubicaciones se navegan manualmente. En el catálogo, los grupos de filtros empiezan cerrados y Desde/Hasta permanece visible; abrir un grupo no cambia la selección.
+El hero avanza cada seis segundos y ofrece flechas, indicadores y pausa. El arte ocupa todo el carrusel: las flechas se superponen a ambos extremos y la pausa queda en la esquina inferior derecha, con controles semitransparentes. Se pausa al interactuar, al ocultar la pestaña y ante movimiento reducido; la alternativa estática evita animaciones. La reproducción se puede reanudar desde su botón cuando la preferencia lo permite. Las otras ubicaciones se navegan manualmente. En el catálogo, los grupos de filtros empiezan cerrados y Desde/Hasta permanece visible; abrir un grupo no cambia la selección.
 
 ## Popup de promociones o noticias
 
 En **Contenido → Banners → Crear**, selecciona **Popup (ventana emergente)**. Completa el título y el texto; para una promoción puedes añadir una imagen (recomendado **1200 × 900 px**, sin recorte) y su alternativa estática. La noticia puede publicarse sin imagen. El texto alternativo identifica el anuncio en el panel y describe la imagen.
 
 Elige Promoción o Noticia, añade un enlace HTTPS y el texto del botón si lo necesitas. Configura la espera (por defecto, dos segundos), la frecuencia (una vez por sesión, cada 24 horas o cada visita), la vigencia y **Publicado**. Si coinciden varios popups, aparece únicamente el de menor orden. Se cierra con la X, Escape, un clic fuera o «Seguir explorando».
+
+En escritorio, la imagen aparece a la izquierda y el contenido a la derecha; en móvil, la imagen queda arriba. Las promociones con fecha de fin muestran una cuenta regresiva hasta esa fecha y se cierran al vencer. Las noticias y las promociones sin fecha de fin se muestran sin contador.
 
 La frecuencia se cuenta desde que se muestra el anuncio en ese navegador. Una nueva fecha «Visible desde» inicia otra campaña. Si el navegador bloquea el almacenamiento, se muestra una vez mientras el catálogo permanece abierto. El popup espera si hay otra ventana del catálogo abierta o la pestaña está oculta.

@@ -4,6 +4,7 @@ import { APIError } from 'payload'
 import { retirementAt, validateTransition, isPublishable } from '../lib/lifecycle'
 import { cmsToDeparture } from './normalize'
 import { departureKey, normalizeMTPE, relationID, sharedData } from '../lib/programs.ts'
+import { prepareSeatReference } from '../lib/availability.ts'
 
 export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, originalDoc, operation, req, context }) => {
   if (operation === 'create') {
@@ -11,6 +12,8 @@ export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, origi
     data.sourceKey ||= 'cms:' + data.stableId
   }
   if (!context.sharedProjection) {
+    try { Object.assign(data, prepareSeatReference(data, operation === 'update' ? originalDoc : undefined)) }
+    catch (error) { throw new APIError((error as Error).message, 400) }
     const combined = { ...originalDoc, ...data }
     let programID = relationID(combined.programRef)
     if (!programID) {
@@ -43,7 +46,7 @@ export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, origi
   return data
 }
 
-const tracked = ['program', 'mtpe', 'destination', 'zone', 'origin', 'cruiseLine', 'days', 'nights', 'travelDate', 'price', 'currency', 'priceCondition', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'descriptionUrl', 'promotions', 'priority', 'advanceDays', 'status', 'withdrawalReason', 'withdrawalNote']
+const tracked = ['program', 'mtpe', 'destination', 'zone', 'origin', 'cruiseLine', 'days', 'nights', 'travelDate', 'price', 'currency', 'priceCondition', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'descriptionUrl', 'promotions', 'priority', 'advanceDays', 'status', 'withdrawalReason', 'withdrawalNote', 'availableSeats', 'lastSeats', 'seatsCheckedAt']
 const compact = (value: unknown): unknown => Array.isArray(value) ? value.map(compact) : value && typeof value === 'object' && 'id' in value ? value.id : value ?? null
 export const recordDepartureAudit: CollectionAfterChangeHook = async ({ doc, previousDoc, req, operation, context }) => {
   const changes = Object.fromEntries(tracked.filter(key => JSON.stringify(compact(doc[key])) !== JSON.stringify(compact(previousDoc?.[key]))).map(key => [key, { before: compact(previousDoc?.[key]), after: compact(doc[key]) }]))
