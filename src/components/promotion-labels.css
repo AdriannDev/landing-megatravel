@@ -1,15 +1,83 @@
-.promo-label.promo-label-new-year {position:relative;display:inline-flex;align-items:center;max-width:100%;padding:0;border:1px solid #b28215;border-radius:4px;background:#fff6df;color:#17334b;font-size:11px;font-weight:750;line-height:1.3;overflow:hidden}
+.promo-label.promo-label-new-year {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0;
+  border: 1px solid #b28215;
+  border-radius: 4px;
+  background: #fff6df;
+  color: #17334b;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.3;
+  overflow: hidden;
+}
 .promo-label-new-year::before,
-.promo-label-new-year::after {content:'';position:absolute;top:50%;width:9px;height:9px;border:1px solid #b28215;border-radius:50%;background:white;transform:translateY(-50%)}
-.promo-label-new-year::before {left:-5px}
-.promo-label-new-year::after {right:-5px}
-.promo-ticket-icon {display:grid;place-items:center;flex-shrink:0;align-self:stretch;padding:5px 8px 5px 9px;color:#a87308;border-right:1px dashed #b28215}
-.promo-ticket-text {padding:5px 10px 5px 8px;overflow-wrap:anywhere}
-.package-card .package-body h3 {font-size:17px;font-weight:750;line-height:1.35;letter-spacing:-.4px;color:#152f50;min-height:46px}
-.mt-preview-card h4 {font-weight:750;line-height:1.35;letter-spacing:-.4px}
-.mt-preview-card .card-promotions {display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}
-.mt-preview-card .promo-label:not(.promo-label-new-year) {padding:3px 6px;border:1px solid #fbe0c9;border-radius:3px;background:#fff0e3;color:#ab490e;font-size:10px}
-@media(max-width:480px) {
-  .package-card .package-body h3 {font-size:18px;min-height:0;letter-spacing:-.45px}
-  .promo-label.promo-label-new-year {font-size:12px}
+.promo-label-new-year::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border: 1px solid #b28215;
+  border-radius: 50%;
+  background: white;
+  transform: translateY(-50%);
+}
+.promo-label-new-year::before {
+  left: -5px;
+}
+.promo-label-new-year::after {
+  right: -5px;
+}
+.promo-ticket-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  align-self: stretch;
+  padding: 5px 8px 5px 9px;
+  color: #a87308;
+  border-right: 1px dashed #b28215;
+}
+.promo-ticket-text {
+  padding: 5px 10px 5px 8px;
+  overflow-wrap: anywhere;
+}
+.package-card .package-body h3 {
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.35;
+  letter-spacing: -0.4px;
+  color: #152f50;
+  min-height: 46px;
+}
+.mt-preview-card h4 {
+  font-weight: 750;
+  line-height: 1.35;
+  letter-spacing: -0.4px;
+}
+.mt-preview-card .card-promotions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 10px 0;
+}
+.mt-preview-card .promo-label:not(.promo-label-new-year) {
+  padding: 3px 6px;
+  border: 1px solid #fbe0c9;
+  border-radius: 3px;
+  background: #fff0e3;
+  color: #ab490e;
+  font-size: 10px;
+}
+@media (max-width: 480px) {
+  .package-card .package-body h3 {
+    font-size: 18px;
+    min-height: 0;
+    letter-spacing: -0.45px;
+  }
+  .promo-label.promo-label-new-year {
+    font-size: 12px;
+  }
 }
