@@ -1,6 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { shouldShowPopup, popupStorageKey, popupTimeRemaining, POPUP_DAY_MS } from '../src/lib/popup.ts'
+import { shouldShowPopup, popupStorageKey, popupTimeRemaining, POPUP_DAY_MS, hasPublishablePopupContent } from '../src/lib/popup.ts'
+
+test('formatos del popup aceptan imagen sin alternativa estática y validan el contenido necesario', () => {
+  assert.equal(hasPublishablePopupContent({ title: 'Anuncio', imageUrl: '' }), true)
+  assert.equal(hasPublishablePopupContent({ title: 'Anuncio', imageUrl: '/art.gif' }), true)
+  assert.equal(hasPublishablePopupContent({ popupFormat: 'image', title: null, imageUrl: '/art.gif' }), true)
+  assert.equal(hasPublishablePopupContent({ popupFormat: 'image', title: 'Anuncio', imageUrl: '' }), false)
+})
 import { bannersAt } from '../src/lib/banners.ts'
 
 test('popup respeta sesión, 24 horas y cada visita', () => {

@@ -3,6 +3,11 @@ import type { Banner } from './types.ts'
 export const POPUP_DAY_MS = 24 * 60 * 60 * 1000
 export const popupStorageKey = (banner: Banner) => `megatravel:popup:${banner.id}:${banner.startsAt || 'initial'}`
 
+export function hasPublishablePopupContent(popup: Pick<Banner, 'popupFormat' | 'title' | 'imageUrl'>) {
+  if (popup.popupFormat === 'image') return !!popup.imageUrl
+  return !!popup.title?.trim()
+}
+
 export function popupTimeRemaining(endsAt: Banner['endsAt'], now = Date.now()) {
   if (!endsAt) return null
   const deadline = Date.parse(endsAt)

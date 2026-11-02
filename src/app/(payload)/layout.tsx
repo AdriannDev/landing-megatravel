@@ -4,6 +4,7 @@ import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
 import type { ServerFunctionClient } from 'payload'
 import { importMap } from './admin/importMap'
 import './custom.css'
+import '../../components/admin/departures.css'
 export const dynamic = 'force-dynamic'
 const serverFunction: ServerFunctionClient = async args => {
   'use server'

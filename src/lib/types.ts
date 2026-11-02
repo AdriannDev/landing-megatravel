@@ -30,6 +30,8 @@ export interface Departure {
   availableSeats?: number | null
   lastSeats?: boolean | null
   seatsCheckedAt?: string | null
+  programLastSeats?: boolean | null
+  lastSeatsCheckedAt?: string | null
   status: Status
   advanceDays: number
   withdrawalAt: string
@@ -51,6 +53,9 @@ export interface Banner {
   title?: string | null
   message?: string | null
   buttonLabel?: string | null
+  popupFormat?: 'text' | 'image' | null
+  popupLabel?: string | null
+  popupSecondaryLabel?: string | null
   popupKind?: 'promotion' | 'news' | null
   popupFrequency?: 'session' | 'daily' | 'always' | null
   popupDelay?: number | null

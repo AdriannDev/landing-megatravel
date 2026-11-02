@@ -2,3 +2,35 @@
 :root .mt-workspace .mt-tool-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px}.mt-saved-views>a[aria-current=page]{background:#063b80;color:white;border-color:#063b80}.mt-create{margin-top:28px}.mt-create form{max-width:960px}.mt-create fieldset{border:1px solid var(--theme-elevation-150);border-radius:8px;padding:20px;margin:20px 0}.mt-create legend{font-weight:600}.mt-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 20px}.mt-form-grid>*{min-width:0}.mt-create h1{font-size:30px}.mt-program-summary{display:flex;gap:18px;align-items:center;padding:16px;background:var(--theme-elevation-50);margin-bottom:24px}.mt-program-summary img{object-fit:contain}.mt-program-summary p{margin:8px 0}.mt-program-summary a{text-decoration:underline}@media(max-width:650px){.mt-form-grid{grid-template-columns:minmax(0,1fr)}.mt-create fieldset{padding:12px}.mt-program-summary{align-items:flex-start}.mt-program-summary img{width:60px;height:60px}.mt-workspace{padding:16px}}
 
 .mt-seat-state{display:inline-block;font-size:12px;border-radius:4px;padding:4px 7px;white-space:nowrap}.mt-seat-state-current{color:#176747;background:#e8f5ee}.mt-seat-state-stale{color:#963b0b;background:#fff0e3}.mt-seat-state-missing{color:var(--theme-elevation-600)}.mt-new-departure-seats{flex-wrap:wrap}.mt-new-departure-seats>label{min-width:130px}.mt-new-departure-seats>.mt-check{min-width:120px;flex:0 1 auto}@media(max-width:650px){.mt-new-departure-seats{display:grid;grid-template-columns:1fr 1fr;align-items:start;padding:12px 0;border-bottom:1px solid var(--theme-elevation-150)}.mt-new-departure-seats>label{min-width:0}}
+
+/* Panel visual language shared by Payload's native views and custom screens. */
+.mt-workspace label small{font-size:12px;letter-spacing:0;line-height:1.5;color:#64748b}
+.collection-list>.mt-management-tabs{padding-inline:var(--gutter-h);box-sizing:border-box}
+.collection-list--departures>.collection-list__wrap{display:flex;flex-direction:column}.collection-list--departures>.collection-list__wrap>.mt-dashboard{order:-1;margin-top:24px}.collection-list--departures>.collection-list__wrap>.list-header .list-header__title-and-actions,.collection-list--departures>.collection-list__wrap>.list-header .collection-list__sub-header{display:none}.mt-dashboard h1{font-size:28px;margin:9px 0}.collection-list--departures>.collection-list__wrap>.list-header{margin-bottom:0}.collection-list--departures .list-controls{margin-bottom:20px}
+.mt-create .mt-new-departure-seats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;align-items:start;padding:18px;border:1px solid #e8edf3;border-radius:8px}.mt-create .mt-new-departure-seats>label{min-width:0;margin:0}.mt-create .mt-new-departure-seats>button{justify-self:end;min-height:40px}.mt-create .mt-new-departure-seats>.mt-check{min-height:40px}.mt-two-column-row>.row__fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;margin-inline:0}.mt-two-column-row>.row__fields>*{width:auto!important;min-width:0;margin-inline:0!important}
+@media(max-width:650px){.mt-create .mt-new-departure-seats,.mt-two-column-row>.row__fields{grid-template-columns:minmax(0,1fr)}.mt-create .mt-new-departure-seats{padding:14px}.mt-create .mt-new-departure-seats>button{justify-self:start}}
+:root{--mt-blue:#103f80;--mt-ink:#17243b;--mt-muted:#8490a1;--mt-border:#e8edf3}
+body{font-family:'DM Sans',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--mt-ink);background:#f5f7fb}
+h1,h2,h3{font-family:Manrope,system-ui,sans-serif;letter-spacing:-.035em}
+.template-default{background:#f5f7fb}
+.nav__wrap:has(.mt-panel-navigation)>.nav-group{display:none}
+.nav__wrap:has(.mt-panel-navigation){padding-top:0}
+.mt-panel-navigation{padding:12px 0 8px;color:#657187}
+.mt-panel-brand{display:flex;align-items:center;gap:10px;padding:0 9px 27px;text-decoration:none!important;color:#102b55;font:800 18px Manrope,system-ui,sans-serif;letter-spacing:-.8px}
+.mt-panel-brand small{display:block;color:#96a2b4;font:700 9px system-ui,sans-serif;letter-spacing:1.5px;margin-top:3px}
+.mt-panel-mark{display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;border-radius:10px;background:#0b3d80;color:white;font-size:19px}
+.mt-panel-nav-heading{margin:19px 12px 8px;text-transform:uppercase;color:#9aa6b6;font-size:10px;font-weight:700;letter-spacing:1.3px}
+.mt-panel-nav-link,.mt-panel-nav-group summary{display:block;padding:10px 12px;border-radius:8px;color:#657187;text-decoration:none;font-size:13px;font-weight:600;line-height:1.3}
+.mt-panel-nav-link:hover,.mt-panel-nav-group summary:hover{background:#f1f5fa;color:#103f80}
+.mt-panel-nav-link.active{background:#eaf1fc;color:#103f80;font-weight:700}
+.mt-panel-nav-group summary{cursor:pointer;list-style:none}.mt-panel-nav-group summary::-webkit-details-marker{display:none}.mt-panel-nav-group summary:after{content:'⌄';float:right}.mt-panel-nav-group[open] summary:after{content:'⌃'}
+.mt-panel-nav-group>div{padding-left:12px}.mt-panel-nav-group>div .mt-panel-nav-link{font-size:12px}
+.mt-panel-nav-footer{border-top:1px solid #edf0f5;margin:28px 8px 0;padding:18px 0 0;font-size:12px;line-height:1.6;color:#78869a}
+.mt-management-tabs{display:flex;gap:24px;overflow-x:auto;border-bottom:1px solid #edf0f4;margin:0 0 20px;padding:0 0 1px;width:100%}
+.mt-management-tabs a{white-space:nowrap;padding:12px 2px;border-bottom:2px solid transparent;text-decoration:none;color:#718096;font-size:13px;font-weight:600}
+.mt-management-tabs a[aria-current=page]{border-color:#174b91;color:#174b91}
+.mt-panel-navigation a:focus-visible,.mt-panel-navigation summary:focus-visible,.mt-management-tabs a:focus-visible{outline:3px solid #ed7424;outline-offset:2px}
+.list-view .table,.collection-edit__main,.global-edit__main{background:white;border:1px solid var(--mt-border);border-radius:12px}
+.list-view .table{overflow:auto}.list-view .table table{min-width:650px}.list-view .table th{background:#f8fafc;color:#8190a2;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.list-view .table td{border-color:#f0f2f6}
+.btn{border-radius:8px}.btn--style-primary{--bg-color:#103f80;--color:#fff}
+@media(max-width:768px){.mt-panel-navigation{padding-top:8px}.mt-panel-brand{padding-bottom:12px}.mt-panel-nav-heading{margin-top:12px}.mt-management-tabs{gap:18px}}

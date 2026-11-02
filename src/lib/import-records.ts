@@ -15,7 +15,7 @@ export function rowToDeparture(row: Record<string, string>, options: { now?: Dat
   const currency = row.currency || 'USD'
   if (!['USD', 'PEN'].includes(currency)) throw new Error('Moneda no reconocida.')
   if (!Number.isInteger(Number(row.days)) || Number(row.days) <= 0) throw new Error('Duración no válida.')
-  if (row.flyer_url && !safeExternalUrl(row.flyer_url) && !row.flyer_url.startsWith('/flyers/')) throw new Error('Enlace del flyer no válido.')
+  if (row.flyer_url && !safeExternalUrl(row.flyer_url) && !row.flyer_url.startsWith('/flyers/')) throw new Error('Enlace de la imagen no válido.')
   const reason = row.withdrawal_reason || null
   if (reason && !['request', 'sold-out', 'price-change', 'other', 'automatic'].includes(reason)) throw new Error('Motivo de retiro no reconocido.')
   const item: Departure = {

@@ -1,15 +1,16 @@
 import { isPublishable } from './lifecycle.ts'
 
 // Legacy fields remain as searchable snapshots and to preserve existing versions.
-export const sharedFields = ['program', 'mtpe', 'destination', 'zone', 'days', 'nights', 'cruiseLine', 'flyer', 'flyerSourceUrl', 'flyerDownloadWarning', 'bookingUrl', 'descriptionUrl'] as const
+export const sharedFields = ['program', 'mtpe', 'destination', 'zone', 'days', 'nights', 'cruiseLine', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'descriptionUrl'] as const
 export const normalizeMTPE = (value: unknown) => String(value ?? '').trim().toUpperCase()
 export const relationID = (value: any): string | number | null => value && typeof value === 'object' ? value.id ?? null : value ?? null
 export const sharedData = (doc: Record<string, any>) => Object.fromEntries(sharedFields.map(key => [key, key === 'mtpe' ? normalizeMTPE(doc[key]) : doc[key] ?? null]))
+export const programSeatSnapshot = (program: Record<string, any>) => ({ availableSeats: program.availableSeats ?? null, seatsCheckedAt: program.seatsCheckedAt ?? null, programLastSeats: program.lastSeats === true })
 export const departureKey = (mtpe: unknown, origin: unknown, date: string) => JSON.stringify([normalizeMTPE(mtpe), String(relationID(origin)), date])
 
 export function resolveProgram(doc: Record<string, any>): Record<string, any> {
   const program = doc.programRef
-  return program && typeof program === 'object' ? { ...doc, ...sharedData(program) } : doc
+  return program && typeof program === 'object' ? { ...doc, ...sharedData(program), ...programSeatSnapshot(program) } : doc
 }
 
 export function migrationGroups(docs: Record<string, any>[], now = new Date()) {

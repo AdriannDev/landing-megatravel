@@ -65,7 +65,7 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
       const data: RequiredDataFromCollectionSlug<'departures'> = {
         program: item.program, mtpe: item.mtpe, destination, origin, zone: item.zone, cruiseLine, days: item.days, nights: item.nights,
         travelDate: item.travelDate, price: item.price, currency: item.currency, priceCondition: item.priceCondition,
-        flyer, flyerSourceUrl: item.flyerUrl.startsWith('https://') ? item.flyerUrl : '', flyerDownloadWarning: warning ? 'Se conserva el enlace original. ' + warning : '', bookingUrl: item.bookingUrl, descriptionUrl: item.descriptionUrl,
+        flyer, flyerSourceUrl: item.flyerUrl.startsWith('https://') ? item.flyerUrl : '', bookingUrl: item.bookingUrl, descriptionUrl: item.descriptionUrl,
         promotions: promotionIds, priority: item.priority, advanceDays: item.advanceDays, status: item.status,
         withdrawalReason: original?.status === 'withdrawn' ? original.withdrawalReason : item.withdrawalReason,
         withdrawalNote: original?.status === 'withdrawn' ? original.withdrawalNote : item.withdrawalNote, sourceKey: item.sourceKey || null,
@@ -83,7 +83,7 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
       }
       data.programRef = programRef as any
       const doc = original ? await payload.update({ collection: 'departures', id: original.id, overrideAccess: false, req, data, context }) : await payload.create({ collection: 'departures', overrideAccess: false, req, data, context })
-      groupResults.push({ row, status: original ? 'updated' : 'created', id: doc.id, ...(warning ? { message: 'Se conserva el enlace del flyer: ' + warning } : {}) })
+      groupResults.push({ row, status: original ? 'updated' : 'created', id: doc.id, ...(warning ? { message: 'Se conserva el enlace de la imagen: ' + warning } : {}) })
       }
       }
       if (options.dryRun) await run()

@@ -16,13 +16,13 @@ export function useSeatAvailability(
     const update = () => {
       const time = Date.now();
       setNow(time);
-      const remaining = Date.parse(value?.expiresAt || "") - time;
-      if (remaining > 0)
+      const remaining = Math.min(...[value?.expiresAt, value?.seatsExpiresAt, value?.lastSeatsExpiresAt].map(stamp => Date.parse(stamp || '') - time).filter(ms => ms > 0));
+      if (Number.isFinite(remaining) && remaining > 0)
         timer = setTimeout(update, Math.min(remaining, 2147483647));
     };
     update();
     return () => clearTimeout(timer);
-  }, [value?.expiresAt]);
+  }, [value?.expiresAt, value?.seatsExpiresAt, value?.lastSeatsExpiresAt]);
   // First render matches the server. The effect checks expiry on hydration, too.
   return now === null ? (value ?? null) : visibleAvailability(value, now);
 }

@@ -1,0 +1,94 @@
+.wrapper {
+  display: inline-block;
+  position: relative;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.trigger {
+  border: 0;
+  background: none;
+  color: #174b91;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 5px;
+}
+.trigger:hover {
+  background: #edf3fb;
+}
+.menu {
+  position: fixed;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid #dce4ee;
+  box-shadow: 0 8px 24px #1a35502a;
+  border-radius: 8px;
+  min-width: 180px;
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  padding: 7px;
+}
+.menu a,
+.menu > button {
+  display: block;
+  padding: 9px 11px;
+  width: 100%;
+  border: 0;
+  text-align: left;
+  text-decoration: none;
+  background: none;
+  color: #172e4e;
+  cursor: pointer;
+  font: inherit;
+}
+.menu a:hover,
+.menu > button:hover {
+  background: #f2f6fb;
+}
+.menu form {
+  width: 260px;
+  max-width: calc(100vw - 42px);
+  padding: 9px;
+}
+.menu form strong {
+  display: block;
+  margin-bottom: 10px;
+}
+.menu form label {
+  display: block;
+  margin: 10px 0;
+  font-size: 12px;
+}
+.menu select,
+.menu textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 7px;
+  border: 1px solid #d5dce6;
+  border-radius: 5px;
+  color: #172e4e;
+  background: white;
+}
+.menu p {
+  font-size: 12px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.actions button {
+  cursor: pointer;
+  padding: 7px;
+  border: 1px solid #d5dce6;
+  border-radius: 5px;
+  background: white;
+  color: #173962;
+}
+.actions button:last-child {
+  background: #103f80;
+  color: white;
+  border-color: #103f80;
+}

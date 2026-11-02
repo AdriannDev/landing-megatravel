@@ -127,7 +127,7 @@ export interface User {
 export interface Departure {
   id: number;
   /**
-   * Selecciona el programa. Su nombre, duración, flyer y enlaces se reutilizan en todas las fechas.
+   * Selecciona el programa. El nombre, la imagen, los enlaces y el saldo de cupos se comparten entre todas sus fechas.
    */
   programRef?: (number | null) | Program;
   departureKey?: string | null;
@@ -162,19 +162,24 @@ export interface Departure {
    */
   priority?: number | null;
   /**
-   * Opcional y exclusivo de esta fecha y origen. Vacío significa sin cantidad informada. Confirma la disponibilidad en Meganet o con un asesor.
+   * Se edita en Programas y se aplica a todas sus fechas. Vacío significa sin cantidad informada.
    */
   availableSeats?: number | null;
   /**
-   * Puede activarse sin indicar una cantidad. Se desactiva si hay cero sillas.
+   * Cuando está activo en el programa, se aplica a todas sus fechas.
+   */
+  programLastSeats?: boolean | null;
+  /**
+   * Opcional. Se suma a la opción del programa; desmarcar esta fecha no anula la opción grupal. No cambia la cantidad de cupos.
    */
   lastSeats?: boolean | null;
   /**
-   * La cantidad y la etiqueta caducan según el plazo de Configuración (72 horas por defecto). Cambiar fecha u origen invalida esta referencia.
+   * La vigencia del saldo se confirma en Programas (72 horas por defecto).
    */
   seatsCheckedAt?: string | null;
+  lastSeatsCheckedAt?: string | null;
   /**
-   * Verifica en Meganet o con un asesor y marca esta casilla antes de guardar. Renueva la revisión aunque la cantidad sea la misma; se desmarca al guardar.
+   * Renueva solo la etiqueta individual, sin modificar la revisión del saldo del programa.
    */
   seatsConfirmed?: boolean | null;
   travelDate: string;
@@ -192,17 +197,13 @@ export interface Departure {
    */
   withdrawalAt?: string | null;
   /**
-   * Contenido compartido. Edita este dato en Programas.
+   * Imagen compartida; se edita en Programas. Ideal: 800 × 800 px. Admite otros tamaños y proporciones, sin recortar. Máximo 12 MB.
    */
   flyer?: (number | null) | Media;
   /**
    * Contenido compartido. Edita este dato en Programas.
    */
   flyerSourceUrl?: string | null;
-  /**
-   * Contenido compartido. Edita este dato en Programas.
-   */
-  flyerDownloadWarning?: string | null;
   /**
    * Contenido compartido. Edita este dato en Programas.
    */
@@ -235,7 +236,7 @@ export interface Departure {
   createdAt: string;
 }
 /**
- * Un programa por MTPE. Los cambios se aplican a todas sus salidas.
+ * Un programa por MTPE. El saldo de cupos, la imagen y la información compartida se aplican a todas sus fechas.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "programs".
@@ -250,11 +251,39 @@ export interface Program {
   nights?: number | null;
   cruiseLine?: (number | null) | CruiseLine;
   /**
-   * Opcional. Sin flyer se usa la imagen de Megatravel en todas las fechas.
+   * Un único saldo para todas las fechas y orígenes del programa. Si se toman 3 de 15 cupos, cambia este saldo a 12. Vacío: sin cantidad informada; cero: sin cupos.
+   */
+  availableSeats?: number | null;
+  /**
+   * Opcional. Actívalo cuando quieras destacar todas las fechas. También puedes destacar una fecha por separado desde Salidas. Con cero cupos no se muestra la etiqueta.
+   */
+  lastSeats?: boolean | null;
+  seatsCheckedAt?: string | null;
+  /**
+   * Confirma la disponibilidad en Meganet o con un asesor. Cambiar el saldo o marcar esta casilla renueva la revisión; se desmarca al guardar.
+   */
+  seatsConfirmed?: boolean | null;
+  /**
+   * Las fechas anteriores tenían cantidades distintas. Revisa el saldo del programa antes de informarlo; los datos anteriores se conservan en el respaldo de migración.
+   */
+  seatsMigrationPending?: boolean | null;
+  legacySeatReferences?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Ideal: 800 × 800 px. Admite otros tamaños y proporciones; se muestra completa dentro de una tarjeta cuadrada, sin recortar. Máximo 12 MB. Sin imagen se usa la de Megatravel en todas las fechas.
    */
   flyer?: (number | null) | Media;
+  /**
+   * Ideal: 800 × 800 px. Se admiten otros tamaños y proporciones. Se conserva el enlace si no se puede copiar la imagen.
+   */
   flyerSourceUrl?: string | null;
-  flyerDownloadWarning?: string | null;
   bookingUrl?: string | null;
   descriptionUrl?: string | null;
   updatedAt: string;
@@ -281,6 +310,8 @@ export interface CruiseLine {
   createdAt: string;
 }
 /**
+ * Biblioteca de imágenes. Programas: ideal 800 × 800 px; banners: 1600 × 600 px; popup: 1200 × 900 px; versión móvil: 800 × 800 px. Se admiten otros tamaños y proporciones. Máximo 12 MB, JPEG, PNG, WebP o GIF.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
@@ -315,8 +346,8 @@ export interface Origin {
 export interface Campaign {
   id: number;
   name: string;
-  slug: string;
   label: string;
+  slug: string;
   /**
    * Instante de inicio. El panel utiliza America/Lima.
    */
@@ -335,6 +366,8 @@ export interface Banner {
    * Si hay varios popups vigentes, se muestra solo el de menor orden.
    */
   placement: 'hero' | 'between-results' | 'catalog-end' | 'popup';
+  popupFormat?: ('text' | 'image') | null;
+  popupLabel?: string | null;
   title?: string | null;
   /**
    * Puedes publicar una noticia solo con título y texto, sin imagen.
@@ -345,18 +378,19 @@ export interface Banner {
    * El botón aparece cuando completas el enlace opcional.
    */
   buttonLabel?: string | null;
+  /**
+   * Si queda vacío se mostrará «Seguir explorando».
+   */
+  popupSecondaryLabel?: string | null;
   popupFrequency?: ('session' | 'daily' | 'always') | null;
   popupDelay?: number | null;
   /**
-   * Banners: 1600 × 600 px. Popup: recomendado 1200 × 900 px. Se muestra el arte completo, sin recortarlo.
+   * Tamaño ideal para banners (Hero, entre resultados y final): 1600 × 600 px. Popup: 1200 × 900 px. Se adapta a otros tamaños y proporciones y muestra la imagen completa, sin recortarla. Máximo 12 MB.
    */
   image?: (number | null) | Media;
-  /**
-   * Obligatoria cuando hay imagen, para respetar las preferencias de movimiento reducido.
-   */
   staticImage?: (number | null) | Media;
   /**
-   * Recomendado: imagen cuadrada, 800 × 800 px.
+   * Ideal: 800 × 800 px. Admite otras proporciones y muestra la imagen completa. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.
    */
   mobileImage?: (number | null) | Media;
   alt: string;
@@ -381,7 +415,7 @@ export interface AuditLog {
   id: number;
   departureId: string;
   program: string;
-  event: 'created' | 'updated' | 'withdrawn' | 'reactivated';
+  event: 'created' | 'updated' | 'withdrawn' | 'reactivated' | 'deleted';
   actor?: (number | null) | User;
   actorLabel: string;
   changes:
@@ -547,8 +581,10 @@ export interface DeparturesSelect<T extends boolean = true> {
   promotions?: T;
   priority?: T;
   availableSeats?: T;
+  programLastSeats?: T;
   lastSeats?: T;
   seatsCheckedAt?: T;
+  lastSeatsCheckedAt?: T;
   seatsConfirmed?: T;
   travelDate?: T;
   days?: T;
@@ -557,7 +593,6 @@ export interface DeparturesSelect<T extends boolean = true> {
   withdrawalAt?: T;
   flyer?: T;
   flyerSourceUrl?: T;
-  flyerDownloadWarning?: T;
   bookingUrl?: T;
   descriptionUrl?: T;
   status?: T;
@@ -586,9 +621,14 @@ export interface ProgramsSelect<T extends boolean = true> {
   days?: T;
   nights?: T;
   cruiseLine?: T;
+  availableSeats?: T;
+  lastSeats?: T;
+  seatsCheckedAt?: T;
+  seatsConfirmed?: T;
+  seatsMigrationPending?: T;
+  legacySeatReferences?: T;
   flyer?: T;
   flyerSourceUrl?: T;
-  flyerDownloadWarning?: T;
   bookingUrl?: T;
   descriptionUrl?: T;
   updatedAt?: T;
@@ -617,8 +657,8 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface CampaignsSelect<T extends boolean = true> {
   name?: T;
-  slug?: T;
   label?: T;
+  slug?: T;
   startsAt?: T;
   endsAt?: T;
   updatedAt?: T;
@@ -630,10 +670,13 @@ export interface CampaignsSelect<T extends boolean = true> {
  */
 export interface BannersSelect<T extends boolean = true> {
   placement?: T;
+  popupFormat?: T;
+  popupLabel?: T;
   title?: T;
   message?: T;
   popupKind?: T;
   buttonLabel?: T;
+  popupSecondaryLabel?: T;
   popupFrequency?: T;
   popupDelay?: T;
   image?: T;

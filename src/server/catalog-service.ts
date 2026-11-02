@@ -6,6 +6,7 @@ import { isActivePeriod } from '@/lib/lifecycle'
 import { cmsToDeparture, mediaUrl } from './normalize'
 import { getCMS } from './payload'
 import { DEFAULT_CONTACT_URL, DEFAULT_CONTACT_LABEL } from '@/lib/brand-config'
+import { hasPublishablePopupContent } from '@/lib/popup'
 
 export async function getPublicCatalog(): Promise<CatalogData> {
   const now = new Date()
@@ -23,6 +24,6 @@ export async function getPublicCatalog(): Promise<CatalogData> {
   ])
   const packages = publishedPackages(departures.docs.map(cmsToDeparture), now, settings.seatsValidityHours ?? undefined)
   const promotions: Promotion[] = campaigns.docs.filter(p => isActivePeriod(p, now)).map(p => ({ id: String(p.slug || p.id), name: p.name, label: p.label }))
-  const publicBanners: Banner[] = banners.docs.filter(p => isActivePeriod(p, now) && (p.placement === 'popup' ? !!p.title && (!p.image || !!mediaUrl(p.image) && !!mediaUrl(p.staticImage)) : !!mediaUrl(p.image) && !!mediaUrl(p.staticImage))).map(p => ({ id: String(p.id), placement: p.placement || 'hero', order: p.order || 0, startsAt: p.startsAt, endsAt: p.endsAt, imageUrl: mediaUrl(p.image), staticUrl: mediaUrl(p.staticImage), mobileUrl: mediaUrl(p.mobileImage) || null, alt: p.alt, href: p.href || null, title: p.title, message: p.message, buttonLabel: p.buttonLabel, popupKind: p.popupKind, popupFrequency: p.popupFrequency, popupDelay: p.popupDelay }))
+  const publicBanners: Banner[] = banners.docs.filter(p => isActivePeriod(p, now) && (p.placement === 'popup' ? hasPublishablePopupContent({ popupFormat: p.popupFormat, title: p.title, imageUrl: mediaUrl(p.image) }) && (!p.image || !!mediaUrl(p.image)) : !!mediaUrl(p.image))).map(p => ({ id: String(p.id), placement: p.placement || 'hero', order: p.order || 0, startsAt: p.startsAt, endsAt: p.endsAt, imageUrl: mediaUrl(p.image), staticUrl: mediaUrl(p.staticImage), mobileUrl: mediaUrl(p.mobileImage) || null, alt: p.alt, href: p.href || null, title: p.title, message: p.message, buttonLabel: p.buttonLabel, popupFormat: p.popupFormat, popupLabel: p.popupLabel, popupSecondaryLabel: p.popupSecondaryLabel, popupKind: p.popupKind, popupFrequency: p.popupFrequency, popupDelay: p.popupDelay }))
   return { packages, promotions, banners: publicBanners, contactUrl: settings.contactUrl || DEFAULT_CONTACT_URL, contactLabel: settings.contactLabel || DEFAULT_CONTACT_LABEL }
 }

@@ -55,10 +55,11 @@ export function CampaignBanner({
       setPaused(true);
   };
   const staticArt = reduced || paused || hidden;
+  const staticImage = banner.staticUrl || banner.imageUrl;
   const mobileStatic =
     banner.mobileUrl && !/\.gif(?:[?#]|$)/i.test(banner.mobileUrl)
       ? banner.mobileUrl
-      : banner.staticUrl;
+      : staticImage;
   const picture = (
     <picture key={banner.id}>
       <source
@@ -69,7 +70,7 @@ export function CampaignBanner({
       />
       <source
         media="(prefers-reduced-motion: reduce)"
-        srcSet={banner.staticUrl}
+        srcSet={staticImage}
       />
       {banner.mobileUrl && (
         <source
@@ -80,7 +81,7 @@ export function CampaignBanner({
         />
       )}
       <img
-        src={staticArt ? banner.staticUrl : banner.imageUrl}
+        src={staticArt ? staticImage : banner.imageUrl}
         alt={banner.alt}
         width="1600"
         height="600"

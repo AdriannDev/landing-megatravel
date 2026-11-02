@@ -86,7 +86,7 @@ export function CampaignPopup({ banner }: { banner: Banner }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
-        className={`campaign-popup${banner.imageUrl ? " campaign-popup-with-image" : ""}`}
+        className={`campaign-popup${banner.imageUrl ? " campaign-popup-with-image" : ""}${banner.popupFormat === "image" ? " campaign-popup-image-only" : ""}`}
         onOpenAutoFocus={(e) => {
           e.preventDefault();
           document
@@ -100,7 +100,10 @@ export function CampaignPopup({ banner }: { banner: Banner }) {
             ?.focus({ preventScroll: true });
         }}
       >
-        {banner.imageUrl && (
+        {banner.popupFormat === "image" && <><DialogTitle className="sr-only">{banner.alt}</DialogTitle><DialogDescription className="sr-only">{banner.alt}</DialogDescription></>}
+        {banner.imageUrl && (banner.popupFormat === "image" && banner.href ? <a href={banner.href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} aria-label={`${banner.alt} (abre otra pestaña)`}>
+          <picture className="popup-art"><source media="(prefers-reduced-motion: reduce)" srcSet={banner.staticUrl || banner.imageUrl} />{banner.mobileUrl && <source media="(max-width: 760px)" srcSet={banner.mobileUrl} />}<img src={banner.imageUrl} alt={banner.alt} width="1200" height="900" /></picture>
+        </a> : (
           <picture className="popup-art">
             <source
               media="(prefers-reduced-motion: reduce)"
@@ -116,11 +119,11 @@ export function CampaignPopup({ banner }: { banner: Banner }) {
               height="900"
             />
           </picture>
-        )}
-        <div className="popup-copy">
+        ))}
+        {banner.popupFormat !== "image" && <div className="popup-copy">
           <span className="popup-eyebrow">
             <Icon size={14} aria-hidden="true" />
-            {news ? "Noticias Megatravel" : "Especial para tu agencia"}
+            {banner.popupLabel || (news ? "Noticias Megatravel" : "Especial para tu agencia")}
           </span>
           <DialogTitle>{banner.title || banner.alt}</DialogTitle>
           <DialogDescription
@@ -170,10 +173,10 @@ export function CampaignPopup({ banner }: { banner: Banner }) {
               </a>
             )}
             <DialogClose className="popup-dismiss">
-              Seguir explorando
+              {banner.popupSecondaryLabel || "Seguir explorando"}
             </DialogClose>
           </div>
-        </div>
+        </div>}
       </DialogContent>
     </Dialog>
   );

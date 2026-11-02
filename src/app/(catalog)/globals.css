@@ -58,6 +58,8 @@
   display:grid;
   grid-template-columns:minmax(0,1fr) minmax(0,1fr);
 }
+.campaign-popup-image-only {display:block;width:min(680px,calc(100vw - 32px))}
+.campaign-popup-image-only .popup-art {min-height:0;height:min(75dvh,680px)}
 .campaign-popup .dialog-close {
   width:40px;
   height:40px;

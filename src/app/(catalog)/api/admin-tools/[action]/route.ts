@@ -3,10 +3,9 @@ import { requireEditor, AdminError } from '@/server/admin-auth'
 import { importCSV } from '@/server/import-service'
 import { serializeCSV } from '@/lib/csv'
 import { cmsToDeparture, mediaUrl } from '@/server/normalize'
-import { importRemoteMedia } from '@/server/media-import'
-import { isDateOnly } from '@/lib/lifecycle'
+import { departureViewWhere } from '@/lib/admin-views'
 import { createDepartures, duplicateDepartures } from '@/server/departure-service'
-import { resolveProgram } from '@/lib/programs'
+import { resolveProgram, relationID } from '@/lib/programs'
 import { getSeatSettings } from '@/server/availability-settings'
 
 export const dynamic = 'force-dynamic'
@@ -18,13 +17,27 @@ export async function GET(request: Request, context: Context) {
     const { payload, req } = await requireEditor(request)
     const { action } = await context.params
     if (action === 'availability-settings') return NextResponse.json(await getSeatSettings(payload, req), { headers: { 'Cache-Control': 'no-store' } })
+    if (action === 'promotions') {
+      const promotions = await payload.find({ collection: 'campaigns', req, overrideAccess: false, depth: 0, pagination: false, sort: 'name' })
+      return NextResponse.json({ promotions: promotions.docs.map(p => ({ id: p.id, name: p.name, label: p.label })) }, { headers: { 'Cache-Control': 'no-store' } })
+    }
+    if (action === 'stats') {
+      const { validityHours } = await getSeatSettings(payload, req)
+      const [published, expiring, seatsReview, programs] = await Promise.all([
+        payload.count({ collection: 'departures', req, overrideAccess: false, where: departureViewWhere('published', new Date(), validityHours) }),
+        payload.count({ collection: 'departures', req, overrideAccess: false, where: departureViewWhere('expiring', new Date(), validityHours) }),
+        payload.count({ collection: 'departures', req, overrideAccess: false, where: departureViewWhere('seats-review', new Date(), validityHours) }),
+        payload.count({ collection: 'programs', req, overrideAccess: false }),
+      ])
+      return NextResponse.json({ published: published.totalDocs, expiring: expiring.totalDocs, seatsReview: seatsReview.totalDocs, programs: programs.totalDocs }, { headers: { 'Cache-Control': 'no-store' } })
+    }
     if (action === 'programs') {
       const programs = await payload.find({ collection: 'programs', req, overrideAccess: false, depth: 0, pagination: false, sort: 'program' })
-      return NextResponse.json({ programs: programs.docs.map(p => ({ id: p.id, program: p.program, mtpe: p.mtpe })) }, { headers: { 'Cache-Control': 'no-store' } })
+      return NextResponse.json({ programs: programs.docs.map(p => ({ id: p.id, program: p.program, mtpe: p.mtpe, availableSeats: p.availableSeats, lastSeats: p.lastSeats, seatsMigrationPending: p.seatsMigrationPending })) }, { headers: { 'Cache-Control': 'no-store' } })
     }
     if (action !== 'options' && action !== 'export') throw new AdminError('Operación no encontrada.', 404)
     const docs = await payload.find({ collection: 'departures', req, overrideAccess: false, depth: 1, pagination: false, sort: 'program' })
-    if (action === 'options') return NextResponse.json({ departures: docs.docs.map(doc => ({ id: doc.id, program: doc.program, mtpe: doc.mtpe, price: doc.price, date: doc.travelDate, flyerUrl: mediaUrl(doc.flyer) || doc.flyerSourceUrl, status: doc.status })) }, { headers: { 'Cache-Control': 'no-store' } })
+    if (action === 'options') return NextResponse.json({ departures: docs.docs.map(doc => ({ id: doc.id, program: doc.program, mtpe: doc.mtpe, price: doc.price, date: doc.travelDate, origin: typeof doc.origin === 'object' ? doc.origin.name : String(doc.origin), flyerUrl: mediaUrl(doc.flyer) || doc.flyerSourceUrl, status: doc.status, programId: relationID(doc.programRef), availableSeats: doc.availableSeats, programLastSeats: doc.programLastSeats })) }, { headers: { 'Cache-Control': 'no-store' } })
     const rows = docs.docs.map(doc => {
       const p = cmsToDeparture(doc)
       const flyerUrl = resolveProgram(doc).flyerSourceUrl || (p.flyerUrl ? new URL(p.flyerUrl, process.env.NEXT_PUBLIC_SITE_URL || request.url).toString() : '')
@@ -59,20 +72,7 @@ export async function POST(request: Request, context: Context) {
     }
     const body = await request.json()
     if (action === 'duplicate') {
-      return NextResponse.json(await duplicateDepartures(payload, req, body.sourceId, body.departures), { status: 201, headers: { 'Cache-Control': 'no-store' } })
-    }
-    if (action === 'images') {
-      const docs = await payload.find({ collection: 'programs', overrideAccess: false, req, depth: 0, pagination: false, where: body.id ? { id: { equals: body.id } } : { and: [{ flyer: { exists: false } }, { flyerSourceUrl: { exists: true } }] } })
-      const results = []
-      for (const doc of docs.docs.slice(0, 50)) {
-        try {
-          if (!doc.flyerSourceUrl) throw new Error('Esta salida no tiene un enlace de imagen para copiar.')
-          const image = await importRemoteMedia(payload, doc.flyerSourceUrl, doc.program, req)
-          await payload.update({ collection: 'programs', id: doc.id, req, overrideAccess: false, data: { flyer: image.id } })
-          results.push({ id: doc.id, status: 'downloaded' })
-        } catch (error) { results.push({ id: doc.id, status: 'error', message: (error as Error).message }) }
-      }
-      return NextResponse.json({ processed: results.length, remaining: Math.max(0, docs.totalDocs - 50), results }, { headers: { 'Cache-Control': 'no-store' } })
+      return NextResponse.json(await duplicateDepartures(payload, req, body.sourceId, body.departures, body.seatsConfirmed === true), { status: 201, headers: { 'Cache-Control': 'no-store' } })
     }
     throw new AdminError('Operación no encontrada.', 404)
   } catch (error) { return failure(error) }

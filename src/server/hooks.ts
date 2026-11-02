@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto'
-import type { CollectionAfterChangeHook, CollectionBeforeChangeHook } from 'payload'
+import type { CollectionAfterChangeHook, CollectionBeforeChangeHook, CollectionBeforeDeleteHook } from 'payload'
 import { APIError } from 'payload'
 import { retirementAt, validateTransition, isPublishable } from '../lib/lifecycle'
 import { cmsToDeparture } from './normalize'
-import { departureKey, normalizeMTPE, relationID, sharedData } from '../lib/programs.ts'
-import { prepareSeatReference } from '../lib/availability.ts'
+import { departureKey, normalizeMTPE, relationID, sharedData, programSeatSnapshot } from '../lib/programs.ts'
+import { prepareDateLastSeats } from '../lib/availability.ts'
 
 export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, originalDoc, operation, req, context }) => {
   if (operation === 'create') {
@@ -12,7 +12,7 @@ export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, origi
     data.sourceKey ||= 'cms:' + data.stableId
   }
   if (!context.sharedProjection) {
-    try { Object.assign(data, prepareSeatReference(data, operation === 'update' ? originalDoc : undefined)) }
+    try { Object.assign(data, prepareDateLastSeats(data, operation === 'update' ? originalDoc : undefined)) }
     catch (error) { throw new APIError((error as Error).message, 400) }
     const combined = { ...originalDoc, ...data }
     let programID = relationID(combined.programRef)
@@ -22,7 +22,7 @@ export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, origi
       programID = program.id
     }
     const program = await req.payload.findByID({ collection: 'programs', id: programID, req, overrideAccess: true, depth: 0 })
-    Object.assign(data, sharedData(program), { programRef: program.id })
+    Object.assign(data, sharedData(program), programSeatSnapshot(program), { programRef: program.id })
     const key = departureKey(program.mtpe, combined.origin, combined.travelDate)
     const duplicates = await req.payload.find({ collection: 'departures', req, overrideAccess: true, depth: 0, limit: 1, where: { and: [{ mtpe: { equals: program.mtpe } }, { origin: { equals: relationID(combined.origin) } }, { travelDate: { equals: combined.travelDate } }, ...(originalDoc?.id ? [{ id: { not_equals: originalDoc.id } }] : [])] } })
     if (duplicates.docs.length && (operation === 'create' || key !== departureKey(originalDoc?.mtpe, originalDoc?.origin, originalDoc?.travelDate))) throw new APIError('Ya existe una salida para este MTPE, origen y fecha.', 409)
@@ -46,7 +46,7 @@ export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, origi
   return data
 }
 
-const tracked = ['program', 'mtpe', 'destination', 'zone', 'origin', 'cruiseLine', 'days', 'nights', 'travelDate', 'price', 'currency', 'priceCondition', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'descriptionUrl', 'promotions', 'priority', 'advanceDays', 'status', 'withdrawalReason', 'withdrawalNote', 'availableSeats', 'lastSeats', 'seatsCheckedAt']
+const tracked = ['program', 'mtpe', 'destination', 'zone', 'origin', 'cruiseLine', 'days', 'nights', 'travelDate', 'price', 'currency', 'priceCondition', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'descriptionUrl', 'promotions', 'priority', 'advanceDays', 'status', 'withdrawalReason', 'withdrawalNote', 'availableSeats', 'lastSeats', 'programLastSeats', 'seatsCheckedAt', 'lastSeatsCheckedAt']
 const compact = (value: unknown): unknown => Array.isArray(value) ? value.map(compact) : value && typeof value === 'object' && 'id' in value ? value.id : value ?? null
 export const recordDepartureAudit: CollectionAfterChangeHook = async ({ doc, previousDoc, req, operation, context }) => {
   const changes = Object.fromEntries(tracked.filter(key => JSON.stringify(compact(doc[key])) !== JSON.stringify(compact(previousDoc?.[key]))).map(key => [key, { before: compact(previousDoc?.[key]), after: compact(doc[key]) }]))
@@ -59,4 +59,15 @@ export const recordDepartureAudit: CollectionAfterChangeHook = async ({ doc, pre
     actorLabel: req.user?.email || (context.automaticRetirement ? 'Sistema: retiro automático' : context.historicalImport ? 'Importación histórica (responsable original no disponible)' : 'Importación autorizada'),
   } })
   return doc
+}
+
+// Las salidas publicadas o retiradas se conservan para mantener su trazabilidad.
+export const recordDepartureDeletion: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  if (req.user?.role !== 'admin') throw new APIError('Solo un administrador puede eliminar borradores.', 403)
+  const doc = await req.payload.findByID({ collection: 'departures', id, req, overrideAccess: false, depth: 0 })
+  if (doc.status !== 'draft') throw new APIError('Solo se pueden eliminar salidas en borrador.', 400)
+  await req.payload.create({ collection: 'audit-log', req, overrideAccess: true, data: {
+    departureId: String(doc.stableId || doc.id), program: doc.program || 'Salida sin nombre', event: 'deleted' as any,
+    actor: req.user.id, actorLabel: req.user.email || 'Administrador', changes: { deleted: { before: false, after: true }, travelDate: { before: doc.travelDate, after: null } },
+  } })
 }

@@ -691,7 +691,7 @@ export function Catalog({
                 )}
                 <p className="catalog-note">
                   Tarifas sujetas a disponibilidad y condiciones de cada
-                  programa. Confirma el precio vigente en Meganet antes de
+                  programa. Confirma el precio vigente con un asesor antes de
                   reservar.
                 </p>
               </div>
@@ -724,6 +724,7 @@ export function Catalog({
           </Button>
         </section>
       </main>
+      
       <footer className="site-footer">
         <div className="container footer-top">
           <Brand inverted />

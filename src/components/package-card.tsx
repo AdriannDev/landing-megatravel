@@ -50,11 +50,11 @@ export function PackageCard({
         <DialogTrigger asChild>
           <button
             className="flyer-button"
-            aria-label={`Ampliar flyer de ${item.program}`}
+            aria-label={`Ampliar imagen de ${item.program}`}
           >
             <img
               src={imageUrl}
-              alt={`Flyer completo de ${titleCase(item.program)}, salida ${formatDate(item.travelDate)}`}
+              alt={`Imagen completa de ${titleCase(item.program)}, salida ${formatDate(item.travelDate)}`}
               loading="lazy"
               width="600"
               height="600"
@@ -73,7 +73,7 @@ export function PackageCard({
           </DialogDescription>
           <img
             src={imageUrl}
-            alt={`Flyer de ${item.program}`}
+            alt={`Imagen de ${item.program}`}
             width="1080"
             height="1080"
             onError={() => setFailedUrl(item.flyerUrl)}

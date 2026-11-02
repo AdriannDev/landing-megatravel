@@ -24,6 +24,10 @@ try {
   const adminReq = await createLocalReq({ user: { ...admin, collection: 'users' } }, payload)
   const editor = await payload.create({ collection: 'users', req: adminReq, overrideAccess: false, data: { name: 'Editor de prueba', email: 'editor@example.test', password: randomUUID(), role: 'editor' } })
   const req = await createLocalReq({ user: { ...editor, collection: 'users' } }, payload)
+  const autoCampaign = await payload.create({ collection: 'campaigns', req, overrideAccess: false, data: { name: 'Promoción sin identificador', label: 'Oferta' } as any })
+  assert.match(autoCampaign.slug, /^promo-[a-f0-9-]+$/)
+  const editedCampaign = await payload.update({ collection: 'campaigns', id: autoCampaign.id, req, overrideAccess: false, data: { name: 'Promoción actualizada' } })
+  assert.equal(editedCampaign.slug, autoCampaign.slug); checks++
   const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a8XcAAAAASUVORK5CYII=', 'base64')
   const uploaded = await payload.create({ collection: 'media', req, overrideAccess: false, data: { alt: 'Imagen de prueba de persistencia' }, file: { data: image, size: image.length, mimetype: 'image/png', name: 'persistence.png' } })
   assert.ok(uploaded.filename)
@@ -55,41 +59,48 @@ try {
   assert.equal(first.errors, 0, JSON.stringify(first)); assert.equal(second.errors, 0, JSON.stringify(second))
   const imported = await payload.find({ collection: 'departures', req, overrideAccess: false, where: { sourceKey: { equals: 'import-test' } } })
   assert.equal(imported.totalDocs, 1); assert.equal(imported.docs[0].price, 2099); checks++
-  // Seat references are independent from ordinary edits, program sync and imports.
+  // El programa posee el saldo; cada fecha conserva solo su etiqueta individual.
+  const seatProgramID = typeof departure.programRef === 'object' ? departure.programRef!.id : departure.programRef!
   const seatStart = Date.now()
-  let withSeats = await payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: false, data: { availableSeats: 3, lastSeats: true } })
-  assert.equal(withSeats.availableSeats, 3); assert.equal(withSeats.lastSeats, true)
-  assert.ok(Date.parse(withSeats.seatsCheckedAt!) >= seatStart); checks++
-  const seatStamp = withSeats.seatsCheckedAt
-  withSeats = await payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: false, data: { price: 4000 } })
-  assert.equal(withSeats.seatsCheckedAt, seatStamp)
-  withSeats = await payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: true, data: { seatsCheckedAt: '2099-01-01T00:00:00Z' } })
-  assert.equal(withSeats.seatsCheckedAt, seatStamp); checks++
-  for (const availableSeats of [-1, 1.5]) await assert.rejects(() => payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: false, data: { availableSeats } }))
+  let pool = await payload.update({ collection: 'programs', id: seatProgramID, req, overrideAccess: false, data: { availableSeats: 15 } })
+  const seatStamp = pool.seatsCheckedAt
+  assert.ok(Date.parse(seatStamp!) >= seatStart); checks++
+  let withSeats = await payload.findByID({ collection: 'departures', id: departure.id, req, depth: 0 })
+  assert.equal(withSeats.availableSeats, 15)
+  await payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: false, data: { availableSeats: 99 } })
+  assert.equal((await payload.findByID({ collection: 'programs', id: seatProgramID, req })).availableSeats, 15); checks++
+  withSeats = await payload.update({ collection: 'departures', id: departure.id, req, data: { lastSeats: true } })
+  assert.equal(cmsToDeparture(withSeats).availableSeats, 15)
+  assert.ok(publishedPackages([cmsToDeparture(withSeats)])[0].availability?.lastSeats)
+  assert.equal((await payload.findByID({ collection: 'programs', id: seatProgramID, req })).lastSeats, false); checks++
+  await payload.update({ collection: 'departures', id: departure.id, req, data: { price: 4000, seatsConfirmed: true } })
+  assert.equal((await payload.findByID({ collection: 'programs', id: seatProgramID, req })).seatsCheckedAt, seatStamp); checks++
+  pool = await payload.update({ collection: 'programs', id: seatProgramID, req, data: { seatsCheckedAt: '2099-01-01T00:00:00Z' } })
+  assert.equal(pool.seatsCheckedAt, seatStamp); checks++
+  for (const availableSeats of [-1, 1.5]) await assert.rejects(() => payload.update({ collection: 'programs', id: seatProgramID, req, data: { availableSeats } }))
   checks++
-  await payload.db.updateOne({ collection: 'departures', id: departure.id, req, data: { seatsCheckedAt: '2020-01-01T00:00:00.000Z' } })
-  withSeats = await payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: false, data: { seatsConfirmed: true } })
-  assert.equal(withSeats.seatsConfirmed, false); assert.ok(Date.parse(withSeats.seatsCheckedAt!) >= seatStart); checks++
-  const seatLog = await payload.find({ collection: 'audit-log', req, where: { departureId: { equals: departure.stableId } }, pagination: false })
-  assert.ok(seatLog.docs.some(log => (log.changes as Record<string, unknown>).seatsCheckedAt)); checks++
-  withSeats = await payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: false, data: { availableSeats: 0, lastSeats: true } })
-  assert.equal(withSeats.lastSeats, false); assert.equal(withSeats.status, 'published')
+  pool = await payload.update({ collection: 'programs', id: seatProgramID, req, data: { availableSeats: 0, lastSeats: true } })
+  assert.equal(pool.lastSeats, false)
+  withSeats = await payload.findByID({ collection: 'departures', id: departure.id, req })
   assert.equal(publishedPackages([cmsToDeparture(withSeats)])[0].availability, null); checks++
-  withSeats = await payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: false, data: { availableSeats: null, lastSeats: true } })
+  await payload.update({ collection: 'programs', id: seatProgramID, req, data: { availableSeats: null } })
+  withSeats = await payload.findByID({ collection: 'departures', id: departure.id, req })
   assert.equal(publishedPackages([cmsToDeparture(withSeats)])[0].availability?.lastSeats, true); checks++
   const nextDate = new Date(Date.parse(date) + 86400000).toISOString().slice(0, 10)
-  withSeats = await payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: false, data: { travelDate: nextDate, seatsConfirmed: true } })
-  assert.equal(withSeats.availableSeats, null); assert.equal(withSeats.lastSeats, false); assert.equal(withSeats.seatsCheckedAt, null); checks++
-  const importSeats = await payload.update({ collection: 'departures', id: imported.docs[0].id, req, overrideAccess: false, data: { availableSeats: 4, lastSeats: true } })
+  await payload.update({ collection: 'programs', id: seatProgramID, req, data: { availableSeats: 12 } })
+  withSeats = await payload.update({ collection: 'departures', id: departure.id, req, data: { travelDate: nextDate } })
+  assert.equal(withSeats.availableSeats, 12); checks++
+  const importProgramID = typeof imported.docs[0].programRef === 'object' ? imported.docs[0].programRef!.id : imported.docs[0].programRef!
+  const importedPool = await payload.update({ collection: 'programs', id: importProgramID, req, data: { availableSeats: 4, lastSeats: true } })
   await importCSV(payload, csv, req, { dryRun: false, downloadImages: false })
-  const importAfter = await payload.findByID({ collection: 'departures', id: importSeats.id, req })
-  assert.equal(importAfter.availableSeats, 4); assert.equal(importAfter.lastSeats, true); assert.equal(importAfter.seatsCheckedAt, importSeats.seatsCheckedAt); checks++
-  await payload.db.updateOne({ collection: 'departures', id: importSeats.id, req, data: { seatsCheckedAt: new Date(Date.now() - 25 * 3600000).toISOString() } })
+  const importAfter = await payload.findByID({ collection: 'departures', id: imported.docs[0].id, req })
+  assert.equal(importAfter.availableSeats, 4); assert.equal(importAfter.programLastSeats, true); assert.equal(importAfter.seatsCheckedAt, importedPool.seatsCheckedAt); checks++
+  await payload.db.updateOne({ collection: 'programs', id: importProgramID, req, data: { seatsCheckedAt: new Date(Date.now() - 25 * 3600000).toISOString() } })
+  await payload.update({ collection: 'programs', id: importProgramID, req, data: { program: 'Programa importado revisado' } })
   const seatNow = new Date()
-  assert.ok((await payload.find({ collection: 'departures', req, where: departureViewWhere('seats-review', seatNow, 24), pagination: false })).docs.some(doc => doc.id === importSeats.id) === false) // Drafts are excluded.
-  await payload.update({ collection: 'departures', id: importSeats.id, req, data: { status: 'published' } })
-  assert.ok((await payload.find({ collection: 'departures', req, where: departureViewWhere('seats-review', seatNow, 24), pagination: false })).docs.some(doc => doc.id === importSeats.id))
-  assert.ok(!(await payload.find({ collection: 'departures', req, where: departureViewWhere('seats-review', seatNow, 72), pagination: false })).docs.some(doc => doc.id === importSeats.id)); checks++
+  await payload.update({ collection: 'departures', id: imported.docs[0].id, req, data: { status: 'published' } })
+  assert.ok((await payload.find({ collection: 'departures', req, where: departureViewWhere('seats-review', seatNow, 24), pagination: false })).docs.some(doc => doc.id === imported.docs[0].id))
+  assert.ok(!(await payload.find({ collection: 'departures', req, where: departureViewWhere('seats-review', seatNow, 72), pagination: false })).docs.some(doc => doc.id === imported.docs[0].id)); checks++
   const { getSeatSettings } = await import('../src/server/availability-settings')
   await payload.updateGlobal({ slug: 'settings', req: adminReq, overrideAccess: false, data: { seatsValidityHours: 24 } })
   assert.equal((await getSeatSettings(payload, req)).validityHours, 24)
@@ -99,7 +110,7 @@ try {
   assert.equal(dry.errors, 0)
   assert.equal((await payload.count({ collection: 'departures', overrideAccess: true, where: { sourceKey: { equals: 'dry-run-test' } } })).totalDocs, 0); checks++
   await assert.rejects(() => payload.find({ collection: 'programs', overrideAccess: false })); checks++
-  const input = { program: { program: 'Programa compartido', mtpe: ' shared1 ', destination: 'Cusco', zone: 'Perú', days: 5, nights: 4, bookingUrl: 'https://www.megatravel.pe/es/', descriptionUrl: 'https://cafe.megatravel.pe/' }, origin: 'Lima', departures: [{ date: '2029-07-10', price: 1599, availableSeats: 10, lastSeats: false }, { date: '2029-08-10', price: 1699, availableSeats: 2, lastSeats: true }] }
+  const input = { seatsConfirmed: true, program: { program: 'Programa compartido', mtpe: ' shared1 ', destination: 'Cusco', zone: 'Perú', days: 5, nights: 4, availableSeats: 15, seatsConfirmed: true, bookingUrl: 'https://www.megatravel.pe/es/', descriptionUrl: 'https://cafe.megatravel.pe/' }, origin: 'Lima', departures: [{ date: '2029-07-10', price: 1599, lastSeats: false }, { date: '2029-08-10', price: 1699, lastSeats: true }] }
   const batch = await createDepartures(payload, req, input)
   assert.equal(batch.created.length, 2)
   const shared = await payload.findByID({ collection: 'programs', id: batch.programId, req, overrideAccess: false })
@@ -115,9 +126,16 @@ try {
   assert.ok(dates.docs.every(doc => cmsToDeparture(doc).program === 'Nombre actualizado' && cmsToDeparture(doc).flyerUrl.endsWith(uploaded.filename!)))
   const indexed = await payload.find({ collection: 'departures', req, overrideAccess: false, depth: 0, where: { program: { contains: 'actualizado' } } })
   assert.equal(indexed.totalDocs, 2); checks++
-  assert.equal(dates.docs.find(doc => doc.id === batch.created[0].id)?.availableSeats, 10)
-  assert.equal(dates.docs.find(doc => doc.id === batch.created[1].id)?.availableSeats, 2)
+  assert.equal(dates.docs.find(doc => doc.id === batch.created[0].id)?.availableSeats, 15)
+  assert.equal(dates.docs.find(doc => doc.id === batch.created[1].id)?.availableSeats, 15)
   assert.equal(dates.docs.find(doc => doc.id === batch.created[1].id)?.lastSeats, true); checks++
+  await payload.update({ collection: 'programs', id: shared.id, req, data: { availableSeats: 12, lastSeats: true } })
+  let sharedDates = await payload.find({ collection: 'departures', req, depth: 0, where: { programRef: { equals: shared.id } }, pagination: false })
+  assert.ok(sharedDates.docs.every(doc => doc.availableSeats === 12 && publishedPackages([cmsToDeparture(doc)])[0].availability?.lastSeats === true)); checks++
+  await payload.update({ collection: 'programs', id: shared.id, req, data: { availableSeats: 15, lastSeats: false } })
+  sharedDates = await payload.find({ collection: 'departures', req, depth: 0, where: { programRef: { equals: shared.id } }, pagination: false })
+  assert.equal(sharedDates.docs.find(doc => doc.id === batch.created[0].id)?.lastSeats, false)
+  assert.equal(sharedDates.docs.find(doc => doc.id === batch.created[1].id)?.lastSeats, true); checks++
   const previewDoc = await payload.findByID({ collection: 'departures', id: batch.created[0].id, req, overrideAccess: false, depth: 1 })
   assert.equal(cmsToDeparture(previewDoc).destination, 'Cusco'); assert.ok(cmsToDeparture(previewDoc).flyerUrl.endsWith(uploaded.filename!)); checks++
   await assert.rejects(() => payload.update({ collection: 'programs', id: shared.id, req, overrideAccess: false, data: { bookingUrl: '' } })); checks++
@@ -129,11 +147,44 @@ try {
   await assert.rejects(() => createDepartures(payload, req, { programId: shared.id, origin: ' LIMA ', departures: [{ date: '2029-07-10', price: 1000 }] })); checks++
   const otherOrigin = await createDepartures(payload, req, { programId: shared.id, origin: 'Arequipa', departures: [{ date: '2029-07-10', price: 1299 }] })
   assert.equal(otherOrigin.created.length, 1); checks++
+  const promoA = await payload.create({ collection: 'campaigns', req, overrideAccess: false, data: { name: 'Promoción por fecha A', slug: 'promo-fecha-a', label: 'Oferta A' } })
+  const promoB = await payload.create({ collection: 'campaigns', req, overrideAccess: false, data: { name: 'Promoción por fecha B', slug: 'promo-fecha-b', label: 'Oferta B' } })
+  const byDate = await createDepartures(payload, req, { programId: shared.id, origin: 'Lima', departures: [
+    { date: '2032-01-10', price: 1500, promotions: [String(promoA.id)] },
+    { date: '2032-02-10', price: 1500, promotions: [promoB.id] },
+    { date: '2032-03-10', price: 1500, promotions: [] },
+  ] })
+  const byDateDocs = await Promise.all(byDate.created.map(item => payload.findByID({ collection: 'departures', id: item.id, req, depth: 0 })))
+  assert.deepEqual(byDateDocs.map(item => item.promotions), [[promoA.id], [promoB.id], []]); checks++
+  const dateOverrides = await duplicateDepartures(payload, req, byDate.created[0].id, [
+    { date: '2032-04-10', price: 1500, promotions: [promoB.id] },
+    { date: '2032-05-10', price: 1500, promotions: [] },
+    { date: '2032-06-10', price: 1500 },
+  ])
+  const duplicateDocs = await Promise.all(dateOverrides.created.map(item => payload.findByID({ collection: 'departures', id: item.id, req, depth: 0 })))
+  assert.deepEqual(duplicateDocs.map(item => item.promotions), [[promoB.id], [], [promoA.id]]); checks++
+  await assert.rejects(() => createDepartures(payload, req, { programId: shared.id, origin: 'Lima', departures: [{ date: '2032-07-10', price: 1500, promotions: [999999999] }] }), /promoción seleccionada/); checks++
   const duplicated = await duplicateDepartures(payload, req, batch.created[0].id, [{ date: '2029-10-10', price: 1799 }])
   assert.equal(duplicated.programId, shared.id)
   assert.equal((await payload.findByID({ collection: 'departures', id: duplicated.created[0].id, req })).status, 'draft'); checks++
   const duplicateSeats = await payload.findByID({ collection: 'departures', id: duplicated.created[0].id, req })
-  assert.equal(duplicateSeats.availableSeats, null); assert.equal(duplicateSeats.lastSeats, false); assert.equal(duplicateSeats.seatsCheckedAt, null); checks++
+  assert.equal(duplicateSeats.availableSeats, 15); assert.equal(duplicateSeats.lastSeats, false); assert.ok(duplicateSeats.seatsCheckedAt); checks++
+  await assert.rejects(() => duplicateDepartures(payload, req, batch.created[0].id, [{ date: '2029-11-10', price: 1799, lastSeats: true }]), /Confirma/)
+  const duplicateWithSeats = await duplicateDepartures(payload, req, batch.created[0].id, [{ date: '2029-11-10', price: 1799, lastSeats: true }], true)
+  const confirmedSeats = await payload.findByID({ collection: 'departures', id: duplicateWithSeats.created[0].id, req })
+  assert.equal(confirmedSeats.availableSeats, 15); assert.equal(confirmedSeats.lastSeats, true); assert.ok(confirmedSeats.seatsCheckedAt); checks++
+  const direct = await createDepartures(payload, req, { status: 'published', programId: shared.id, origin: 'Lima', departures: [{ date: '2031-02-10', price: 1700 }] })
+  assert.equal((await payload.findByID({ collection: 'departures', id: direct.created[0].id, req })).status, 'published')
+  const toDelete = await createDepartures(payload, req, { programId: shared.id, origin: 'Lima', departures: [{ date: '2035-01-10', price: 1700 }] })
+  const deletingDoc = await payload.findByID({ collection: 'departures', id: toDelete.created[0].id, req, depth: 0 })
+  await assert.rejects(() => payload.delete({ collection: 'departures', id: deletingDoc.id, req, overrideAccess: false }))
+  await assert.rejects(() => payload.delete({ collection: 'departures', id: direct.created[0].id, req: adminReq, overrideAccess: false }))
+  await payload.delete({ collection: 'departures', id: deletingDoc.id, req: adminReq, overrideAccess: false })
+  const deletedLogs = await payload.find({ collection: 'audit-log', req, overrideAccess: false, where: { departureId: { equals: deletingDoc.stableId } }, depth: 0 })
+  assert.ok(deletedLogs.docs.some(log => String(log.event) === 'deleted' && log.actorLabel === admin.email)); checks++
+  const beforeInvalidPublication = (await payload.count({ collection: 'departures', req })).totalDocs
+  await assert.rejects(() => createDepartures(payload, req, { status: 'published', programId: shared.id, origin: 'Lima', departures: [{ date: '2031-03-10', price: 1700 }, { date: '2020-01-10', price: 1700 }] }))
+  assert.equal((await payload.count({ collection: 'departures', req })).totalDocs, beforeInvalidPublication); checks++
   const beforeFailure = { programs: (await payload.count({ collection: 'programs', req })).totalDocs, departures: (await payload.count({ collection: 'departures', req })).totalDocs, audit: (await payload.count({ collection: 'audit-log', req })).totalDocs, media: (await payload.count({ collection: 'media', req })).totalDocs }
   const forcedFailure = ({ data }: { data: Record<string, any> }) => { if (data.travelDate === '2029-12-11') throw new Error('Fallo de persistencia simulado'); return data }
   payload.collections.departures.config.hooks.beforeChange.push(forcedFailure)
