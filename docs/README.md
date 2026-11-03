@@ -18,6 +18,7 @@ Esta documentación describe el código existente y dónde modificarlo. Los paso
 | Conectar GitHub, hacer push y trabajar en varios equipos | [Git y GitHub](github.md) |
 | Ejecutar el corte, retiros y copias de seguridad | [Operación y lanzamiento](operacion.md) |
 | Usar el CMS como editor comercial | [Guía de editores](editores.md) |
+| Consultar el plan futuro de automatización por correo y consolidado | [Plan de automatización de cupos](plan-automatizacion-cupos.md) |
 
 Lectura sugerida: arquitectura → mantenimiento → configuración. Para una tarea concreta, empieza por la tabla «Dónde hacer cada cambio» de la guía de mantenimiento.
 

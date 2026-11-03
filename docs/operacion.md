@@ -1,6 +1,6 @@
 # Operación y lanzamiento
 
-Para entender qué servicio contratar y por qué no hace falta un hosting web adicional si se utiliza Railway, consulta [producción y proveedores](produccion.md). El mapa de carpetas está en [arquitectura](arquitectura.md) y las variables/comandos en [configuración](configuracion.md). Este documento describe una etapa posterior; no implica que se hayan realizado estos pasos.
+Para una prueba inicial sin programas, sigue [Railway: prueba con catálogo vacío](railway-prueba-vacia.md). Para entender qué servicio contratar y por qué no hace falta un hosting web adicional si se utiliza Railway, consulta [producción y proveedores](produccion.md). El mapa de carpetas está en [arquitectura](arquitectura.md) y las variables/comandos en [configuración](configuracion.md). Este documento describe una etapa posterior; no implica que se hayan realizado estos pasos.
 
 ## Servicios y variables
 
@@ -16,7 +16,7 @@ El contacto por defecto utiliza el enlace de WhatsApp publicado en [la web ofici
 
 1. Usar Node compatible e instalar con `npm ci`. Ya existe `package-lock.json`, coherente con el manifiesto en esta revisión, y el Dockerfile usa `npm ci`. Versionar ambos archivos de dependencias cuando se modifiquen mediante npm.
 2. Ejecutar pruebas unitarias, tipos, integración, build e inspección visual de escritorio y móvil.
-3. En staging PostgreSQL, generar `npm run migrate:create -- inicial`. Revisar y versionar los archivos de `src/migrations`; ejecutar `npm run migrate` y verificar que la base vacía arranca correctamente. Producción tiene `push: false`.
+3. En staging PostgreSQL, revisar las migraciones existentes en `src/migrations`, ejecutar `npm run migrate` y verificar que la base vacía arranca correctamente. Producción tiene `push: false`; no se debe generar otra migración inicial para una base nueva.
 4. Crear el primer administrador mediante `npm run bootstrap`, con variables temporales privadas. No exponer la pantalla de creación de primera cuenta. Retirar la contraseña del entorno después.
 5. Ejecutar la validación CSV y revisar el reporte; importar con `--historical --commit`. Verificar recuentos por hoja/estado, los diez borradores y una muestra de precios, fechas, enlaces y flyers. No activar la opción histórica para operaciones diarias.
 6. Comprobar que R2 conserva los archivos y sus enlaces de origen, y que las imágenes del catálogo abren completas. Revisar fallos de descarga; no sustituir archivos por imágenes de otro programa.
@@ -25,7 +25,7 @@ El contacto por defecto utiliza el enlace de WhatsApp publicado en [la web ofici
 9. Activar el dominio y comprobar `/api/health`, búsqueda por código/destino/fecha, URL compartida, reservas/descriptivos y ausencia de datos privados en `/api/public/catalog`.
 10. Mantener SpreadSimple operativo durante la aceptación para volver al origen si la validación falla. Capacitar a editores con `docs/editores.md`.
 
-No hay una migración SQL inicial generada y validada. El 24 de octubre de 2026 se actualizó Node a 24.22.1 LTS, con npm 11.19.1, y se repitieron correctamente tipos, 31 pruebas, 14 comprobaciones de Payload con SQLite/medios aislados y build; este último terminó sin advertencias de compilación. Next 16.4.3 se confirmó como versión estable vigente. Siguen pendientes PostgreSQL y su migración, validación del contenedor y staging, correo, archivos de producción y restauración. Ver [estado actual](continuidad.md) y [arranque del CMS](cms.md).
+Existe una migración inicial y migraciones posteriores en `src/migrations`. La cadena requiere validación con el adaptador de Payload y PostgreSQL real en staging; las pruebas con SQLite o PostgreSQL embebido no sustituyen esa validación. Siguen pendientes la verificación del contenedor y staging, correo, archivos de producción y restauración. Ver [estado actual](continuidad.md) y [arranque del CMS](cms.md).
 
 ## Retiro programado
 
