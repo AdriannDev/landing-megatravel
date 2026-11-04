@@ -37,4 +37,4 @@ El CMS elegido es **Payload**. Para la configuración pendiente, empieza por [co
 
 El registro de la implementación anterior está en [migration/verification.json](../migration/verification.json). Sus resultados corresponden a esa ejecución. El [estado del 24 de octubre](continuidad.md) registra las comprobaciones posteriores, repetidas con Node 24.22.1: 31 pruebas, 14 verificaciones del CMS con SQLite/medios aislados, tipos, sintaxis y build local completado sin advertencias de compilación.
 
-La revisión de Railway del 4 de noviembre confirmó la aplicación, PostgreSQL y las migraciones. Permanecen pendientes archivos persistentes, copias y restauración, correo, cron y ajustes del despliegue; ver [estado actual](continuidad.md). Los resultados históricos no sustituyen una prueba actual.
+La revisión de Railway del 4 de noviembre confirmó la aplicación, PostgreSQL, el chequeo de salud y una ejecución correcta del cron. Permanecen pendientes la validación de archivos persistentes, copias y restauración, correo y ajustes del despliegue; ver [estado actual](continuidad.md). Los resultados históricos no sustituyen una prueba actual.

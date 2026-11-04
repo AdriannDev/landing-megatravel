@@ -15,6 +15,7 @@ const [{ getPayload, createLocalReq }, { default: config }, { importCSV }, { cms
   import('payload'), import('../src/payload.config'), import('../src/server/import-service'), import('../src/server/normalize'), import('../src/lib/catalog'),
 ])
 const { createDepartures, duplicateDepartures } = await import('../src/server/departure-service')
+const { retireExpired } = await import('../src/server/retire-service')
 const { prepareProgramMigration, applyProgramMigration, revertProgramMigration } = await import('../src/server/program-migration')
 const { departureViewWhere } = await import('../src/lib/admin-views')
 const { DEFAULT_FLYER } = await import('../src/lib/flyer')
@@ -58,6 +59,22 @@ try {
   const destination = await payload.create({ collection: 'destinations', req, overrideAccess: false, data: { name: 'Madrid' } })
   const origin = await payload.create({ collection: 'origins', req, overrideAccess: false, data: { name: 'Lima' } })
   const date = new Date(Date.now() + 120 * 86400000).toISOString().slice(0, 10)
+  const cronData = { program: 'Retiro de prueba', mtpe: 'CRON1', destination: destination.id, zone: 'Europa', origin: origin.id, days: 10, travelDate: date, price: 2000, currency: 'USD' as const, priceCondition: 'Por persona', bookingUrl: 'https://www.megatravel.pe/es/', descriptionUrl: 'https://cafe.megatravel.pe/', status: 'published' as const, advanceDays: 30 }
+  const cronExpired = await payload.create({ collection: 'departures', req, overrideAccess: false, data: cronData })
+  const cronCurrent = await payload.create({ collection: 'departures', req, overrideAccess: false, data: { ...cronData, program: 'Salida vigente', mtpe: 'CRON2' } })
+  const cronDraft = await payload.create({ collection: 'departures', req, overrideAccess: false, data: { ...cronData, program: 'Borrador de prueba', mtpe: 'CRON3', status: 'draft' } })
+  // Simula que pasó el tiempo sin eludir las validaciones en operaciones normales.
+  for (const id of [cronExpired.id, cronDraft.id]) await payload.db.updateOne({ collection: 'departures', id, req, data: { travelDate: '2020-01-01', withdrawalAt: '2019-12-02T05:00:00.000Z' } })
+  const cronReport = await retireExpired(payload)
+  assert.equal(cronReport.checked, 2); assert.equal(cronReport.withdrawn, 1); assert.equal(cronReport.errors, 0, JSON.stringify(cronReport))
+  const automaticallyWithdrawn = await payload.findByID({ collection: 'departures', id: cronExpired.id, req, depth: 0 })
+  assert.equal(automaticallyWithdrawn.status, 'withdrawn'); assert.equal(automaticallyWithdrawn.withdrawalReason, 'automatic'); assert.equal(automaticallyWithdrawn.retiredBy, null)
+  assert.equal((await payload.findByID({ collection: 'departures', id: cronCurrent.id, req })).status, 'published')
+  assert.equal((await payload.findByID({ collection: 'departures', id: cronDraft.id, req })).status, 'draft')
+  const cronAudit = await payload.find({ collection: 'audit-log', req, where: { departureId: { equals: cronExpired.stableId } }, pagination: false })
+  assert.equal(cronAudit.docs.filter(log => log.event === 'withdrawn' && log.actorLabel === 'Sistema: retiro automático').length, 1)
+  const repeatCron = await retireExpired(payload)
+  assert.equal(repeatCron.withdrawn, 0); assert.equal(repeatCron.errors, 0); checks++
   let departure = await payload.create({ collection: 'departures', req, overrideAccess: false, context: { skipMediaDownload: true }, data: { program: 'Programa de prueba', mtpe: 'TEST1', destination: destination.id, zone: 'Europa', origin: origin.id, days: 10, travelDate: date, price: 3999, currency: 'USD', priceCondition: 'Por persona en habitación doble', flyerSourceUrl: 'https://i.imgur.com/example.png', bookingUrl: 'https://www.megatravel.pe/es/', descriptionUrl: 'https://cafe.megatravel.pe/', status: 'published', advanceDays: 30 } })
   assert.ok(departure.withdrawalAt); checks++
   await assert.rejects(() => payload.find({ collection: 'departures', overrideAccess: false })); checks++

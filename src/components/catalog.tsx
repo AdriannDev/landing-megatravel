@@ -30,6 +30,7 @@ import { Brand } from "./brand";
 import { PackageCard } from "./package-card";
 import { CampaignBanner } from "./campaign-banner";
 import { CampaignPopup } from "./campaign-popup";
+import { WhatsAppContact } from "./whatsapp-contact";
 import { bannersAt } from "@/lib/banners";
 import { Button } from "./ui/button";
 import {
@@ -749,6 +750,7 @@ export function Catalog({
           <a href="/admin">Acceso al equipo</a>
         </div>
       </footer>
+      <WhatsAppContact contactUrl={liveData.contactUrl} />
     </>
   );
 }

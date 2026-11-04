@@ -2,7 +2,7 @@
 
 Catálogo público y administración en español con Next.js, TypeScript, Tailwind, componentes shadcn/ui sobre Radix, Payload y PostgreSQL. Almacenamiento de imágenes compatible con Cloudflare R2. Las reservas y descriptivos continúan en los enlaces originales de Meganet y Café Megatravel.
 
-El catálogo incluye búsqueda por programa, destino y MTPE; filtros combinables; campañas; carrusel accesible; ordenamiento; paginación; filtros móviles; ampliación de imágenes; enlaces externos y eventos GA4 opcionales. Programas comparte el contenido de un MTPE entre sus fechas; Nueva salida y Nueva fecha permiten guardar o publicar hasta 30 fechas en una transacción. Los programas sin imagen usan una imagen de Megatravel.
+El catálogo incluye búsqueda por programa, destino y MTPE; filtros combinables; campañas; carrusel accesible; ordenamiento; paginación; filtros móviles; contacto flotante por WhatsApp; enlaces externos y eventos GA4 opcionales. Programas comparte el contenido de un MTPE entre sus fechas; Nueva salida y Nueva fecha permiten guardar o publicar hasta 30 fechas en una transacción. Los programas sin imagen usan una imagen de Megatravel.
 
 ## Documentación del desarrollo
 
@@ -26,8 +26,8 @@ Empieza por el [índice de documentación](docs/README.md). Las guías están or
 
 ## Estado de la entrega
 
-- Railway está conectado al repositorio y a PostgreSQL. La revisión del 4 de noviembre confirmó siete migraciones aplicadas y despliegue automático de `main`.
-- Continúan pendientes la rotación de credenciales expuestas durante la revisión, el almacenamiento persistente de imágenes, las copias probadas, el chequeo de salud en Railway, el cron y el correo. Ver [estado y próximos pasos](docs/continuidad.md) y [guía práctica de Railway](docs/guia-railway-operacion.md).
+- Railway está conectado al repositorio y a PostgreSQL. El 4 de noviembre se comprobó el chequeo de salud y se configuró y probó el cron diario de retiros.
+- Continúan pendientes la rotación de credenciales expuestas durante la revisión, la validación del almacenamiento de imágenes, las copias probadas, el correo y la migración de la configuración heredada de Railway. Ver [estado y próximos pasos](docs/continuidad.md) y [guía práctica de Railway](docs/guia-railway-operacion.md).
 - El despliegue automático puede fallar: tras cada push revisa su estado en Railway. Los cambios de esquema requieren migraciones planificadas; la base, las imágenes y las claves no se guardan en Git.
 
 ## Arranque local

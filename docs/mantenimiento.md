@@ -117,7 +117,7 @@ Una descarga local a `public/flyers/` no carga por sí sola el archivo a R2. El 
 
 ## Cambios visuales y accesibilidad
 
-Las tarjetas conservan el flyer completo con `object-fit: contain`. Cambiarlo a `cover` puede cortar textos comerciales. La ampliación utiliza el diálogo base, que también se usa en los filtros móviles.
+Las tarjetas conservan el flyer completo con `object-fit: contain`. Cambiarlo a `cover` puede cortar textos comerciales. El diálogo base se usa en los filtros móviles.
 
 Al cambiar tamaños, comprobar que las condiciones del precio, fechas, códigos y acciones sigan legibles. Conservar títulos de diálogo, texto alternativo, foco visible, textos para enlaces externos y `prefers-reduced-motion`.
 

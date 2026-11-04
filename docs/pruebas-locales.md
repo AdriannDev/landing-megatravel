@@ -67,7 +67,7 @@ Crear desde Usuarios una segunda cuenta con rol Editor y probarla en otra sesió
 | Banners/promociones | Probar periodos de vigencia, orden y alternativa estática del banner |
 | CSV | Validar primero, importar, repetir conservando claves y exportar; no se crean duplicados |
 | Persistencia | Reiniciar el servidor de desarrollo y comprobar usuarios, contenido y archivos |
-| Interfaz | Probar escritorio/móvil, teclado, mensajes de error, ampliación y lectura del flyer |
+| Interfaz | Probar escritorio/móvil, teclado, mensajes de error, lectura del flyer y contacto por WhatsApp |
 
 Una pestaña pública abierta consulta cambios cada 30 segundos. Ese plazo forma parte del comportamiento actual; comprobar también una recarga. Si se modifica la entrega pública mediante caché o exportación estática, habrá que repetir estas pruebas con su nuevo mecanismo de actualización.
 

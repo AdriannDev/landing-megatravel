@@ -221,7 +221,7 @@ La interfaz pide validar antes de habilitar el botón de importación. El servid
 - `POST /api/cron/retire` exige `Authorization: Bearer …` igual a `CRON_SECRET`, de al menos 32 caracteres. Una clave ausente/inválida devuelve 503/401. Los fallos de ejecución devuelven 500.
 - `GET /api/health` devuelve modo y estado. En `workbook` no comprueba PostgreSQL; en modo CMS realiza una consulta de disponibilidad de Salidas. Un estado correcto en modo instantánea no prueba que el CMS esté listo para producción.
 
-El cron también puede usar `npm run retire`, dentro del servidor y con variables de entorno propias. La agenda no está creada por el repositorio.
+El cron también puede usar `npm run retire`, dentro del servidor y con variables de entorno propias. La agenda de producción se administra en Railway y llama al endpoint protegido; ver [retiro programado](operacion.md#retiro-programado).
 
 ## CSV y traslado desde Excel
 

@@ -4,7 +4,6 @@ import {
   MapPin,
   Clock3,
   ArrowUpRight,
-  Maximize2,
   FileText,
   Plane,
 } from "lucide-react";
@@ -12,13 +11,6 @@ import { useState } from "react";
 import type { PublicPackage } from "@/lib/types";
 import { formatDate, formatMoney, titleCase } from "@/lib/catalog";
 import { Button } from "./ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from "./ui/dialog";
 import { track } from "@/lib/analytics";
 import { DEFAULT_FLYER } from "@/lib/flyer";
 import { DEFAULT_CONTACT_URL } from "@/lib/brand-config";
@@ -46,40 +38,16 @@ export function PackageCard({
       : DEFAULT_FLYER;
   return (
     <article className="package-card">
-      <Dialog>
-        <DialogTrigger asChild>
-          <button
-            className="flyer-button"
-            aria-label={`Ampliar imagen de ${item.program}`}
-          >
-            <img
-              src={imageUrl}
-              alt={`Imagen completa de ${titleCase(item.program)}, salida ${formatDate(item.travelDate)}`}
-              loading="lazy"
-              width="600"
-              height="600"
-              onError={() => setFailedUrl(item.flyerUrl)}
-            />
-            <span className="flyer-expand">
-              <Maximize2 size={15} />
-              <span>Ampliar</span>
-            </span>
-          </button>
-        </DialogTrigger>
-        <DialogContent className="flyer-dialog">
-          <DialogTitle>{titleCase(item.program)}</DialogTitle>
-          <DialogDescription>
-            MTPE {item.mtpe} · Salida {formatDate(item.travelDate)}
-          </DialogDescription>
-          <img
-            src={imageUrl}
-            alt={`Imagen de ${item.program}`}
-            width="1080"
-            height="1080"
-            onError={() => setFailedUrl(item.flyerUrl)}
-          />
-        </DialogContent>
-      </Dialog>
+      <div className="flyer-image">
+        <img
+          src={imageUrl}
+          alt={`Imagen de ${titleCase(item.program)}, salida ${formatDate(item.travelDate)}`}
+          loading="lazy"
+          width="600"
+          height="600"
+          onError={() => setFailedUrl(item.flyerUrl)}
+        />
+      </div>
       {availability?.lastSeats && <LastSeatsBadge seats={availability.seats} />}
       <div className="package-body">
         <div className="card-topline">

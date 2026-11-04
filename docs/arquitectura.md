@@ -124,7 +124,8 @@ El mapa de importaciones se regenera con `npm run generate:importmap`. Para aña
 | Archivo o carpeta | Qué contiene |
 | --- | --- |
 | `catalog.tsx` | Cabecera, hero, buscador, filtros, resultados, paginación, contacto y pie. También `FilterPanel`, que se reutiliza en escritorio y móvil |
-| `package-card.tsx` | Una tarjeta de salida: flyer, ampliación, datos comerciales, reserva, descriptivo y eventos de clic |
+| `package-card.tsx` | Una tarjeta de salida: flyer, datos comerciales, reserva, descriptivo y eventos de clic |
+| `whatsapp-contact.tsx` | Acceso flotante al enlace de WhatsApp configurado en el CMS |
 | `campaign-banner.tsx` | Banners administrados y carrusel manual; presenta una composición de marca cuando no hay banners |
 | `brand.tsx` | Logo enlazado a inicio y representación alternativa si la imagen falla |
 | `ui/button.tsx` | Variantes de botón y opción de aplicar su estilo a un enlace |

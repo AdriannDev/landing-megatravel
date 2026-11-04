@@ -106,7 +106,7 @@ Los enlaces originales se conservan como herramienta de migración del Excel y p
 
 Las imágenes estáticas nuevas se procesan con Sharp: se intenta convertirlas a WebP manteniendo la proporción y sin ampliar, con lado máximo de 1.600 px. El ahorro varía según el archivo; Payload puede procesar nuevamente el WebP antes de guardarlo. Las animaciones se mantienen. Los archivos ya guardados no se optimizan automáticamente. Consulta [R2 e imágenes](r2-imagenes.md) para su configuración y despliegue.
 
-El flujo de optimización previsto debe conservar el original, generar una versión para tarjeta y otra legible para ampliar, mantener el flyer completo y verificar que precios y condiciones sigan claros. El objetivo de peso se debe definir con imágenes reales; no imponer una compresión que borre texto. Si se elige una publicación estática, optimizar durante carga/build y publicar los archivos resultantes, conservando la misma experiencia de selección del editor.
+El flujo de optimización previsto debe conservar el original, generar una versión para tarjeta, mantener el flyer completo y verificar que precios y condiciones sigan claros. El objetivo de peso se debe definir con imágenes reales; no imponer una compresión que borre texto. Si se elige una publicación estática, optimizar durante carga/build y publicar los archivos resultantes, conservando la misma experiencia de selección del editor.
 
 La carga y administración de imágenes continúa en Payload. El [presupuesto de Railway](costos-railway.md) explica el consumo de la aplicación, la base y los archivos.
 
@@ -136,7 +136,7 @@ Antes del arranque CMS de producción, generar, revisar, versionar y aplicar la 
 
 Si se elige volumen para imágenes, importar desde el panel o ejecutar el CLI dentro del servicio con ese volumen y el CSV disponible. Ejecutar la importación en el ordenador con `MEDIA_DIR` local no copia esos binarios al volumen de Railway. Con R2, el CLI puede cargar al mismo bucket desde un checkout autorizado.
 
-Programar retiros con `npm run retire` a `0 5 * * *` UTC, usando un servicio cron con configuración propia y sin healthcheck HTTP. Alternativamente, programar `POST /api/cron/retire` con `CRON_SECRET`. El catálogo también filtra la vigencia si la tarea se retrasa. Completar copias y restauración antes del corte; ver [operación](operacion.md).
+El servicio cron de producción llama a `POST /api/cron/retire` con `CRON_SECRET` a `0 5 * * *` UTC. También puede ejecutarse `npm run retire` con acceso privado al CMS y a la base. El catálogo filtra la vigencia si la tarea se retrasa. Completar copias y restauración; ver [operación](operacion.md).
 
 ## Correo y problemas frecuentes
 

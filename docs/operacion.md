@@ -8,7 +8,7 @@ Preparar en la cuenta del proyecto una aplicación Railway con PostgreSQL, almac
 
 La aplicación necesita `DATABASE_URL`, una clave `PAYLOAD_SECRET` aleatoria de 32 caracteres o más y `NEXT_PUBLIC_SITE_URL` con la URL definitiva HTTPS. Para R2: `R2_BUCKET`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` y `R2_PUBLIC_URL`. El bucket debe servir los archivos en una URL pública o dominio de medios. Los permisos de la clave R2 se limitan al bucket correspondiente. `NEXT_PUBLIC_GA4_ID` es opcional y se proporciona al build.
 
-El contacto por defecto utiliza el enlace de WhatsApp publicado en [la web oficial de Megatravel Perú](https://www.megatravel.pe/es/), verificado el 23 de octubre de 2026. Confirma que sea el canal apropiado para este catálogo; el administrador puede modificarlo en Configuración del catálogo. El logo se referencia desde el recurso público vinculado por esa misma web.
+El contacto por defecto utiliza el enlace de WhatsApp publicado en [la web oficial de Megatravel Perú](https://www.megatravel.pe/es/), verificado el 23 de octubre de 2026. Confirma que sea el canal apropiado para este catálogo; el administrador puede modificarlo en Configuración del catálogo. El botón flotante utiliza ese mismo enlace y solo aparece si apunta a un dominio de WhatsApp admitido. El logo se referencia desde el recurso público vinculado por esa misma web.
 
 `IMPORT_MEDIA_ALLOWED_HOSTS` contiene los hosts exactos permitidos para copiar archivos. Para el Excel recibido: `i.imgur.com,i.spread.name`. El importador no sigue redirecciones. Si se incorpora otro proveedor, un administrador debe añadir su host después de verificarlo.
 
@@ -19,7 +19,7 @@ El contacto por defecto utiliza el enlace de WhatsApp publicado en [la web ofici
 3. En staging PostgreSQL, revisar las migraciones existentes en `src/migrations`, ejecutar `npm run migrate` y verificar que la base vacía arranca correctamente. Producción tiene `push: false`; no se debe generar otra migración inicial para una base nueva.
 4. Crear el primer administrador mediante `npm run bootstrap`, con variables temporales privadas. No exponer la pantalla de creación de primera cuenta. Retirar la contraseña del entorno después.
 5. Ejecutar la validación CSV y revisar el reporte; importar con `--historical --commit`. Verificar recuentos por hoja/estado, los diez borradores y una muestra de precios, fechas, enlaces y flyers. No activar la opción histórica para operaciones diarias.
-6. Comprobar que R2 conserva los archivos y sus enlaces de origen, y que las imágenes del catálogo abren completas. Revisar fallos de descarga; no sustituir archivos por imágenes de otro programa.
+6. Comprobar que R2 conserva los archivos y sus enlaces de origen, y que las imágenes se muestran completas en el catálogo. Revisar fallos de descarga; no sustituir archivos por imágenes de otro programa.
 7. Probar una copia y restauración en una base separada. Verificar acceso, recuentos y enlaces de medios en la restauración.
 8. Detener brevemente la edición de Sheets, exportar últimos cambios y repetir el importador conservando las claves. Establecer `CATALOG_SOURCE=cms` antes de la validación final.
 9. Activar el dominio y comprobar `/api/health`, búsqueda por código/destino/fecha, URL compartida, reservas/descriptivos y ausencia de datos privados en `/api/public/catalog`.
@@ -29,7 +29,15 @@ Existe una migración inicial y migraciones posteriores en `src/migrations`. La 
 
 ## Retiro programado
 
-Configura un cron Railway `0 5 * * *` (UTC): equivale a las 00:00 de Lima. Usa el mismo código y base que la aplicación; comando `npm run retire`. La agenda debe configurarse en el servicio de tareas, sin mantenerlo como un servidor HTTP permanente. Usar configuración de despliegue propia, sin heredar el healthcheck `/api/health` de la aplicación en `railway.toml`. Alternativamente, un programador de confianza puede enviar `POST /api/cron/retire` con el bearer `CRON_SECRET` (mínimo 32 caracteres) desde su almacén de secretos. [Tareas cron de Railway](https://docs.railway.com/cron-jobs).
+En Railway, `retiros-automaticos` ejecuta `0 5 * * *` UTC, equivalente a las 00:00 de Lima. Utiliza la imagen `node:24-bookworm-slim`, sin healthcheck HTTP, y termina tras enviar `POST /api/cron/retire` a la aplicación. `RETIRE_URL` apunta a ese endpoint y `CRON_SECRET` referencia la variable del servicio `landing-megatravel`; el secreto no se guarda en el repositorio. La aplicación realiza el retiro en su propia base. [Tareas cron de Railway](https://docs.railway.com/cron-jobs).
+
+El comando de inicio configurado en el servicio es:
+
+```sh
+node -e "fetch(process.env.RETIRE_URL,{method:'POST',headers:{Authorization:'Bearer '+process.env.CRON_SECRET},signal:AbortSignal.timeout(120000)}).then(async r=>{const b=await r.json();console.log(JSON.stringify({httpStatus:r.status,checked:b.checked,withdrawn:b.withdrawn,errors:b.errors}));if(!r.ok)process.exitCode=1}).catch(e=>{console.error('retirement_request_failed',e.message);process.exitCode=1})"
+```
+
+Para comprobarlo, consulta `railway cron list --service retiros-automaticos --environment production` y los logs del servicio. Una ejecución manual con `railway cron run --service retiros-automaticos --environment production --yes` también procesa las salidas vencidas reales. Si se cambia el dominio, actualiza `RETIRE_URL`; al rotar el secreto, actualiza el servicio web y vuelve a desplegar el cron para que use la referencia actualizada. También es posible ejecutar `npm run retire` en un entorno privado con las variables del CMS y acceso a la base.
 
 La consulta pública también calcula vigencia y no depende del cron. Una pestaña abierta refresca datos cada 30 segundos; el catálogo del servidor no tiene caché. Registrar y alertar sobre fallos del cron. La tarea solo retira registros todavía publicados y vencidos, y escribe historial con responsable Sistema.
 
