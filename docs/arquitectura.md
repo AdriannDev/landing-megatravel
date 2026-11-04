@@ -29,7 +29,7 @@ bloqueosweb/
 ├── docs/                         Documentación técnica y operativa
 ├── migration/                    Datos normalizados y reportes del Excel
 ├── public/                       Archivos públicos servidos directamente
-│   ├── icon.svg                  Icono del sitio
+│   ├── favicon-megatravel.png    Icono del sitio y panel
 │   └── flyers/                   Copias locales, si se ejecuta la descarga
 ├── scripts/                      Comandos de importación, operación y comprobación
 ├── src/
@@ -204,7 +204,7 @@ Que `migration/departures.csv` esté en Git no significa que esas filas estén c
 
 ## `public` y `media`
 
-Todo lo situado en `public/` puede servirse sin autenticar. `public/icon.svg` responde en `/icon.svg`; un archivo de `public/flyers/` responde en `/flyers/nombre.png`. No se deben colocar allí exportaciones privadas, contraseñas ni copias de base.
+Todo lo situado en `public/` puede servirse sin autenticar. `public/favicon-megatravel.png` responde en `/favicon-megatravel.png`; un archivo de `public/flyers/` responde en `/flyers/nombre.png`. No se deben colocar allí exportaciones privadas, contraseñas ni copias de base.
 
 `media/` es el almacenamiento local por defecto de Payload cuando no se usa R2. `MEDIA_DIR` permite fijar otra ruta; el Dockerfile utiliza `/app/media` para mantenerla común entre scripts y servidor standalone. Las cargas están excluidas de Git. En producción deben persistir en R2 o en un volumen montado en esa ruta; no depender del disco temporal del contenedor. La opción de volumen sigue pendiente de validación en Railway.
 

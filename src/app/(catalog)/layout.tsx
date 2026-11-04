@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Bloqueos Megatravel | Grandes viajes, mejores oportunidades',
   description: 'Encuentra salidas de Megatravel por destino, fecha y código MTPE. Catálogo de bloqueos para agencias de viajes del Perú.',
   robots: { index: true, follow: true },
-  icons: { icon: '/icon.svg' },
+  icons: { icon: '/favicon-megatravel.png' },
 }
 export default function Layout({ children }: { children: React.ReactNode }) {
   const ga = process.env.NEXT_PUBLIC_GA4_ID

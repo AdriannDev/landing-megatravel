@@ -33,6 +33,8 @@ export async function createDepartures(payload: Payload, req: PayloadRequest, in
   if (input.currency && !['USD', 'PEN'].includes(input.currency)) throw new Error('Moneda no válida.')
   if (input.priority != null && !Number.isFinite(input.priority)) throw new Error('Prioridad no válida.')
   if (flyerFile && (input.programId || flyerFile.size > 12 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(flyerFile.type))) throw new Error('La imagen del programa nuevo debe ser JPEG, PNG, WebP o GIF de hasta 12 MB.')
+  if (flyerFile && input.program?.flyer) throw new Error('Elige una imagen existente o sube un archivo, no ambos.')
+  if (input.program?.flyer && input.program.flyerSourceUrl) throw new Error('Elige una imagen existente o un enlace, no ambos.')
   if (new Set(input.departures.map(row => row.date)).size !== input.departures.length) throw new Error('Hay fechas repetidas en la solicitud.')
   for (const row of input.departures) {
     if (!isDateOnly(row.date) || !Number.isFinite(row.price) || row.price <= 0) throw new Error('Cada salida necesita una fecha válida y un precio mayor que cero.')
@@ -57,6 +59,10 @@ export async function createDepartures(payload: Payload, req: PayloadRequest, in
     if (input.programId) program = await payload.findByID({ collection: 'programs', id: input.programId, req, overrideAccess: false, depth: 0 })
     else {
       if (!input.program) throw new Error('Selecciona un programa o completa uno nuevo.')
+      if (input.program.flyer) {
+        try { await payload.findByID({ collection: 'media', id: input.program.flyer, req, overrideAccess: false, depth: 0 }) }
+        catch { throw new Error('La imagen seleccionada no existe o no está disponible.') }
+      }
       const destination = await reference('destinations', input.program.destination)
       const cruiseLine = input.program.cruiseLine ? await reference('cruise-lines', input.program.cruiseLine) : null
       const flyer = flyerFile ? await payload.create({ collection: 'media', req, overrideAccess: false, data: { alt: `Imagen de ${input.program.program}` }, file: { data: Buffer.from(await flyerFile.arrayBuffer()), size: flyerFile.size, mimetype: flyerFile.type, name: flyerFile.name } }) : null
@@ -73,8 +79,8 @@ export async function createDepartures(payload: Payload, req: PayloadRequest, in
   })
 }
 
-export async function duplicateDepartures(payload: Payload, req: PayloadRequest, sourceId: string | number, rows: NewDepartureInput['departures'], seatsConfirmed = false) {
+export async function duplicateDepartures(payload: Payload, req: PayloadRequest, sourceId: string | number, rows: NewDepartureInput['departures'], seatsConfirmed = false, status: NewDepartureInput['status'] = 'draft') {
   const source = await payload.findByID({ collection: 'departures', id: sourceId, req, overrideAccess: false, depth: 1 })
   if (!source.programRef) throw new Error('Migra esta salida a Programas antes de duplicarla.')
-  return createDepartures(payload, req, { seatsConfirmed, programId: relationID(source.programRef)!, origin: typeof source.origin === 'object' ? source.origin.name : String(source.origin), currency: source.currency, priceCondition: source.priceCondition, advanceDays: source.advanceDays, priority: source.priority || 0, promotions: (source.promotions || []).map(p => relationID(p)!), departures: rows.map(({ date, price, availableSeats, lastSeats, promotions }) => ({ date, price, availableSeats, lastSeats, promotions })) })
+  return createDepartures(payload, req, { status, seatsConfirmed, programId: relationID(source.programRef)!, origin: typeof source.origin === 'object' ? source.origin.name : String(source.origin), currency: source.currency, priceCondition: source.priceCondition, advanceDays: source.advanceDays, priority: source.priority || 0, promotions: (source.promotions || []).map(p => relationID(p)!), departures: rows.map(({ date, price, availableSeats, lastSeats, promotions }) => ({ date, price, availableSeats, lastSeats, promotions })) })
 }

@@ -21,7 +21,7 @@ npm run migrate:seats:sqlite -- --apply
 
 El primer comando muestra una previsión sin escribir; el segundo crea un respaldo en `backups/` y migra en una transacción. Puede repetirse sin sobrescribir los saldos ya revisados. La base local se migró durante esta implementación: 97 programas, sin conflictos.
 
-En PostgreSQL, la migración de Payload `20261102_173707_program_shared_seats` realiza la transición al desplegar la versión. Se verificó en PostgreSQL embebido; no se ejecutó contra producción. Su reversión bloquea la pérdida de saldos o respaldos que requieren conciliación.
+En PostgreSQL, la migración de Payload `20261102_173707_program_shared_seats` realiza la transición al ejecutarse. Su registro fue comprobado en producción el 4 de noviembre de 2026. Las migraciones futuras no se ejecutan automáticamente con un push y deben planificarse. Su reversión bloquea la pérdida de saldos o respaldos que requieren conciliación.
 
 ## Imágenes
 

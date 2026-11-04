@@ -6,11 +6,10 @@ Entra en `/admin` con tu cuenta: abre directamente la tabla de Salidas, ordenada
 
 ## Crear una nueva salida a partir de un programa
 
-1. Pulsa **Nueva salida**. Selecciona un programa existente o completa uno nuevo: MTPE, nombre, destino, zona, duración, naviera opcional, flyer y enlaces de Meganet y Café.
+1. Pulsa **Nueva salida**. Selecciona un programa existente o completa uno nuevo: MTPE, nombre, destino, zona, duración, naviera opcional, imagen y enlaces de Meganet y Café. Para la imagen puedes elegir una ya cargada en la biblioteca, subir un archivo, usar un enlace HTTPS o dejar la predeterminada.
 2. Indica origen, moneda y condiciones. Usa «Añadir otra fecha» para introducir entre 1 y 30 filas de fecha/precio.
-3. Pulsa «Crear borradores». El programa y sus fechas se guardan juntos; si una fecha falla, no quedan salidas parciales. Se rechaza un MTPE/origen/fecha repetido, incluso si la salida anterior está retirada.
-4. Abre los enlaces para revisar cada borrador, ajustar promociones, precio, prioridad o anticipación, y ver su vista previa privada.
-5. Cambia el estado a Publicado y guarda. Se validan el precio, la moneda, los enlaces HTTPS y la vigencia. El flyer es opcional: sin él aparece una imagen de Megatravel.
+3. Elige **Guardar como borrador** o **Publicar salidas**. También puedes usar **Nueva fecha** para partir de una salida existente y elegir entre crear borradores o publicar directamente. El programa y sus fechas se guardan juntos; si una fecha falla, no quedan salidas parciales. Se rechaza un MTPE/origen/fecha repetido, incluso si la salida anterior está retirada.
+4. Al publicar se validan precio, moneda, enlaces HTTPS y vigencia. Si guardaste borradores, ábrelos para revisarlos y publicarlos más adelante. La imagen es opcional: sin ella aparece una imagen de Megatravel.
 
 **Programas** guarda el contenido común una sola vez por MTPE. Edita allí nombre, destino, zona, duración, naviera, flyer y enlaces. El cambio aparece en todas sus fechas, incluidas las ya publicadas; las pestañas públicas abiertas se actualizan en hasta 30 segundos. El MTPE identifica el programa y no se cambia después de crearlo. El precio, moneda, condición, origen, promociones, prioridad, fecha, anticipación y estado se editan por salida.
 
@@ -20,7 +19,7 @@ La tarjeta se retira automáticamente 30 días antes de la salida. Puedes cambia
 
 ## Cupos referenciales y últimos cupos
 
-En cada salida, abre **Información comercial → Cupos referenciales**. Puedes introducir las sillas disponibles y activar **Destacar como «Últimos cupos»**, incluso sin una cantidad exacta. Estos datos pertenecen únicamente a esa fecha y origen. En «Nueva salida» también puedes completarlos por fila.
+En **Programas → Cupos compartidos**, introduce las sillas disponibles para todas las fechas del programa y, si corresponde, activa la etiqueta grupal. En cada salida puedes activar «Últimos cupos» solo para esa fecha. Ambas etiquetas son opcionales; la cantidad se comparte entre fechas y orígenes.
 
 La card muestra «Cupos referenciales: 10 sillas» y «Disponibilidad sujeta a cambios. Confirma en Meganet o con un asesor». Ambas opciones tienen enlace: Meganet utiliza el enlace del programa y el asesor utiliza el contacto comercial de Configuración. «Últimos cupos» aparece como una franja naranja bajo el flyer, con icono de llama y la cantidad referencial si está informada; esa cantidad no se repite en el cuerpo de la card. La etiqueta es manual y no cambia el orden de las cards. La promoción «Año Nuevo» utiliza una etiqueta dorada con forma de boleto; debe asociarse a la salida como cualquier otra promoción.
 
@@ -28,7 +27,7 @@ Cambiar la cantidad o la etiqueta registra la revisión automáticamente al guar
 
 La vigencia predeterminada es de **72 horas**. Un administrador puede ajustarla entre 1 y 720 horas en **Configuración del catálogo**. Al vencer se ocultan la cifra y «Últimos cupos», y la card invita a consultar en Meganet o con un asesor. La salida y los valores guardados permanecen disponibles. La vista **Cupos por revisar** reúne referencias vencidas de salidas publicadas y vigentes; la columna «Última revisión de cupos» indica Vigente, Por revisar o Sin informar.
 
-Vacío significa sin cantidad informada; cero desactiva la urgencia y muestra la invitación a consultar. Si confirmas que está agotada, retírala con el motivo **Sin stock**. Duplicar para otras fechas comienza sin cupos; cambiar fecha, origen o programa de una salida invalida su referencia anterior. Los CSV conservan su formato actual y no editan cupos.
+Vacío significa sin cantidad informada; cero desactiva la urgencia y muestra la invitación a consultar. Si confirmas que está agotada, retírala con el motivo **Sin stock**. Una nueva fecha reutiliza el saldo compartido del programa y permite escoger su propia etiqueta. Los CSV conservan su formato actual y no editan cupos.
 
 ## Retirar y reactivar
 
@@ -38,7 +37,7 @@ Para reactivar, corrige precio, enlaces o fechas según corresponda; marca la co
 
 ## Flyers como archivos, migración y operaciones masivas
 
-Se admiten archivos JPEG, PNG, WebP y GIF de hasta 12 MB. Subir un archivo genera automáticamente su dirección de publicación; no es necesario pegar un enlace externo. La conversión automática a un formato/peso menor está pendiente: por ahora, usar archivos ya optimizados y comprobar que el texto comercial siga legible.
+Se admiten archivos JPEG, PNG, WebP y GIF de hasta 12 MB. Las imágenes estáticas nuevas se optimizan automáticamente al subir: se intenta generar WebP sin recortar ni ampliar, con lado máximo de 1.600 px. El ahorro final depende de la imagen. Los GIF y WebP animados mantienen la animación. Revisa siempre la legibilidad del texto comercial; las imágenes ya guardadas no se modifican automáticamente.
 
 El campo de enlace queda disponible para migrar imágenes existentes del Excel. Al guardar un enlace nuevo, el CMS intenta descargarlo automáticamente. Si falla, muestra el motivo y conserva el enlace para mostrar el flyer. «Copiar imágenes desde sus enlaces» permite reintentar hasta 50 pendientes por operación, conserva el original y reutiliza copias ya existentes. Repite la operación si quedan pendientes.
 

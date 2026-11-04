@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
     "test:integration": "tsx --env-file-if-exists=.env.local scripts/verify-cms.ts",
+    "test:r2": "tsx scripts/verify-r2.ts",
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
     "migrate:create": "node --env-file-if-exists=.env.local node_modules/payload/bin.js migrate:create",

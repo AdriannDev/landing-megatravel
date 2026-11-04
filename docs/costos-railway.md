@@ -10,7 +10,7 @@ En este proyecto, el proceso Next/Payload mantiene el panel, las sesiones y la A
 
 Como ejemplo aritmético, 400 imágenes de 200 KB suman aproximadamente **80 MB de almacenamiento**. No significa 80 MB de RAM ocupada permanentemente ni que cada visitante descargue las 400. El peso real y la calidad legible de los flyers deben verificarse.
 
-La carga normal de imágenes y la administración del contenido se realizan en Payload. Ver [configuración del CMS](cms.md#cms-del-proyecto-payload) y [pruebas locales](pruebas-locales.md). La optimización de imágenes y una futura caché/publicación estática son trabajos pendientes sobre esta misma arquitectura; deben conservar la actualización de precios, los retiros de America/Lima y la privacidad del historial.
+La carga normal de imágenes y la administración del contenido se realizan en Payload. La optimización de nuevas cargas con Sharp está implementada localmente; R2 requiere configuración y verificación reales. Una futura caché/publicación estática debe conservar la actualización de precios, los retiros de America/Lima y la privacidad del historial. Ver [R2 e imágenes](r2-imagenes.md).
 
 ## Estimación para este catálogo
 

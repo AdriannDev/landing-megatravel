@@ -1,8 +1,10 @@
 Esta carpeta corresponde al esquema de PostgreSQL. No contiene los datos del Excel: esos están en `migration/`, en la raíz del proyecto. Para el contexto completo, consulta [arquitectura](../../docs/arquitectura.md), [configuración](../../docs/configuracion.md) y [operación](../../docs/operacion.md).
 
-El 28 de octubre de 2026 se generaron dos migraciones PostgreSQL sin conexión a una base: `20261028_220221_initial` reconstruye el esquema anterior desde Git y `20261028_220255_programs_and_banner_placements` añade Programas/versiones, relaciones e índices y la ubicación de banners. La reversión elimina primero las claves foráneas para evitar referencias eliminadas por CASCADE. Su ejecución debe comprobarse en PostgreSQL de staging antes de producción.
+La cadena PostgreSQL incluye la migración inicial y cambios posteriores de programas, banners, cupos e imágenes. El 4 de noviembre de 2026 se comprobaron las primeras siete migraciones en la base de producción.
 
-En una base nueva se ejecutan ambas en orden. Una base PostgreSQL creada previamente por push requiere conciliar primero el esquema y el historial de migraciones: no ejecutar el CREATE inicial sobre tablas existentes. Tras el esquema, `npm run migrate:programs` prepara el reporte de datos y `-- --commit` aplica la unificación. El respaldo, reporte y reversión están documentados en [Datos y API](../../docs/datos-y-api.md#migración-de-salidas-existentes-a-programas). La migración de datos no modifica las versiones ni el historial anteriores.
+En una base nueva se ejecuta la cadena completa en orden. Una base PostgreSQL creada previamente por push requiere conciliar primero el esquema y el historial de migraciones: no ejecutar el CREATE inicial sobre tablas existentes. Las instrucciones de migración de datos y reversión están en [Datos y API](../../docs/datos-y-api.md#migración-de-salidas-existentes-a-programas).
+
+`20261104_171419_r2_media_storage` agrega la columna opcional `_objectkey` a `media`. El nuevo código la necesita con o sin R2, por lo que debe aplicarse antes de iniciar la nueva versión. Su reversión se detiene si existen claves R2. La prueba con PGlite comprobó la conservación de datos y la protección de reversión; falta verificarla en PostgreSQL real. Sigue el orden de [R2 e imágenes](../../docs/r2-imagenes.md).
 
 Para aplicar las migraciones preparadas en una PostgreSQL vacía de staging:
 

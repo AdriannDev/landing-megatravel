@@ -15,7 +15,7 @@ El repositorio se modifica para cambiar diseño, comportamiento, permisos, campo
 | Orden o contenido dentro de una tarjeta | `src/components/package-card.tsx` | Contrato público en `lib/types.ts`, proyección en `lib/catalog.ts` y estilos |
 | Logo o contacto de respaldo | `src/lib/brand-config.ts` y `src/components/brand.tsx` | En modo CMS, el contacto real se edita en Configuración del catálogo |
 | Contacto que aparece en el catálogo CMS | Global Configuración del catálogo en `/admin` | Valores por defecto solo si no hay configuración guardada |
-| Título del navegador, descripción o icono | `src/app/(catalog)/layout.tsx` y `public/icon.svg` | Metadatos del preview se definen en su página |
+| Título del navegador, descripción o icono | `src/app/(catalog)/layout.tsx` y `public/favicon-megatravel.png` | Metadatos del preview se definen en su página |
 | Banners reales y periodos | Colección Banners en `/admin` | Alternativa estática y versión móvil |
 | Apariencia/controles de los banners | `src/components/campaign-banner.tsx` | CSS y preferencias de movimiento reducido |
 | Número de tarjetas por página | `PAGE_SIZE` en `src/lib/catalog.ts` | Prueba de paginación y tamaños del catálogo |

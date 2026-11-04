@@ -11,6 +11,11 @@ import { AuditLog, Banners, Campaigns, CruiseLines, Departures, Destinations, Me
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const useSqlite = process.env.USE_SQLITE === 'true' && process.env.NODE_ENV !== 'production'
+const r2Variables = ['R2_ENDPOINT', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_PUBLIC_URL'] as const
+if (process.env.R2_BUCKET) {
+  const missing = r2Variables.filter(name => !process.env[name]?.trim())
+  if (missing.length) throw new Error(`Faltan variables para el almacenamiento R2: ${missing.join(', ')}`)
+}
 if (process.env.NODE_ENV === 'production' && (!process.env.PAYLOAD_SECRET || process.env.PAYLOAD_SECRET.length < 32 || process.env.PAYLOAD_SECRET.startsWith('replace-'))) {
   throw new Error('Configura un PAYLOAD_SECRET aleatorio de al menos 32 caracteres antes de iniciar en producción.')
 }
@@ -21,8 +26,8 @@ export default buildConfig({
   csrf: [process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'],
   admin: {
     user: 'users', theme: 'light', importMap: { baseDir: dirname },
-    meta: { titleSuffix: ' | Equipo Megatravel' },
-    components: { beforeNavLinks: ['/components/admin/panel-navigation#PanelNavigation'], views: { dashboard: { Component: '/components/admin/admin-home#AdminHome' }, newDeparture: { Component: '/components/admin/new-departure-view#NewDepartureView', path: '/new-departure', exact: true }, newDate: { Component: '/components/admin/new-date-view#NewDateView', path: '/new-date', exact: true } } },
+    meta: { titleSuffix: ' | Equipo Megatravel', icons: { icon: '/favicon-megatravel.png' } },
+    components: { graphics: { Logo: '/components/admin/brand#PanelLogo', Icon: '/components/admin/brand#PanelIcon' }, beforeNavLinks: ['/components/admin/panel-navigation#PanelNavigation'], views: { dashboard: { Component: '/components/admin/admin-home#AdminHome' }, newDeparture: { Component: '/components/admin/new-departure-view#NewDepartureView', path: '/new-departure', exact: true }, newDate: { Component: '/components/admin/new-date-view#NewDateView', path: '/new-date', exact: true } } },
     dateFormat: 'dd/MM/yyyy HH:mm',
     timezones: { defaultTimezone: 'America/Lima', supportedTimezones: [{ label: 'Lima (UTC−05:00)', value: 'America/Lima' }] },
   },
@@ -38,7 +43,7 @@ export default buildConfig({
   sharp,
   upload: { limits: { fileSize: 12 * 1024 * 1024 } },
   plugins: process.env.R2_BUCKET ? [s3Storage({
-    collections: { media: { generateFileURL: ({ filename, prefix }) => `${process.env.R2_PUBLIC_URL}/${prefix ? prefix + '/' : ''}${filename}` } },
+    collections: { media: { generateFileURL: ({ filename, prefix }) => `${process.env.R2_PUBLIC_URL!.replace(/\/+$/, '')}/${[...(prefix ? prefix.split('/') : []), filename].map(encodeURIComponent).join('/')}` } },
     bucket: process.env.R2_BUCKET,
     config: { region: 'auto', endpoint: process.env.R2_ENDPOINT, forcePathStyle: true, credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID || '', secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '' } },
   })] : [],

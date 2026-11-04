@@ -32,7 +32,7 @@ Sin R2, los archivos guardados en el contenedor son temporales y pueden desapare
 
 ## Inicializar esquema y administrador
 
-La aplicación en producción no crea automáticamente las tablas. Hay siete migraciones registradas en `src/migrations/index.ts`; están preparadas, pero aún falta verificarlas con el adaptador Payload contra PostgreSQL real. Una base nueva debe recibirlas en orden mediante el comando existente, sin crear una migración inicial adicional:
+La aplicación en producción no crea automáticamente las tablas. La cadena registrada en `src/migrations/index.ts` incluye la nueva migración para R2; las primeras siete se comprobaron en producción y la nueva requiere verificación allí. Una base nueva debe recibir toda la cadena en orden mediante el comando existente, sin crear una migración inicial adicional:
 
 ```sh
 npm run migrate

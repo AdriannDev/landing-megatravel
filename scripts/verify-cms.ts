@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
+import sharp from 'sharp'
 process.env.USE_SQLITE = 'true'
 Object.assign(process.env, { NODE_ENV: 'test' })
 process.env.PAYLOAD_SECRET = randomUUID() + randomUUID()
@@ -28,10 +29,30 @@ try {
   assert.match(autoCampaign.slug, /^promo-[a-f0-9-]+$/)
   const editedCampaign = await payload.update({ collection: 'campaigns', id: autoCampaign.id, req, overrideAccess: false, data: { name: 'Promoción actualizada' } })
   assert.equal(editedCampaign.slug, autoCampaign.slug); checks++
-  const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a8XcAAAAASUVORK5CYII=', 'base64')
+  const image = await sharp({ create: { width: 2, height: 2, channels: 3, background: '#f90' } }).png().toBuffer()
   const uploaded = await payload.create({ collection: 'media', req, overrideAccess: false, data: { alt: 'Imagen de prueba de persistencia' }, file: { data: image, size: image.length, mimetype: 'image/png', name: 'persistence.png' } })
   assert.ok(uploaded.filename)
   assert.ok((await readFile(path.join(process.env.MEDIA_DIR, uploaded.filename))).length > 0); checks++
+  const largeImage = await sharp({ create: { width: 2200, height: 1100, channels: 3, background: '#2468ab' } }).png().toBuffer()
+  const optimizedImage = await payload.create({ collection: 'media', req, overrideAccess: false, data: { alt: 'Imagen optimizada' }, file: { data: largeImage, size: largeImage.length, mimetype: 'image/png', name: 'large.png' } })
+  const savedImage = await readFile(path.join(process.env.MEDIA_DIR, optimizedImage.filename!))
+  const savedMetadata = await sharp(savedImage).metadata()
+  assert.equal(savedMetadata.format, 'webp'); assert.equal(savedMetadata.width, 1600); assert.equal(savedMetadata.height, 800)
+  assert.ok(savedImage.length < largeImage.length); assert.equal(optimizedImage.mimeType, 'image/webp'); checks++
+  const smallImage = await sharp({ create: { width: 400, height: 200, channels: 3, background: '#f90' } }).png().toBuffer()
+  const replacedImage = await payload.update({ collection: 'media', id: optimizedImage.id, req, overrideAccess: false, data: { alt: 'Imagen reemplazada' }, file: { data: smallImage, size: smallImage.length, mimetype: 'image/png', name: 'small.png' } })
+  const replacedMetadata = await sharp(await readFile(path.join(process.env.MEDIA_DIR, replacedImage.filename!))).metadata()
+  assert.equal(replacedMetadata.width, 400); assert.equal(replacedMetadata.height, 200); checks++
+  const animation = Buffer.from('47494638396101000100800000000000ffffff21f904000a0000002c000000000100010000020244010021f904000a0000002c00000000010001000002024c01003b', 'hex')
+  const animatedImage = await payload.create({ collection: 'media', req, overrideAccess: false, data: { alt: 'Animación de prueba' }, file: { data: animation, size: animation.length, mimetype: 'image/gif', name: 'animated.gif' } })
+  const animationMetadata = await sharp(await readFile(path.join(process.env.MEDIA_DIR, animatedImage.filename!)), { animated: true }).metadata()
+  assert.equal(animationMetadata.format, 'gif'); assert.equal(animationMetadata.pages, 2); checks++
+  const animatedWebp = await sharp(animation, { animated: true }).webp({ lossless: true }).toBuffer()
+  const webpAnimation = await payload.create({ collection: 'media', req, overrideAccess: false, data: { alt: 'WebP animado de prueba' }, file: { data: animatedWebp, size: animatedWebp.length, mimetype: 'image/webp', name: 'animated.webp' } })
+  assert.equal((await sharp(await readFile(path.join(process.env.MEDIA_DIR, webpAnimation.filename!)), { animated: true }).metadata()).pages, 2); checks++
+  const jpeg = await sharp({ create: { width: 1800, height: 900, channels: 3, background: '#2468ab' } }).jpeg({ quality: 100 }).toBuffer()
+  const optimizedJpeg = await payload.create({ collection: 'media', req, overrideAccess: false, data: { alt: 'JPEG optimizado' }, file: { data: jpeg, size: jpeg.length, mimetype: 'image/jpeg', name: 'original.jpg' } })
+  assert.equal(optimizedJpeg.mimeType, 'image/webp'); assert.ok(optimizedJpeg.filesize! < jpeg.length); checks++
   await assert.rejects(() => payload.create({ collection: 'users', req, overrideAccess: false, data: { name: 'Prohibido', email: 'forbidden@example.test', password: randomUUID(), role: 'admin' } })); checks++
   await assert.rejects(() => payload.findGlobal({ slug: 'settings', req, overrideAccess: false })); checks++
   const destination = await payload.create({ collection: 'destinations', req, overrideAccess: false, data: { name: 'Madrid' } })
@@ -111,6 +132,12 @@ try {
   assert.equal((await payload.count({ collection: 'departures', overrideAccess: true, where: { sourceKey: { equals: 'dry-run-test' } } })).totalDocs, 0); checks++
   await assert.rejects(() => payload.find({ collection: 'programs', overrideAccess: false })); checks++
   const input = { seatsConfirmed: true, program: { program: 'Programa compartido', mtpe: ' shared1 ', destination: 'Cusco', zone: 'Perú', days: 5, nights: 4, availableSeats: 15, seatsConfirmed: true, bookingUrl: 'https://www.megatravel.pe/es/', descriptionUrl: 'https://cafe.megatravel.pe/' }, origin: 'Lima', departures: [{ date: '2029-07-10', price: 1599, lastSeats: false }, { date: '2029-08-10', price: 1699, lastSeats: true }] }
+  const imageCount = (await payload.count({ collection: 'media', req })).totalDocs
+  const withExistingImage = await createDepartures(payload, req, { ...input, program: { ...input.program, mtpe: 'EXISTINGIMG', flyer: uploaded.id }, departures: [{ date: '2036-01-10', price: 1500 }] })
+  const imageProgram = await payload.findByID({ collection: 'programs', id: withExistingImage.programId, req, depth: 0 })
+  assert.equal(imageProgram.flyer, uploaded.id)
+  assert.equal((await payload.count({ collection: 'media', req })).totalDocs, imageCount)
+  await assert.rejects(() => createDepartures(payload, req, { ...input, program: { ...input.program, mtpe: 'MISSINGIMG', flyer: 999999999 }, departures: [{ date: '2036-02-10', price: 1500 }] }), /imagen seleccionada/); checks++
   const batch = await createDepartures(payload, req, input)
   assert.equal(batch.created.length, 2)
   const shared = await payload.findByID({ collection: 'programs', id: batch.programId, req, overrideAccess: false })
@@ -167,6 +194,11 @@ try {
   const duplicated = await duplicateDepartures(payload, req, batch.created[0].id, [{ date: '2029-10-10', price: 1799 }])
   assert.equal(duplicated.programId, shared.id)
   assert.equal((await payload.findByID({ collection: 'departures', id: duplicated.created[0].id, req })).status, 'draft'); checks++
+  const publishedDates = await duplicateDepartures(payload, req, batch.created[0].id, [{ date: '2036-03-10', price: 1799 }, { date: '2036-04-10', price: 1899 }], false, 'published')
+  assert.ok((await Promise.all(publishedDates.created.map(item => payload.findByID({ collection: 'departures', id: item.id, req })))).every(doc => doc.status === 'published'))
+  const beforeBadDuplicate = (await payload.count({ collection: 'departures', req })).totalDocs
+  await assert.rejects(() => duplicateDepartures(payload, req, batch.created[0].id, [{ date: '2036-05-10', price: 1799 }, { date: '2020-01-10', price: 1799 }], false, 'published'))
+  assert.equal((await payload.count({ collection: 'departures', req })).totalDocs, beforeBadDuplicate); checks++
   const duplicateSeats = await payload.findByID({ collection: 'departures', id: duplicated.created[0].id, req })
   assert.equal(duplicateSeats.availableSeats, 15); assert.equal(duplicateSeats.lastSeats, false); assert.ok(duplicateSeats.seatsCheckedAt); checks++
   await assert.rejects(() => duplicateDepartures(payload, req, batch.created[0].id, [{ date: '2029-11-10', price: 1799, lastSeats: true }]), /Confirma/)

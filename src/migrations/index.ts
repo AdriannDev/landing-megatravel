@@ -5,6 +5,7 @@ import * as migration_20261029_175432_departure_seat_references from './20261029
 import * as migration_20261102_120000_popup_formats from './20261102_120000_popup_formats';
 import * as migration_20261102_130000_departure_deletion from './20261102_130000_departure_deletion';
 import * as migration_20261102_173707_program_shared_seats from './20261102_173707_program_shared_seats';
+import * as migration_20261104_171419_r2_media_storage from './20261104_171419_r2_media_storage';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20261102_173707_program_shared_seats.up,
     down: migration_20261102_173707_program_shared_seats.down,
-    name: '20261102_173707_program_shared_seats'
+    name: '20261102_173707_program_shared_seats',
+  },
+  {
+    up: migration_20261104_171419_r2_media_storage.up,
+    down: migration_20261104_171419_r2_media_storage.down,
+    name: '20261104_171419_r2_media_storage'
   },
 ];

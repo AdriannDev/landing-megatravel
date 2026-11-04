@@ -52,14 +52,11 @@ export function PanelNavigation() {
   return (
     <div className="mt-panel-navigation">
       <Link className="mt-panel-brand" href={admin}>
-        <span className="mt-panel-mark" aria-hidden="true">
-          ✦
-        </span>
         <span>
-          mega travel<small>PANEL DE GESTIÓN</small>
+          <img className="mt-panel-logo" src="/logo-megatravel.png" alt="Megatravel" width={160} height={54} />
         </span>
       </Link>
-      <div className="mt-panel-nav-heading">Gestión comercial</div>
+      <div className="mt-panel-nav-heading">Gestión de programas</div>
       {link("Salidas", "/collections/departures")}
       {link("Programas", "/collections/programs")}
       {link("Promociones", "/collections/campaigns")}
@@ -91,7 +88,7 @@ export function PanelNavigation() {
       <div className="mt-panel-nav-footer">
         Panel de administración
         <br />
-        <strong>Equipo comercial</strong>
+        <strong>Equipo Producto</strong>
       </div>
     </div>
   );

@@ -94,7 +94,7 @@ Para cupos referenciales, el 29 de octubre se verificaron 50 pruebas de dominio 
 
 La revisión visual posterior del 29 de octubre incorporó las referencias de `Images/`: franja de últimos cupos con cantidad bajo el flyer y boleto dorado para Año Nuevo. Se verificaron cards y hero a 375, 768 y 1440 px: sin desbordes, sin franja adicional bajo el banner, flechas laterales y pausa en esquina con áreas de 44 px. También se comprobó el banner horizontal sin versión móvil a 320 px: los controles permanecen dentro de la imagen y no se solapan. En gstack se comprobaron navegación, avance automático, pausa/reanudación, eventos táctiles del control y preferencia de movimiento reducido. Se corrigió la pausa involuntaria al cambiar el icono de reproducción bajo el puntero. Las referencias gráficas siguen excluidas de Git.
 
-El recorrido manual por navegador, el ciclo completo de la tarea de retiros y la validación PostgreSQL siguen pendientes. La conversión automática de imágenes y el adaptador de correo aún requieren implementación; iniciar localmente no las habilita. Para correo se podrá utilizar un servidor SMTP de pruebas local al incorporar el adaptador.
+El recorrido manual por navegador, el ciclo completo de la tarea de retiros y la validación contra PostgreSQL real siguen pendientes. La optimización de imágenes nuevas está implementada y se comprueba con `npm run test:integration` y `npm run test:r2`; esta última usa un servidor S3 simulado. El adaptador de correo sigue pendiente.
 
 ## Nivel 2: PostgreSQL y despliegue local comparable
 

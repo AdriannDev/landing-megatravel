@@ -1,111 +1,20 @@
-# Estado y próximos pasos del desarrollo
+﻿# Estado y próximos pasos
 
-Revisión del 24 de octubre de 2026. Este documento describe lo comprobado en el repositorio local; no acredita servicios ni despliegues en cuentas externas.
+Última revisión de servicios: 4 de noviembre de 2026. La configuración y los datos pueden cambiar después de esa fecha.
 
-## Entrega del 28 de octubre de 2026: banners, Programas y administrador
+## Comprobado
 
-Implementados el hero de ancho completo, banners opcionales en tres ubicaciones, autoplay de seis segundos con controles/pausa, movimiento reducido y filtros inicialmente cerrados con fechas visibles. `/admin` entra en la tabla de Salidas; Publicadas usa vigencia, Próximas abarca siete días y Retiradas incluye vencidas pendientes del cron. Vista, búsqueda y página persisten en la URL. Se conservan columnas y edición masiva de Payload.
+- El proyecto Railway contiene una aplicación Next.js/Payload y PostgreSQL con volumen persistente. El servicio web usa la conexión privada, el catálogo CMS y el dominio Railway.
+- El despliegue automático está activado para `main`. El último despliegue revisado correspondía al commit `cd7dc98`; cualquier cambio posterior requiere comprobar su propio resultado en Railway.
+- Las primeras siete migraciones PostgreSQL estaban aplicadas. La migración posterior para R2 aún no se ha aplicado. `/api/health` respondió correctamente y el catálogo público mostró las salidas vigentes.
+- El entorno local revisado usa SQLite, separado de PostgreSQL de producción. La integración se verifica con otra SQLite y medios aislados bajo `.qa`.
 
-Programas tiene MTPE único y contenido común. Nueva salida permite seleccionar/crear un programa y guardar entre 1 y 30 fechas/precios en una transacción, también con flyer opcional. La duplicación reutiliza el programa. Los cambios compartidos llegan al catálogo, tabla, previews y CSV; un flyer vacío utiliza la imagen de Megatravel y sigue vacío en el origen. La API pública mantiene su lista de campos permitidos y el refresco de 30 segundos.
+## Pendiente de operación
 
-La migración reversible e idempotente conserva IDs, fechas, precios, estados, procedencia, marcas de tiempo, versiones e historial. Produce respaldo, reporte de valores reemplazados y manifiesto de reversión. Instrucciones en [Datos y API](datos-y-api.md#migración-de-salidas-existentes-a-programas).
+1. Rotar el secreto de Payload y la contraseña de PostgreSQL expuestos en la salida técnica de una revisión. Seguir [la guía de Railway](guia-railway-operacion.md).
+2. Configurar R2, recuperar las imágenes que faltan y probar un redespliegue. La optimización automática de cargas nuevas está implementada localmente; seguir [R2 e imágenes](r2-imagenes.md), incluida la migración de esquema previa al despliegue.
+3. Configurar copias, probar la restauración en un destino independiente y mantener copias de los archivos.
+4. Configurar el chequeo de salud efectivo en Railway y revisar la migración de `railway.toml` antes de su retirada. El endpoint existe, pero el servicio revisado no tenía configurado el chequeo.
+5. Configurar la tarea de retiros y el correo transaccional. El catálogo filtra las salidas vencidas aun sin cron, pero su retiro administrativo no queda registrado automáticamente.
 
-Validación actual: **39 pruebas de dominio**, **34 comprobaciones de integración** con SQLite/medios aislados; tipos completos, tipos del dominio y comprobación de fuentes. Build de producción y recorrido con gstack browse completados. Payload genera advertencias Sass de dependencias y la integración avisa del adaptador de correo pendiente; no hubo errores de compilación. Se probaron cero/uno/varios banners, ubicaciones, arte completo, carga diferida, autoplay, pausa, movimiento reducido, visibilidad, filtros móviles, creación de dos fechas, vistas del administrador, búsqueda y paginación. No hubo desbordamiento en 375, 768 y 1440 px. Evidencias locales privadas en `.qa/browser/`.
-
-La integración incluye publicación sin flyer, sustitución compartida, unicidad de MTPE/fecha/origen, rollback de programa/salidas/referencias/medios/auditoría, lote de 30 fechas y migración repetida/revertida con versiones e historial intactos. Windows requiere ejecutar `tsx`, build y el navegador fuera del sandbox. Para no interferir con el servidor existente, el recorrido usa el puerto 3100 y `NEXT_BUILD_DIR=.next-qa`.
-
-Migraciones PostgreSQL generadas: `20261028_220221_initial` (base anterior) y `20261028_220255_programs_and_banner_placements` (cambio aditivo, con reversión). Pendiente para producción: aplicar y verificar estas migraciones en staging antes de la migración de datos; restauración de copia completa, R2/volumen, correo y despliegue. Se migró la SQLite local: **409 salidas a 96 programas**, con 60 valores compartidos unificados. Se comprobó que IDs, fechas, precios, estados, procedencia, marcas de tiempo, versiones e historial permanecieran intactos, además de la integridad referencial. Una segunda ejecución creó cero programas y modificó cero salidas. Respaldo de la primera aplicación: `backups/programas-2026-10-28T22-25-20-233Z.backup.json`, con `.sqlite.db`, `.report.json` y `.applied.json` del mismo prefijo. No se publicó el sitio. Las secciones anteriores de validación se conservan como historial y sus recuentos no sustituyen los de esta entrega.
-
-La preparación del esquema SQLite detectó dos fallos de Drizzle: copiar columnas nuevas durante una reconstrucción y emitir los índices dos veces. El CLI añade las columnas con copia previa y aplica el plan dentro de una transacción, evitando índices repetidos y comprobando los valores de todas las columnas originales antes de confirmar. Se validaron las 21 tablas y 409 salidas en una copia antes de actualizar la base local. Aprendizaje operativo: no usar el push de desarrollo para esta transición sobre una SQLite existente.
-
-## Actualización del 27 de octubre: acceso al administrador local
-
-Se reprodujo el error de `/admin`: `.env.local` existía vacío y Payload intentaba conectarse a PostgreSQL sin una conexión configurada. Se preparó SQLite local en `megatravel.db`, un `PAYLOAD_SECRET` aleatorio y la primera cuenta administradora con el correo indicado por el usuario. La contraseña temporal está en `.qa/admin-access/acceso-local.txt`, excluido de Git, y se eliminó `ADMIN_PASSWORD` del entorno después del bootstrap. No se modificaron los permisos ni el mecanismo de autenticación.
-
-Se activó `CATALOG_SOURCE=cms` y se validó/importó el CSV histórico con `--skip-images`: 409 registros aceptados de 411; las filas 2 y 3 quedaron excluidas por haber alcanzado su fecha de retiro. Los reportes privados están en `migration/import-report-dry-run.json` y `migration/import-report-commit.json`. Se conservaron los datos originales y los enlaces de los flyers.
-
-El navegador de gstack comprobó el fallo original y la pantalla de inicio de sesión corregida, sin errores nuevos de consola (queda una advertencia de precarga CSS en desarrollo). Una comprobación local de API confirmó inicio de sesión HTTP 200 con rol Administrador, 231 salidas en el catálogo público y HTTP 403 para lectura anónima de la colección privada. La base contiene diez borradores, 231 publicados y 168 retirados. Las 31 pruebas del proyecto pasaron. El recorrido completo de edición/carga por navegador sigue pendiente de la sesión del usuario; no se introdujeron contraseñas en el navegador automatizado. La guía de [CMS](cms.md) incluye el acceso preparado y el flujo para crear programas.
-
-Quedan pendientes PostgreSQL, migraciones de producción, almacenamiento persistente, correo transaccional y despliegue. Las afirmaciones sobre ausencia de `.env.local`, cuenta e importación de la revisión del 24 de octubre que aparece debajo describen el estado anterior a esta actualización.
-
-## Actualización del 26 de octubre: filtros del catálogo
-
-Se corrigió la distribución del panel lateral: más ancho en escritorio/tablet, fechas con etiqueta encima y campo de ancho completo, y nombres largos de opciones que se ajustan dentro del panel. En móvil, las fechas tienen 44 px de altura, texto de 16 px y un panel desplazable con el botón de resultados accesible. También se corrigió el margen de las pestañas de promoción a 360 px o menos y se adaptaron los precios de las tarjetas al espacio disponible.
-
-La prueba de interacción detectó que la sincronización inicial de la URL podía borrar la primera fecha elegida. Se eliminó esa sincronización redundante: el estado inicial ya llega en la consulta del servidor y el evento `popstate` sigue restaurando los filtros al navegar atrás/adelante.
-
-Verificado con el navegador de gstack en una instancia local aislada y código idéntico al de la carpeta principal: 13 anchos (320, 360, 390, 480, 760, 761, 768, 900, 1000, 1024, 1100, 1280 y 1440 px), siete grupos de filtros accesibles, fechas legibles y ausencia de desbordamiento horizontal. Se probaron fechas + zona, URL, limpieza, atrás/adelante y cierre/reapertura del diálogo móvil. Pasaron las 31 pruebas existentes, TypeScript y la comprobación de sintaxis de 57 archivos. Las capturas y recorridos locales se conservan en `.qa/filter-layout/`, que no se versiona.
-
-Esta revisión cubre los filtros y la distribución contigua del catálogo. El recorrido completo del editor, el resto de la aceptación visual y las comprobaciones de servicios de producción de las secciones siguientes continúan pendientes. Algunos flyers externos respondieron HTTP 403 durante la prueba; su descarga no forma parte de esta corrección.
-
-## Qué está implementado y qué se verificó
-
-El catálogo y Payload CMS comparten una aplicación Next.js. El panel está en `/admin`, en español, con administradores y editores. Ya existen salidas, publicación/retiro/reactivación, historial, promociones, banners, importación/exportación CSV y herramientas para duplicar programas y crear fechas. No hace falta desarrollar otro panel ni contratar un servidor independiente para el CMS.
-
-| Comprobación | Resultado de esta revisión | Límite |
-| --- | --- | --- |
-| `npm test` | 31 pruebas aprobadas | Dominio e importación; incluye conciliación con el Excel local |
-| `npm run check:source` | Correcto | Sintaxis, no despliegue |
-| `npm run check:domain` | Correcto | Tipos de las reglas independientes |
-| `npm run typecheck` | Correcto después de corregir 13 errores | Tipos del proyecto |
-| `npm run test:integration` | 14 comprobaciones aprobadas | Payload con SQLite y medios aislados en `.qa/`; no PostgreSQL ni R2 |
-| `npm run build` | Completado en Node 24.22.1, sin advertencias de compilación | Build local en modo `workbook`; no se verificó el contenedor Linux |
-| Inspección visual y prueba completa por navegador | Pendiente | Escritorio, móvil, teclado y recorrido del editor |
-| Migración/restauración PostgreSQL y lanzamiento | Pendiente | Requieren los servicios correspondientes |
-
-La instalación global de Node se actualizó de 24.19.0 a **24.22.1 LTS**, con npm **11.19.1**, el 24 de octubre. Se comprobó el instalador oficial con SHA256 y firma OpenJS Foundation; Windows exigió elevación de administrador y la instalación elevada terminó con código 0, sin reinicio. El proyecto ya tiene esa referencia en `.nvmrc` y `engines`.
-
-Next.js **16.4.3** ya estaba instalado y se confirmó como última versión estable mediante npm y el release oficial. Es compatible con `@payloadcms/next@3.90.2`. La actualización que faltaba era la del motor Node. Ver [procedimiento y diferencia entre versiones](configuracion.md#actualizar-nodejs-y-comprobar-nextjs).
-
-El sandbox de Windows bloqueó inicialmente `tsx` con `uv_os_get_passwd`; integración y build se ejecutan fuera del sandbox con autorización. Eso no es un requisito de Railway.
-
-Tras la actualización de Node se repitieron las comprobaciones de la tabla: 31 pruebas, tipos completos y del dominio, sintaxis, 14 comprobaciones del CMS y build correctos. La integración sigue avisando de la falta del adaptador de correo, pendiente de configuración. El build anterior con Node 24.19.0 terminó con advertencias; el último, con 24.22.1, terminó sin advertencias de compilación.
-
-No existe `.env.local` en esta revisión. No se encontraron Docker ni las herramientas PostgreSQL en el PATH de esta sesión. Existen dependencias instaladas y el repositorio se gestiona en `main` con el remoto `origin`. El estado de los commits se consulta con `git log` y `git status`; la publicación del código no acredita un despliegue.
-
-## Orden de continuación
-
-El usuario confirmó mantener **Payload como CMS**, con Next.js y PostgreSQL para producción en Railway. Las imágenes se suben como archivos desde el panel. Primero se configura el entorno local y después se valida el flujo comercial antes del despliegue. El [presupuesto](costos-railway.md) recoge el consumo estimado de esta arquitectura.
-
-La [guía de pruebas locales](pruebas-locales.md) cubre SQLite para empezar y PostgreSQL/contenedor para validar la arquitectura de producción. La aceptación manual y PostgreSQL siguen pendientes; no se creó una cuenta de uso diario durante la documentación. La configuración del secreto propio, el administrador y el origen CMS se realiza siguiendo [la guía de Payload](cms.md).
-
-| Prioridad | Pendiente | Cómo se da por terminado |
-| --- | --- | --- |
-| 0: aceptación | Validar localmente Payload con las tareas del equipo | Recorrido como administrador/editor y evaluación de formularios, imágenes, retiros y herramientas; documentar ajustes |
-| 0: arquitectura pública | Definir caché/publicación estática según el presupuesto | Conservar permisos, actualización de precios y cortes de retiro; verificar costo total y funciones conservadas |
-| 1: desarrollo local | Crear `.env.local`, secreto propio y primera cuenta | Bootstrap correcto y acceso real a `/admin`; seguir [CMS](cms.md) |
-| 1: desarrollo local | Activar `CATALOG_SOURCE=cms` e importar datos | Editar/publicar/retirar una salida y comprobar el catálogo |
-| 2: datos | Revisar errores de importación, flyers y diez borradores | Informe sin errores para los registros aceptados y enlaces comprobados |
-| 2: base de producción | Disponer de PostgreSQL de desarrollo/staging | Conexión válida, separada de producción; Docker Compose es una opción |
-| 2: esquema | Generar, revisar y aplicar la migración inicial | Archivos en `src/migrations/` versionados y arranque contra PostgreSQL vacío |
-| 2: archivos | Elegir R2 o volumen persistente en Railway | Una carga sigue disponible después de reiniciar y volver a desplegar |
-| 2: acceso | Incorporar y configurar correo transaccional | Recuperación de contraseña recibida y enlace válido |
-| 3: aceptación | Probar interfaz, permisos, enlaces y retiros | Recorrido completo como administrador y editor, escritorio/móvil |
-| 3: operación | Configurar tarea diaria y copias/restauración | Cron termina correctamente; restauración comprobada en otra base |
-| 3: publicación | Configurar Railway, dominio, DNS y presupuesto | HTTPS, `/api/health` en modo CMS y estimación basada en métricas reales |
-
-Para el correo falta implementar un adaptador en `src/payload.config.ts` y configurar un proveedor/remitente. Actualmente Payload informa que escribe el correo en consola. El inicio de sesión funciona, pero la recuperación por correo no debe darse por habilitada. No existen variables SMTP implementadas que baste con rellenar. [Correo en Payload](https://payloadcms.com/docs/email/overview).
-
-La preparación del Excel contiene 411 registros: 233 con estado publicado, diez borradores y 168 retirados. Son recuentos del archivo preparado el 23 de octubre, no del catálogo visible hoy. La vigencia se comprueba con la fecha actual; una importación posterior puede rechazar publicaciones vencidas. Hay que revisar el informe y resolver esos casos conservando su procedencia.
-
-## Cambios realizados el 24 de octubre
-
-- Corregidos los tipos de validadores, relaciones del importador y plantilla de duplicación. La plantilla conserva una lista explícita de campos comerciales.
-- La copia de flyers informa cuando una salida no tiene URL de origen.
-- `bootstrap`, `import:cms` y `test:integration` aceptan variables del servicio sin exigir un archivo `.env.local`. Cuando el archivo existe, lo siguen cargando.
-- Añadida `MEDIA_DIR` para fijar la carpeta de cargas locales. El Dockerfile establece `/app/media`, de modo que el servidor standalone y los scripts puedan compartir la misma ruta. El volumen real y sus permisos siguen pendientes de probar en Railway.
-- Regenerado el mapa de componentes del panel mediante el build.
-- Corregida la comprobación del responsable de retiro cuando Payload devuelve la relación poblada. Añadida una carga real de imagen a la prueba aislada y evitada la descarga remota de su flyer de ejemplo.
-- Añadidas las guías de [configuración y uso del CMS](cms.md) y [presupuesto Railway](costos-railway.md).
-- Actualizado Node global a 24.22.1 LTS y npm a 11.19.1. Next 16.4.3 se verificó como versión estable vigente y compatible con Payload.
-- Actualizado el presupuesto con las 1,000 personas mensuales informadas por el usuario: ejemplos de tráfico de USD 0.15–1.00, consumo permanente de app/base y alternativas de caché o catálogo estático. Son estimaciones condicionadas al consumo real de memoria; esas alternativas de arquitectura siguen pendientes de implementación.
-- Registrada la preferencia por optimizar la entrega pública del catálogo. La estimación de Railway queda limitada a la arquitectura actual y debe sustituirse por mediciones del despliegue.
-- Documentada la carga normal de archivos como flujo principal de imágenes. Ya existe en Payload; la compresión automática y las versiones de imagen están pendientes. Los enlaces se mantienen documentados para migración y procedencia.
-- Confirmado Payload como CMS para el alcance comercial actual y la prueba del panel con usuarios no técnicos. La documentación se unificó alrededor de esta elección, eliminando evaluaciones de otros CMS y alojamientos.
-- Añadida la guía de aceptación local con SQLite, PostgreSQL, archivos, tarea de retiro y límites de las pruebas frente a los servicios del proveedor.
-
-No se crearon cuentas comerciales, no se importó contenido en una base de operación y no se contrataron ni desplegaron servicios.
-
-## Documentar cada entrega
-
-Una parte del desarrollo se considera terminada cuando incluye código, comprobaciones pertinentes y documentación del comportamiento resultante. Actualizar la guía afectada, las nuevas variables/comandos, los cambios de esquema y este estado cuando cambien los pendientes. Registrar fecha, resultado de validación y limitaciones; conservar los reportes anteriores como históricos. El procedimiento está en [mantenimiento](mantenimiento.md#documentación-de-cada-cambio).
+Las migraciones futuras deben probarse y aplicarse de forma explícita: un push no ejecuta `npm run migrate`. Antes de cada despliegue revisa pruebas, cambios de esquema, copias y el estado final de Railway. Las instrucciones históricas de preparación siguen en Git; no describen necesariamente el estado actual.

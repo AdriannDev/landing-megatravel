@@ -10,6 +10,7 @@ import { departureViewWhere, parseDepartureView } from '../lib/admin-views'
 import { sharedFields } from '../lib/programs'
 import { DEFAULT_SEATS_VALIDITY_HOURS, MAX_SEATS_VALIDITY_HOURS, validSeatCount } from '../lib/availability'
 import { getSeatSettings } from '../server/availability-settings'
+import { optimizeMedia } from '../server/optimize-media'
 
 const urlValidation = (value: unknown) => !value || safeExternalUrl(value) || 'Usa un enlace HTTPS completo, sin usuario ni contraseña.'
 const period: Field[] = [
@@ -23,9 +24,12 @@ export const Media: CollectionConfig = {
   slug: 'media', labels: { singular: 'Imagen', plural: 'Imágenes' },
   access: { ...contentAccess, read: () => true }, admin: { group: 'Contenido', useAsTitle: 'alt', description: 'Biblioteca de imágenes. Programas: ideal 800 × 800 px; banners: 1600 × 600 px; popup: 1200 × 900 px; versión móvil: 800 × 800 px. Se admiten otros tamaños y proporciones. Máximo 12 MB, JPEG, PNG, WebP o GIF.' },
   upload: { staticDir: path.resolve(process.env.MEDIA_DIR || 'media'), mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], crop: false, focalPoint: false },
+  hooks: { beforeOperation: [optimizeMedia] },
   fields: [
     { name: 'alt', label: 'Texto alternativo', type: 'text', required: true },
     { name: 'sourceUrl', label: 'Enlace original', type: 'text', unique: true, index: true, access: { read: ({ req }) => !!req.user }, admin: { readOnly: true } },
+    // Keep the schema stable with or without the S3 adapter enabled.
+    { name: '_objectKey', type: 'text', admin: { hidden: true, readOnly: true } },
   ],
 }
 

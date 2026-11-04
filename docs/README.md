@@ -1,6 +1,6 @@
 # Documentación del desarrollo
 
-Esta documentación describe el código existente y dónde modificarlo. Los pasos de lanzamiento son instrucciones para una etapa posterior; documentarlos no significa que se hayan ejecutado.
+Esta documentación describe el código y su operación. Distingue la configuración comprobada de los pasos pendientes.
 
 ## Por dónde empezar
 
@@ -17,6 +17,8 @@ Esta documentación describe el código existente y dónde modificarlo. Los paso
 | Configurar Railway, almacenamiento y dominio | [Producción y proveedores](produccion.md) |
 | Conectar GitHub, hacer push y trabajar en varios equipos | [Git y GitHub](github.md) |
 | Ejecutar el corte, retiros y copias de seguridad | [Operación y lanzamiento](operacion.md) |
+| Rotar credenciales y elegir almacenamiento o copias | [Guía práctica de Railway](guia-railway-operacion.md) |
+| Activar R2 y optimizar imágenes | [R2 e imágenes](r2-imagenes.md) |
 | Usar el CMS como editor comercial | [Guía de editores](editores.md) |
 | Consultar el plan futuro de automatización por correo y consolidado | [Plan de automatización de cupos](plan-automatizacion-cupos.md) |
 
@@ -35,4 +37,4 @@ El CMS elegido es **Payload**. Para la configuración pendiente, empieza por [co
 
 El registro de la implementación anterior está en [migration/verification.json](../migration/verification.json). Sus resultados corresponden a esa ejecución. El [estado del 24 de octubre](continuidad.md) registra las comprobaciones posteriores, repetidas con Node 24.22.1: 31 pruebas, 14 verificaciones del CMS con SQLite/medios aislados, tipos, sintaxis y build local completado sin advertencias de compilación.
 
-Siguen pendientes PostgreSQL y su migración inicial, archivos de producción, inspección visual, correo, restauración y despliegue. Node ya se actualizó a 24.22.1 LTS, con npm 11.19.1. Next 16.4.3 se confirmó como la versión estable vigente y compatible con Payload. El [presupuesto](costos-railway.md) incorpora las 1,000 personas mensuales informadas por el usuario. Toda entrega debe actualizar la documentación de la parte desarrollada y registrar su validación, según [mantenimiento](mantenimiento.md#documentación-de-cada-cambio).
+La revisión de Railway del 4 de noviembre confirmó la aplicación, PostgreSQL y las migraciones. Permanecen pendientes archivos persistentes, copias y restauración, correo, cron y ajustes del despliegue; ver [estado actual](continuidad.md). Los resultados históricos no sustituyen una prueba actual.

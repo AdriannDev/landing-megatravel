@@ -36,6 +36,7 @@ export function NewDate() {
   const [created, setCreated] = useState<
     { id: string | number; date: string; href: string; preview: string }[]
   >([]);
+  const [createdStatus, setCreatedStatus] = useState<"draft" | "published">("draft");
   useEffect(() => {
     const controller = new AbortController();
     fetch("/api/admin-tools/options", { signal: controller.signal })
@@ -67,12 +68,15 @@ export function NewDate() {
           e.preventDefault();
           setBusy(true);
           setError("");
+          const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+          const status = submitter?.value === "published" ? "published" : "draft";
           try {
             const response = await fetch("/api/admin-tools/duplicate", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 sourceId,
+                status,
                 seatsConfirmed:
                   new FormData(e.currentTarget).get("seatsConfirmed") === "on",
                 departures: rows.map((row) => ({
@@ -86,6 +90,7 @@ export function NewDate() {
             const result = await response.json();
             if (!response.ok)
               throw new Error(result.error || "No se pudo guardar.");
+            setCreatedStatus(status);
             setCreated(result.created);
           } catch (err) {
             setError((err as Error).message);
@@ -97,8 +102,7 @@ export function NewDate() {
         <fieldset disabled={busy || created.length > 0}>
           <legend>Programa y salida base</legend>
           <p>
-            Las condiciones comerciales se copiarán de la salida seleccionada;
-            elige la promoción de cada fecha por separado.
+            Se asignara la imagen y enlaces del bloqueo seleccionado.
           </p>
           <label>
             Salida base
@@ -217,20 +221,21 @@ export function NewDate() {
           >
             + Añadir otra fecha
           </button>
-          <p>
-            La cantidad de cupos se comparte con el programa. Aquí solo se
-            cambia la etiqueta individual. Las fechas se crearán como
-            borradores.
-          </p>
+          
           {rows.some((row) => row.lastSeats) && (
             <label className="mt-check">
               <input type="checkbox" name="seatsConfirmed" required />
               Confirmo que «Últimos cupos» está vigente en las fechas marcadas
             </label>
           )}
-          <button className="mt-tool-button" disabled={!sourceId} type="submit">
-            Crear {rows.length === 1 ? "borrador" : `${rows.length} borradores`}
-          </button>
+          <div className="mt-action-row">
+            <button className="mt-tool-button secondary" disabled={!sourceId} type="submit" value="draft">
+              Crear {rows.length === 1 ? "borrador" : `${rows.length} borradores`}
+            </button>
+            <button className="mt-tool-button" disabled={!sourceId} type="submit" value="published">
+              Publicar {rows.length === 1 ? "salida" : `${rows.length} salidas`}
+            </button>
+          </div>
         </fieldset>
       </form>
       {busy && <p role="status">Guardando fechas…</p>}
@@ -241,10 +246,10 @@ export function NewDate() {
       )}
       {created.length > 0 && (
         <div role="status">
-          <h2>Borradores creados</h2>
+          <h2>{createdStatus === "published" ? "Salidas publicadas" : "Borradores creados"}</h2>
           {created.map((item) => (
             <p key={item.id}>
-              <a href={item.href}>Revisar y publicar salida del {item.date}</a>{" "}
+              <a href={item.href}>{createdStatus === "published" ? "Ver salida" : "Revisar y publicar salida"} del {item.date}</a>{" "}
               ·{" "}
               <a href={item.preview} target="_blank" rel="noopener noreferrer">
                 Vista previa ↗

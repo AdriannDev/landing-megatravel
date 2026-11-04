@@ -72,7 +72,7 @@ export async function POST(request: Request, context: Context) {
     }
     const body = await request.json()
     if (action === 'duplicate') {
-      return NextResponse.json(await duplicateDepartures(payload, req, body.sourceId, body.departures, body.seatsConfirmed === true), { status: 201, headers: { 'Cache-Control': 'no-store' } })
+      return NextResponse.json(await duplicateDepartures(payload, req, body.sourceId, body.departures, body.seatsConfirmed === true, body.status), { status: 201, headers: { 'Cache-Control': 'no-store' } })
     }
     throw new AdminError('Operación no encontrada.', 404)
   } catch (error) { return failure(error) }

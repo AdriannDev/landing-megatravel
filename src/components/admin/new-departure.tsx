@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useListDrawer } from "@payloadcms/ui";
 import { PromotionSelect, usePromotionOptions } from "./promotion-select";
 
 type Program = {
@@ -11,6 +12,9 @@ type Program = {
   seatsMigrationPending?: boolean;
 };
 export function NewDeparture() {
+  const [imageMode, setImageMode] = useState<"none" | "existing" | "upload" | "url">("none");
+  const [selectedImage, setSelectedImage] = useState<{ id: string | number; label: string; url?: string } | null>(null);
+  const [ImageDrawer, , { openDrawer, closeDrawer }] = useListDrawer({ collectionSlugs: ["media"], selectedCollection: "media", uploads: true });
   const [programs, setPrograms] = useState<Program[]>([]),
     [programId, setProgramId] = useState("");
   const [rows, setRows] = useState([
@@ -47,7 +51,7 @@ export function NewDeparture() {
   return (
     <section className="mt-workspace mt-create">
       <a href="/admin/collections/departures">← Volver a salidas</a>
-      <small>GESTIÓN COMERCIAL / SALIDAS</small>
+      <small>CREAR BLOQUEO / SALIDAS</small>
       <h1>Nueva salida</h1>
       <p>
         Elige o crea un programa y añade hasta 30 fechas. Puedes publicarlas
@@ -83,7 +87,8 @@ export function NewDeparture() {
                       days: Number(text("days")),
                       nights: text("nights") ? Number(text("nights")) : null,
                       cruiseLine: text("cruiseLine"),
-                      flyerSourceUrl: text("flyerSourceUrl"),
+                      flyerSourceUrl: imageMode === "url" ? text("flyerSourceUrl") : "",
+                      flyer: imageMode === "existing" ? selectedImage?.id : undefined,
                       bookingUrl: text("bookingUrl"),
                       descriptionUrl: text("descriptionUrl"),
                       availableSeats:
@@ -105,7 +110,9 @@ export function NewDeparture() {
                 })),
               }),
             );
-            if (!programId && file?.size) body.set("flyer", file);
+            if (!programId && imageMode === "existing" && !selectedImage) throw new Error("Selecciona una imagen de la biblioteca.");
+            if (!programId && imageMode === "upload" && !file?.size) throw new Error("Selecciona un archivo de imagen.");
+            if (!programId && imageMode === "upload" && file?.size) body.set("flyer", file);
             const response = await fetch("/api/admin-tools/create-departures", {
               method: "POST",
               body,
@@ -125,7 +132,7 @@ export function NewDeparture() {
         <fieldset disabled={busy || created.length > 0}>
           <legend>Programa</legend>
           <label>
-            Programa existente
+            Selecciona un programa o crea uno nuevo
             <select
               name="programId"
               value={programId}
@@ -169,28 +176,33 @@ export function NewDeparture() {
                 Naviera (solo cruceros)
                 <input name="cruiseLine" />
               </label>
+              <div>
+                <label>
+                  Imagen del programa (opcional)
+                  <select value={imageMode} onChange={(e) => setImageMode(e.target.value as typeof imageMode)}>
+                    <option value="none">Usar imagen temporal</option>
+                    <option value="existing">Seleccionar de la biblioteca</option>
+                    <option value="upload">Subir una imagen</option>
+                    <option value="url">Usar enlace HTTPS</option>
+                  </select>
+                </label>
+                {imageMode === "existing" && <>
+                  <button type="button" className="mt-tool-button secondary" onClick={openDrawer}>Seleccionar imagen</button>
+                  {selectedImage && <div className="mt-selected-image">
+                    {selectedImage.url && <img src={selectedImage.url} alt="" width={80} height={80} />}
+                    <p>Seleccionada: {selectedImage.label} <button type="button" className="mt-inline-button" onClick={() => setSelectedImage(null)}>Quitar</button></p>
+                  </div>}
+                </>}
+                {imageMode === "upload" && <label>Archivo de imagen<input name="flyer" type="file" required accept="image/png,image/jpeg,image/webp,image/gif" /></label>}
+                {imageMode === "url" && <label>Enlace HTTPS de la imagen<input name="flyerSourceUrl" type="url" required pattern="https://.*" /></label>}
+                <small>Ideal: 800x800 px. Admite otros tamaños y proporciones, sin recortar. Máximo 12 MB.</small>
+              </div>
               <label>
-                Imagen del programa (opcional)
-                <input
-                  name="flyer"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
-                />
-                <small>
-                  Ideal: 800 × 800 px. Admite otros tamaños y proporciones, sin
-                  recortar. Máximo 12 MB.
-                </small>
-              </label>
-              <label>
-                O enlace HTTPS de la imagen
-                <input name="flyerSourceUrl" type="url" pattern="https://.*" />
-              </label>
-              <label>
-                Reservar en Meganet
+                Link programa en Meganet
                 <input name="bookingUrl" type="url" pattern="https://.*" />
               </label>
               <label>
-                Descriptivo en Café
+                Link descriptivo en Café
                 <input name="descriptionUrl" type="url" pattern="https://.*" />
               </label>
               <p>
@@ -198,7 +210,7 @@ export function NewDeparture() {
                 antes de publicar.
               </p>
               <label>
-                Cupos compartidos del programa (opcional)
+                Sillas Disponibles (Opcional)
                 <input
                   type="number"
                   min="0"
@@ -207,8 +219,7 @@ export function NewDeparture() {
                   onChange={(e) => setProgramSeats(e.target.value)}
                 />
                 <small>
-                  Un único saldo para todas las fechas. Se actualiza desde
-                  Programas.
+                  Se aplicara la cantidad de sillas a todas las fechas del programa. Dejar vacío si no aplica.
                 </small>
               </label>
               <label className="mt-check">
@@ -387,11 +398,7 @@ export function NewDeparture() {
           >
             + Añadir otra fecha
           </button>
-          <p>
-            El saldo de cupos es opcional y se revisa en el programa. El saldo
-            se edita en Programas y las etiquetas individuales se confirman por
-            fecha.
-          </p>
+
           {rows.some((row) => row.lastSeats) && (
             <label className="mt-check">
               <input type="checkbox" name="seatsConfirmed" required />
@@ -418,6 +425,12 @@ export function NewDeparture() {
           </div>
         </fieldset>
       </form>
+      <ImageDrawer allowCreate={false} onSelect={({ doc }) => {
+        if (typeof doc.id === "number" || typeof doc.id === "string") {
+          setSelectedImage({ id: doc.id, label: String(doc.alt || doc.filename || `Imagen ${doc.id}`), url: typeof doc.url === "string" ? doc.url : undefined });
+        }
+        closeDrawer();
+      }} />
       {busy && <p role="status">Guardando programa y fechas…</p>}
       {error && (
         <p role="alert" className="mt-report-error">

@@ -7,11 +7,14 @@ import { CardPreview as CardPreview_adb63170f4e37b1f448d8f795506a411 } from '../
 import { StatusCell as StatusCell_22956b2ffd088c8a15372659134b37da } from '../../../components/admin/status-cell'
 import { WorkspaceTools as WorkspaceTools_06e492f54820a6d867a84173b6d37ceb } from '../../../components/admin/workspace-tools'
 import { PopupPreview as PopupPreview_bdcaee27f9c0503162cee4876f3fd152 } from '../../../components/admin/popup-preview'
+import { PanelIcon as PanelIcon_8080e1ef1118adf03a39f8c4df3468b1 } from '../../../components/admin/brand'
+import { PanelLogo as PanelLogo_8080e1ef1118adf03a39f8c4df3468b1 } from '../../../components/admin/brand'
 import { PanelNavigation as PanelNavigation_143cf35d08d11e96cad4e1658483ebbf } from '../../../components/admin/panel-navigation'
 import { AdminHome as AdminHome_cb47140cf1c61abcf2af833261923f85 } from '../../../components/admin/admin-home'
 import { NewDepartureView as NewDepartureView_566f6b3ace942112d6b5414cca541481 } from '../../../components/admin/new-departure-view'
 import { NewDateView as NewDateView_96938c75b0c9337db691db26bc406f25 } from '../../../components/admin/new-date-view'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
+import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
@@ -24,9 +27,12 @@ export const importMap = {
   "/components/admin/status-cell#StatusCell": StatusCell_22956b2ffd088c8a15372659134b37da,
   "/components/admin/workspace-tools#WorkspaceTools": WorkspaceTools_06e492f54820a6d867a84173b6d37ceb,
   "/components/admin/popup-preview#PopupPreview": PopupPreview_bdcaee27f9c0503162cee4876f3fd152,
+  "/components/admin/brand#PanelIcon": PanelIcon_8080e1ef1118adf03a39f8c4df3468b1,
+  "/components/admin/brand#PanelLogo": PanelLogo_8080e1ef1118adf03a39f8c4df3468b1,
   "/components/admin/panel-navigation#PanelNavigation": PanelNavigation_143cf35d08d11e96cad4e1658483ebbf,
   "/components/admin/admin-home#AdminHome": AdminHome_cb47140cf1c61abcf2af833261923f85,
   "/components/admin/new-departure-view#NewDepartureView": NewDepartureView_566f6b3ace942112d6b5414cca541481,
   "/components/admin/new-date-view#NewDateView": NewDateView_96938c75b0c9337db691db26bc406f25,
-  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
+  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
+  "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24
 }

@@ -104,7 +104,7 @@ La preferencia del usuario es seleccionar el archivo desde el ordenador. El CMS 
 
 Los enlaces originales se conservan como herramienta de migración del Excel y procedencia de medios existentes. Para contenido nuevo, utilizar la carga normal de archivos. Guardar un archivo en R2 también es una carga normal: R2 o el volumen son el destino del archivo, independientemente de cómo lo seleccione el editor.
 
-La conversión automática a WebP/AVIF y la generación de versiones con distintos tamaños **siguen pendientes de implementación**. La integración de Sharp existente no acredita esa conversión: la colección actual no define formatos ni tamaños de salida. Mientras tanto, se pueden subir archivos WebP previamente optimizados.
+Las imágenes estáticas nuevas se procesan con Sharp: se intenta convertirlas a WebP manteniendo la proporción y sin ampliar, con lado máximo de 1.600 px. El ahorro varía según el archivo; Payload puede procesar nuevamente el WebP antes de guardarlo. Las animaciones se mantienen. Los archivos ya guardados no se optimizan automáticamente. Consulta [R2 e imágenes](r2-imagenes.md) para su configuración y despliegue.
 
 El flujo de optimización previsto debe conservar el original, generar una versión para tarjeta y otra legible para ampliar, mantener el flyer completo y verificar que precios y condiciones sigan claros. El objetivo de peso se debe definir con imágenes reales; no imponer una compresión que borre texto. Si se elige una publicación estática, optimizar durante carga/build y publicar los archivos resultantes, conservando la misma experiencia de selección del editor.
 
