@@ -1,4 +1,5 @@
 import { isPublishable } from './lifecycle.ts'
+import { programBadgeSnapshot } from './new-badge.ts'
 
 // Legacy fields remain as searchable snapshots and to preserve existing versions.
 export const sharedFields = ['program', 'mtpe', 'destination', 'zone', 'days', 'nights', 'cruiseLine', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'descriptionUrl'] as const
@@ -10,7 +11,7 @@ export const departureKey = (mtpe: unknown, origin: unknown, date: string) => JS
 
 export function resolveProgram(doc: Record<string, any>): Record<string, any> {
   const program = doc.programRef
-  return program && typeof program === 'object' ? { ...doc, ...sharedData(program), ...programSeatSnapshot(program) } : doc
+  return program && typeof program === 'object' ? { ...doc, ...sharedData(program), ...programSeatSnapshot(program), ...programBadgeSnapshot(program) } : doc
 }
 
 export function migrationGroups(docs: Record<string, any>[], now = new Date()) {

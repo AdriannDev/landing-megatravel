@@ -6,6 +6,8 @@ En una base nueva se ejecuta la cadena completa en orden. Una base PostgreSQL cr
 
 `20261104_171419_r2_media_storage` agrega la columna opcional `_objectkey` a `media`. El nuevo código la necesita con o sin R2, por lo que debe aplicarse antes de iniciar la nueva versión. Su reversión se detiene si existen claves R2. La prueba con PGlite comprobó la conservación de datos y la protección de reversión; falta verificarla en PostgreSQL real. Sigue el orden de [R2 e imágenes](../../docs/r2-imagenes.md).
 
+`20261109_014741_new_badge` agrega la etiqueta «Nuevo» (`new_badge`, `new_badge_label`, `new_badge_until`) en `programs`, `departures` y sus tablas de versiones, así como el contador editable (`countdown_enabled`, `countdown_ends_at`) en `banners`. Su reversión se detiene si hay etiquetas o contadores configurados.
+
 Para aplicar las migraciones preparadas en una PostgreSQL vacía de staging:
 
 ```sh

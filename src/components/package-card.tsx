@@ -2,7 +2,6 @@
 import {
   CalendarDays,
   MapPin,
-  Clock3,
   ArrowUpRight,
   FileText,
   Plane,
@@ -20,6 +19,8 @@ import {
   useSeatAvailability,
 } from "./seat-availability";
 import { PromotionLabels } from "./promotion-labels";
+import { NewBadge, durationLabel } from "./new-badge";
+import "./package-card.css";
 
 export function PackageCard({
   item,
@@ -47,6 +48,12 @@ export function PackageCard({
           height="600"
           onError={() => setFailedUrl(item.flyerUrl)}
         />
+        {item.newBadge && <NewBadge label={item.newBadge.label} />}
+      </div>
+      <div className="duration-bridge">
+        <span className="duration-pill">
+          {durationLabel(item.days, item.nights)}
+        </span>
       </div>
       {availability?.lastSeats && <LastSeatsBadge seats={availability.seats} />}
       <div className="package-body">
@@ -65,16 +72,12 @@ export function PackageCard({
           </span>
         </div>
         <div className="departure-meta">
-          <span>
-            <CalendarDays size={15} />
+          <span className="departure-date">
+            <CalendarDays size={15} aria-hidden="true" />
+            <span className="departure-label">Salida:</span>
             <time dateTime={item.travelDate}>
               {formatDate(item.travelDate)}
             </time>
-          </span>
-          <span>
-            <Clock3 size={15} />
-            {item.days} días
-            {item.nights != null ? ` / ${item.nights} noches` : ""}
           </span>
         </div>
         <SeatAvailability
@@ -89,7 +92,6 @@ export function PackageCard({
             <span className="price-from">Desde</span>
             <div className="price">
               <strong>{formatMoney(item.price, item.currency)}</strong>
-              <span>{item.currency}</span>
             </div>
           </div>
           <span className="price-condition">{item.priceCondition}</span>

@@ -1,7 +1,145 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+} from "lucide-react";
 import type { Banner, BannerPlacement } from "@/lib/types";
+import { popupTimeRemaining } from "@/lib/popup";
+import "./campaign-banner.css";
+
+function GridEndBannerCard({
+  banner,
+  variant,
+  reduced,
+}: {
+  banner: Banner;
+  variant: "full" | "rectangular" | "square";
+  reduced: boolean;
+}) {
+  const deadline = banner.countdownEndsAt || banner.endsAt || null;
+  const wantCountdown = Boolean(banner.countdownEnabled && deadline);
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!wantCountdown || !deadline || !Number.isFinite(Date.parse(deadline)))
+      return;
+    const tick = () => setNow(Date.now());
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [wantCountdown, deadline]);
+
+  const remaining =
+    wantCountdown && now !== null ? popupTimeRemaining(deadline, now) : null;
+  const hasOverlay = Boolean(
+    remaining ||
+      banner.popupLabel?.trim() ||
+      banner.title?.trim() ||
+      (banner.href && banner.buttonLabel?.trim() && wantCountdown),
+  );
+
+  const staticImage = banner.staticUrl || banner.imageUrl;
+  const mobileStatic =
+    banner.mobileUrl && !/\.gif(?:[?#]|$)/i.test(banner.mobileUrl)
+      ? banner.mobileUrl
+      : staticImage;
+
+  const media = (
+    <picture className="grid-end-banner-media">
+      <source
+        media="(max-width: 640px) and (prefers-reduced-motion: reduce)"
+        srcSet={mobileStatic}
+      />
+      <source media="(prefers-reduced-motion: reduce)" srcSet={staticImage} />
+      {banner.mobileUrl && (
+        <source
+          media="(max-width: 640px)"
+          srcSet={reduced ? mobileStatic : banner.mobileUrl}
+        />
+      )}
+      <img
+        src={reduced ? staticImage : banner.imageUrl}
+        alt={banner.alt}
+        loading="lazy"
+      />
+    </picture>
+  );
+
+  const overlay = hasOverlay ? (
+    <div className="grid-end-banner-overlay">
+      <div className="grid-end-banner-frame">
+        {banner.popupLabel?.trim() && (
+          <span className="grid-end-banner-eyebrow">{banner.popupLabel}</span>
+        )}
+        {banner.title?.trim() && (
+          <h3 className="grid-end-banner-title">{banner.title}</h3>
+        )}
+        {remaining && (
+          <div
+            className="grid-end-countdown"
+            role="timer"
+            aria-live="off"
+            aria-label={`${remaining.days} días, ${remaining.hours} horas, ${remaining.minutes} minutos, ${remaining.seconds} segundos`}
+          >
+            {[
+              { value: remaining.days, label: "DÍAS" },
+              { value: remaining.hours, label: "HRS" },
+              { value: remaining.minutes, label: "MINS" },
+              { value: remaining.seconds, label: "SEGS" },
+            ].map((unit) => (
+              <div
+                className="grid-end-countdown-box"
+                key={unit.label}
+                aria-hidden="true"
+              >
+                <span className="grid-end-countdown-value">
+                  {String(unit.value).padStart(2, "0")}
+                </span>
+                <span className="grid-end-countdown-label">{unit.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {banner.href && (
+          <span className="grid-end-banner-cta">
+            {banner.buttonLabel?.trim() || "Ver programa"}{" "}
+            <ChevronRight size={14} aria-hidden="true" />
+          </span>
+        )}
+      </div>
+    </div>
+  ) : null;
+
+  const content = (
+    <>
+      {media}
+      {overlay}
+    </>
+  );
+
+  return (
+    <article
+      className={`grid-end-banner-card grid-end-banner-${variant}${hasOverlay ? " has-overlay" : ""}`}
+    >
+      {banner.href ? (
+        <a
+          className="grid-end-banner-link"
+          href={banner.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${banner.title || banner.alt}, abre otra pestaña`}
+        >
+          {content}
+        </a>
+      ) : (
+        <div className="grid-end-banner-link">{content}</div>
+      )}
+    </article>
+  );
+}
 
 export function CampaignBanner({
   banners,
@@ -17,9 +155,12 @@ export function CampaignBanner({
     [ready, setReady] = useState(false);
   const count = banners.length,
     current = count ? index % count : 0;
+  const autoRotate =
+    placement === "hero" || placement === "between-results";
+  const hasControls = placement === "hero" && count > 1;
   const playing =
     ready &&
-    placement === "hero" &&
+    autoRotate &&
     count > 1 &&
     !paused &&
     !reduced &&
@@ -44,6 +185,27 @@ export function CampaignBanner({
     return () => clearInterval(timer);
   }, [playing, count]);
   if (!count) return null;
+
+  if (placement === "catalog-end") {
+    const items = banners.slice(0, 2);
+    const single = items.length === 1;
+    return (
+      <section
+        className={`catalog-end-banners${single ? " is-single" : " is-pair"}`}
+        aria-label="Promociones destacadas del catálogo"
+      >
+        {items.map((item, idx) => (
+          <GridEndBannerCard
+            key={item.id}
+            banner={item}
+            variant={single ? "full" : idx === 0 ? "rectangular" : "square"}
+            reduced={reduced}
+          />
+        ))}
+      </section>
+    );
+  }
+
   const banner = banners[current];
   const navigate = (next: number) => {
     setPaused(true);
@@ -83,8 +245,8 @@ export function CampaignBanner({
       <img
         src={staticArt ? staticImage : banner.imageUrl}
         alt={banner.alt}
-        width="1600"
-        height="600"
+        width={placement === "between-results" ? "1200" : "1600"}
+        height={placement === "between-results" ? "130" : "300"}
         loading={placement === "hero" ? "eager" : "lazy"}
         fetchPriority={placement === "hero" ? "high" : "low"}
       />
@@ -101,9 +263,9 @@ export function CampaignBanner({
             ? "Promociones entre resultados"
             : "Promociones del final del catálogo"
       }
-      onPointerEnter={(e) => pauseForInteraction(e.target)}
-      onTouchStart={(e) => pauseForInteraction(e.target)}
-      onFocusCapture={(e) => pauseForInteraction(e.target)}
+      onPointerEnter={placement === "hero" ? (e) => pauseForInteraction(e.target) : undefined}
+      onTouchStart={placement === "hero" ? (e) => pauseForInteraction(e.target) : undefined}
+      onFocusCapture={placement === "hero" ? (e) => pauseForInteraction(e.target) : undefined}
     >
       <div
         aria-live={playing ? "off" : "polite"}
@@ -126,7 +288,7 @@ export function CampaignBanner({
           picture
         )}
       </div>
-      {count > 1 && (
+      {hasControls && (
         <div className="banner-controls">
           <button
             className="banner-arrow banner-previous"

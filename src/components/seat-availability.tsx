@@ -83,9 +83,9 @@ export function SeatAvailability({
       )}
       <p className="seat-confirmation">
         {availability
-          ? "Disponibilidad sujeta a cambios. Confirma en "
-          : "Consulta disponibilidad en "}
-        {link(bookingUrl, "Meganet")} o {link(contactUrl, "con un asesor")}.
+          ? "Disponibilidad sujeta a cambios. Confirma "
+          : "Consulta disponibilidad "}
+        {link(contactUrl, "con un asesor")}.
       </p>
     </div>
   );

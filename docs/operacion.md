@@ -27,7 +27,7 @@ El contacto por defecto utiliza el enlace de WhatsApp publicado en [la web ofici
 
 Existe una migración inicial y migraciones posteriores en `src/migrations`. La cadena requiere validación con el adaptador de Payload y PostgreSQL real en staging; las pruebas con SQLite o PostgreSQL embebido no sustituyen esa validación. Siguen pendientes la verificación del contenedor y staging, correo, archivos de producción y restauración. Ver [estado actual](continuidad.md) y [arranque del CMS](cms.md).
 
-## Retiro programado
+## Tareas automáticas: retiros y Mega Blog
 
 En Railway, `retiros-automaticos` ejecuta `0 5 * * *` UTC, equivalente a las 00:00 de Lima. Utiliza la imagen `node:24-bookworm-slim`, sin healthcheck HTTP, y termina tras enviar `POST /api/cron/retire` a la aplicación. `RETIRE_URL` apunta a ese endpoint y `CRON_SECRET` referencia la variable del servicio `landing-megatravel`; el secreto no se guarda en el repositorio. La aplicación realiza el retiro en su propia base. [Tareas cron de Railway](https://docs.railway.com/cron-jobs).
 
@@ -38,6 +38,20 @@ node -e "fetch(process.env.RETIRE_URL,{method:'POST',headers:{Authorization:'Bea
 ```
 
 Para comprobarlo, consulta `railway cron list --service retiros-automaticos --environment production` y los logs del servicio. Una ejecución manual con `railway cron run --service retiros-automaticos --environment production --yes` también procesa las salidas vencidas reales. Si se cambia el dominio, actualiza `RETIRE_URL`; al rotar el secreto, actualiza el servicio web y vuelve a desplegar el cron para que use la referencia actualizada. También es posible ejecutar `npm run retire` en un entorno privado con las variables del CMS y acceso a la base.
+
+La misma ejecución también mantiene la sección **Mega Blog**. El cron se ejecuta todos los días por los retiros, pero la aplicación consulta `https://www.megatravel.pe/es/blog` solo cuando han transcurrido cinco días desde la última sincronización correcta. Guarda los tres artículos recientes en Configuración del catálogo; si el sitio fuente falla, conserva las cards anteriores y vuelve a intentarlo con la siguiente ejecución diaria.
+
+No hace falta crear otro cron ni otra variable en Railway. Después del primer despliegue, para poblar las cards sin esperar a la siguiente ejecución diaria, lanzar una vez:
+
+```sh
+railway cron run --service retiros-automaticos --environment production --yes
+```
+
+Para poblarlas en el entorno local de SQLite, con el servidor detenido o en otra terminal, ejecutar:
+
+```sh
+npm run sync:blog
+```
 
 La consulta pública también calcula vigencia y no depende del cron. Una pestaña abierta refresca datos cada 30 segundos; el catálogo del servidor no tiene caché. Registrar y alertar sobre fallos del cron. La tarea solo retira registros todavía publicados y vencidos, y escribe historial con responsable Sistema.
 

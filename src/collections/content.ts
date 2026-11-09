@@ -11,8 +11,20 @@ import { sharedFields } from '../lib/programs'
 import { DEFAULT_SEATS_VALIDITY_HOURS, MAX_SEATS_VALIDITY_HOURS, validSeatCount } from '../lib/availability'
 import { getSeatSettings } from '../server/availability-settings'
 import { optimizeMedia } from '../server/optimize-media'
+import { DEFAULT_NEW_BADGE_LABEL, NEW_BADGE_MAX_LENGTH } from '../lib/new-badge'
 
 const urlValidation = (value: unknown) => !value || safeExternalUrl(value) || 'Usa un enlace HTTPS completo, sin usuario ni contraseña.'
+// «Nuevo» badge: same three fields in Programas (all dates) and Salidas (one date).
+function newBadgeFields(scope: 'program' | 'departure'): Field {
+  const program = scope === 'program'
+  return { type: 'collapsible', label: program ? 'Etiqueta «Nuevo»' : 'Etiqueta «Nuevo» de esta fecha', admin: { initCollapsed: true }, fields: [
+    { name: 'newBadge', label: program ? 'Mostrar la etiqueta en todas las fechas' : 'Mostrar la etiqueta solo en esta fecha', type: 'checkbox', defaultValue: false, admin: { description: program ? 'Destaca el programa en la esquina de la imagen. También puedes activarla en una fecha concreta desde Salidas.' : 'Se suma a la opción del programa; desmarcarla aquí no anula la etiqueta grupal. Útil para destacar una nueva fecha.' } },
+    { type: 'row', fields: [
+      { name: 'newBadgeLabel', label: program ? 'Texto de la etiqueta' : 'Texto para esta fecha (opcional)', type: 'text', maxLength: NEW_BADGE_MAX_LENGTH, ...(program ? { defaultValue: DEFAULT_NEW_BADGE_LABEL } : {}), admin: { width: '50%', ...(program ? { description: `Vacío: se muestra «${DEFAULT_NEW_BADGE_LABEL}».` } : { placeholder: 'NUEVA FECHA', description: `Vacío: usa el texto del programa o «${DEFAULT_NEW_BADGE_LABEL}».` }) } },
+      { name: 'newBadgeUntil', label: 'Mostrar hasta (opcional, exclusivo)', type: 'date', admin: { width: '50%', description: 'Vacío: se muestra hasta que la desactives. El panel utiliza America/Lima.', date: { pickerAppearance: 'dayAndTime' } } },
+    ] },
+  ] }
+}
 const period: Field[] = [
   { name: 'startsAt', label: 'Visible desde', type: 'date', admin: { description: 'Instante de inicio. El panel utiliza America/Lima.' } },
   { name: 'endsAt', label: 'Visible hasta (exclusivo)', type: 'date', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => {
@@ -56,17 +68,19 @@ export const Banners: CollectionConfig = {
   slug: 'banners', labels: { singular: 'Banner', plural: 'Banners' }, access: contentAccess,
   admin: { group: 'Contenido', useAsTitle: 'alt', defaultColumns: ['alt', 'placement', 'enabled', 'order', 'startsAt', 'endsAt'] },
   fields: [
-    { name: 'placement', label: 'Ubicación', type: 'select', required: true, defaultValue: 'hero', options: [{ label: 'Hero', value: 'hero' }, { label: 'Entre resultados', value: 'between-results' }, { label: 'Final del catálogo', value: 'catalog-end' }, { label: 'Popup (ventana emergente)', value: 'popup' }], admin: { description: 'Si hay varios popups vigentes, se muestra solo el de menor orden.' } },
+    { name: 'placement', label: 'Ubicación', type: 'select', required: true, defaultValue: 'hero', options: [{ label: 'Hero', value: 'hero' }, { label: 'Rompetráfico (después de 6 productos)', value: 'between-results' }, { label: 'Final de la grilla (1 o 2 banners)', value: 'catalog-end' }, { label: 'Popup (ventana emergente)', value: 'popup' }], admin: { description: 'El rompetráfico admite varios banners y los rota automáticamente sin controles. En «Final de la grilla»: si hay 1 banner ocupa todo el ancho; si hay 2, el primero es rectangular y el segundo cuadrado.' } },
     { name: 'popupFormat', label: 'Formato del popup', type: 'select', defaultValue: 'text', options: [{ label: 'Imagen con texto', value: 'text' }, { label: 'Solo imagen', value: 'image' }], admin: { condition: data => data.placement === 'popup' } },
-    { name: 'popupLabel', label: 'Etiqueta superior', type: 'text', maxLength: 120, admin: { condition: data => data.placement === 'popup' && data.popupFormat !== 'image' } },
-    { name: 'title', label: 'Título del popup', type: 'text', maxLength: 120, validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => siblingData?.placement !== 'popup' || siblingData?.popupFormat === 'image' || !!String(value || '').trim() || 'Escribe un título para el popup.', admin: { condition: data => data.placement === 'popup' && data.popupFormat !== 'image' } },
+    { name: 'countdownEnabled', label: 'Mostrar contador regresivo sobre el banner', type: 'checkbox', defaultValue: false, admin: { condition: data => data.placement === 'catalog-end', description: 'Ideal para el banner cuadrado al final de la grilla (por ejemplo, para destacar un programa con tiempo límite).' } },
+    { name: 'countdownEndsAt', label: 'Fecha y hora límite del contador', type: 'date', admin: { condition: data => data.placement === 'catalog-end' && data.countdownEnabled === true, date: { pickerAppearance: 'dayAndTime' }, description: 'Define hasta cuándo cuenta el reloj. Si queda vacío, usará «Visible hasta». El panel utiliza America/Lima.' } },
+    { name: 'popupLabel', label: 'Etiqueta superior', type: 'text', maxLength: 120, admin: { condition: data => (data.placement === 'popup' && data.popupFormat !== 'image') || data.placement === 'catalog-end', description: 'Opcional. Aparece en pequeño encima del título.' } },
+    { name: 'title', label: 'Título', type: 'text', maxLength: 120, validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => siblingData?.placement !== 'popup' || siblingData?.popupFormat === 'image' || !!String(value || '').trim() || 'Escribe un título para el popup.', admin: { condition: data => (data.placement === 'popup' && data.popupFormat !== 'image') || data.placement === 'catalog-end', description: 'Obligatorio en popup con texto; opcional en los banners del final de la grilla.' } },
     { name: 'message', label: 'Texto de la noticia o promoción', type: 'textarea', maxLength: 2000, admin: { condition: data => data.placement === 'popup' && data.popupFormat !== 'image', description: 'Puedes publicar una noticia solo con título y texto, sin imagen.' } },
     { name: 'popupKind', label: 'Tipo de anuncio', type: 'select', defaultValue: 'promotion', options: [{ label: 'Promoción', value: 'promotion' }, { label: 'Noticia', value: 'news' }], admin: { condition: data => data.placement === 'popup' } },
-    { name: 'buttonLabel', label: 'Texto del botón del popup', type: 'text', maxLength: 60, defaultValue: 'Conocer más', admin: { condition: data => data.placement === 'popup' && data.popupFormat !== 'image', description: 'El botón aparece cuando completas el enlace opcional.' } },
+    { name: 'buttonLabel', label: 'Texto del botón', type: 'text', maxLength: 60, defaultValue: 'Conocer más', admin: { condition: data => (data.placement === 'popup' && data.popupFormat !== 'image') || data.placement === 'catalog-end', description: 'El botón aparece cuando completas el enlace opcional.' } },
     { name: 'popupSecondaryLabel', label: 'Texto de acción secundaria', type: 'text', maxLength: 60, admin: { condition: data => data.placement === 'popup' && data.popupFormat !== 'image', description: 'Si queda vacío se mostrará «Seguir explorando».' } },
     { name: 'popupFrequency', label: 'Frecuencia del popup', type: 'select', defaultValue: 'session', options: [{ label: 'Una vez por sesión', value: 'session' }, { label: 'Una vez cada 24 horas', value: 'daily' }, { label: 'Cada visita al catálogo', value: 'always' }], admin: { condition: data => data.placement === 'popup' } },
     { name: 'popupDelay', label: 'Espera antes de abrir (segundos)', type: 'number', defaultValue: 2, min: 0, max: 60, admin: { condition: data => data.placement === 'popup' } },
-    { name: 'image', label: 'Imagen o GIF de escritorio', type: 'upload', relationTo: 'media', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => (siblingData?.placement === 'popup' && siblingData?.popupFormat !== 'image') || !!value || 'Selecciona una imagen.', admin: { description: 'Tamaño ideal para banners (Hero, entre resultados y final): 1600 × 600 px. Popup: 1200 × 900 px. Se adapta a otros tamaños y proporciones y muestra la imagen completa, sin recortarla. Máximo 12 MB.' } },
+    { name: 'image', label: 'Imagen o GIF de escritorio', type: 'upload', relationTo: 'media', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => (siblingData?.placement === 'popup' && siblingData?.popupFormat !== 'image') || !!value || 'Selecciona una imagen.', admin: { description: 'Tamaños ideales: Hero 1600 × 300 px (altura máxima en escritorio) · Rompetráfico 1200 × 130 px (horizontal de poca altura) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.' } },
     { name: 'staticImage', label: 'Alternativa estática', type: 'upload', relationTo: 'media', admin: { hidden: true } },
     { name: 'mobileImage', label: 'Imagen para móvil (opcional)', type: 'upload', relationTo: 'media', admin: { description: 'Ideal: 800 × 800 px. Admite otras proporciones y muestra la imagen completa. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.' } },
     { name: 'alt', label: 'Texto alternativo', type: 'text', required: true },
@@ -87,7 +101,7 @@ function pairedFields(fields: Field[], pairs: string[][]): Field[] {
     return [{ type: 'row', admin: { className: 'mt-two-column-row' }, fields: pair.map(name => fields.find(candidate => 'name' in candidate && candidate.name === name)!).filter(Boolean) } as Field]
   })
 }
-Banners.fields = pairedFields(Banners.fields, [['placement', 'popupFormat'], ['popupLabel', 'title'], ['buttonLabel', 'popupSecondaryLabel'], ['popupFrequency', 'popupDelay'], ['alt', 'href'], ['startsAt', 'endsAt']])
+Banners.fields = pairedFields(Banners.fields, [['placement', 'popupFormat'], ['countdownEnabled', 'countdownEndsAt'], ['popupLabel', 'title'], ['buttonLabel', 'popupSecondaryLabel'], ['popupFrequency', 'popupDelay'], ['alt', 'href'], ['startsAt', 'endsAt']])
 
 export const Departures: CollectionConfig = {
   slug: 'departures', labels: { singular: 'Salida', plural: 'Salidas' },
@@ -138,6 +152,7 @@ export const Departures: CollectionConfig = {
           { name: 'lastSeatsCheckedAt', label: 'Última revisión de la etiqueta individual', type: 'date', access: { create: () => false, update: () => false }, admin: { readOnly: true } },
           { name: 'seatsConfirmed', label: 'Confirmo que «Últimos cupos» sigue vigente para esta fecha', type: 'checkbox', defaultValue: false, admin: { description: 'Renueva solo la etiqueta individual, sin modificar la revisión del saldo del programa.' } },
         ] },
+        newBadgeFields('departure'),
       ] },
       { label: 'Salida y retiro', fields: [
         { name: 'travelDate', label: 'Fecha de salida (AAAA-MM-DD)', type: 'text', required: true, index: true, validate: (value: unknown) => isDateOnly(value) || 'Indica una fecha válida con formato AAAA-MM-DD.' },
@@ -224,6 +239,7 @@ export const Programs: CollectionConfig = {
       { name: 'seatsMigrationPending', label: 'Revisión pendiente de cupos anteriores', type: 'checkbox', defaultValue: false, access: { create: () => false, update: () => false }, admin: { readOnly: true, condition: data => data.seatsMigrationPending === true, description: 'Las fechas anteriores tenían cantidades distintas. Revisa el saldo del programa antes de informarlo; los datos anteriores se conservan en el respaldo de migración.' } },
       { name: 'legacySeatReferences', type: 'json', access: { create: () => false, update: () => false }, admin: { hidden: true } },
     ] },
+    newBadgeFields('program'),
     { name: 'flyer', label: 'Imagen del programa (opcional)', type: 'upload', relationTo: 'media', admin: { description: 'Ideal: 800 × 800 px. Admite otros tamaños y proporciones; se muestra completa dentro de una tarjeta cuadrada, sin recortar. Máximo 12 MB. Sin imagen se usa la de Megatravel en todas las fechas.' } },
     { name: 'flyerSourceUrl', label: 'O pegar enlace de imagen (HTTPS)', type: 'text', validate: urlValidation, admin: { description: 'Ideal: 800 × 800 px. Se admiten otros tamaños y proporciones. Se conserva el enlace si no se puede copiar la imagen.' } },
     { name: 'bookingUrl', label: 'Reservar en Meganet', type: 'text', validate: urlValidation },
@@ -251,5 +267,14 @@ export const Settings: GlobalConfig = {
     { name: 'contactUrl', label: 'Enlace de contacto comercial', type: 'text', required: true, defaultValue: DEFAULT_CONTACT_URL, validate: urlValidation },
     { name: 'contactLabel', label: 'Texto del botón de contacto', type: 'text', required: true, defaultValue: DEFAULT_CONTACT_LABEL },
     { name: 'seatsValidityHours', label: 'Vigencia de cupos referenciales (horas)', type: 'number', required: true, defaultValue: DEFAULT_SEATS_VALIDITY_HOURS, min: 1, max: MAX_SEATS_VALIDITY_HOURS, validate: (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_SEATS_VALIDITY_HOURS || 'Indica horas enteras entre 1 y 720.', admin: { step: 1, description: 'Al vencer se ocultan cantidad y «Últimos cupos» hasta una nueva revisión. La salida sigue publicada.' } },
+    { name: 'blogPosts', label: 'Artículos automáticos de Mega Blog', type: 'array', maxRows: 3, admin: { readOnly: true, description: 'Los actualiza el sistema desde el Mega Blog. No requieren edición manual.' }, fields: [
+      { name: 'sourceId', label: 'ID en Mega Blog', type: 'text', required: true, admin: { readOnly: true } },
+      { name: 'title', label: 'Título', type: 'text', required: true, admin: { readOnly: true } },
+      { name: 'category', label: 'Categoría', type: 'text', required: true, admin: { readOnly: true } },
+      { name: 'dateLabel', label: 'Fecha publicada', type: 'text', required: true, admin: { readOnly: true } },
+      { name: 'href', label: 'Enlace del artículo', type: 'text', required: true, admin: { readOnly: true } },
+      { name: 'imageUrl', label: 'Imagen de origen', type: 'text', required: true, admin: { readOnly: true } },
+    ] },
+    { name: 'blogLastSyncedAt', label: 'Última sincronización correcta de Mega Blog', type: 'date', admin: { readOnly: true, description: 'La tarea diaria consulta el blog únicamente cuando han pasado cinco días desde esta fecha.' } },
   ],
 }

@@ -30,7 +30,9 @@ import { Brand } from "./brand";
 import { PackageCard } from "./package-card";
 import { CampaignBanner } from "./campaign-banner";
 import { CampaignPopup } from "./campaign-popup";
+import { BlogSection } from "./blog-section";
 import { WhatsAppContact } from "./whatsapp-contact";
+import { SiteFooter } from "./site-footer";
 import { bannersAt } from "@/lib/banners";
 import { Button } from "./ui/button";
 import {
@@ -356,18 +358,13 @@ export function Catalog({
           <div className="hero-heading">
             <span className="eyebrow">
               <span className="orange-line" />
-              BLOQUEOS MEGATRAVEL
+              MEJORES OPORTUNIDADES
             </span>
             <h1 id="page-title">
-              Grandes viajes.
+              Programas con Bloqueos de
               <br />
-              <span>Mejores oportunidades.</span>
+              <span>Mega Travel</span>
             </h1>
-            <p>
-              Encuentra la próxima experiencia de tus pasajeros.
-              <br className="desktop-break" /> Tú eliges el destino. Nosotros
-              conectamos el viaje.
-            </p>
           </div>
           <CampaignBanner banners={heroBanners} />
         </section>
@@ -608,23 +605,25 @@ export function Catalog({
                         />
                       ))}
                     </div>
+                    <CampaignBanner
+                      banners={betweenBanners}
+                      placement="between-results"
+                    />
                     {result.items.length > 6 && (
-                      <>
-                        <CampaignBanner
-                          banners={betweenBanners}
-                          placement="between-results"
-                        />
-                        <div className="package-grid package-grid-continuation">
-                          {result.items.slice(6).map((item) => (
-                            <PackageCard
-                              item={item}
-                              contactUrl={liveData.contactUrl}
-                              key={item.id}
-                            />
-                          ))}
-                        </div>
-                      </>
+                      <div className="package-grid package-grid-continuation">
+                        {result.items.slice(6).map((item) => (
+                          <PackageCard
+                            item={item}
+                            contactUrl={liveData.contactUrl}
+                            key={item.id}
+                          />
+                        ))}
+                      </div>
                     )}
+                    <CampaignBanner
+                      banners={finalBanners}
+                      placement="catalog-end"
+                    />
                   </>
                 ) : (
                   <div className="empty-state">
@@ -699,11 +698,7 @@ export function Catalog({
             </div>
           </section>
         </div>
-        {finalBanners.length > 0 && (
-          <div className="container final-campaign">
-            <CampaignBanner banners={finalBanners} placement="catalog-end" />
-          </div>
-        )}
+        <BlogSection posts={liveData.blogPosts} />
         <section className="agency-help container">
           <div className="help-icon">
             <Headphones size={30} />
@@ -726,30 +721,7 @@ export function Catalog({
         </section>
       </main>
       
-      <footer className="site-footer">
-        <div className="container footer-top">
-          <Brand inverted />
-          <p>
-            El mundo en tus manos.
-            <br />
-            El respaldo de Megatravel en cada viaje.
-          </p>
-          <a
-            href="https://www.megatravel.pe/es/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Conoce Megatravel <ArrowUpRight size={15} />
-            <span className="sr-only">, abre otra pestaña</span>
-          </a>
-        </div>
-        <div className="container footer-bottom">
-          <span>
-            © {new Date().getFullYear()} Megatravel Operadora del Perú S.A.
-          </span>
-          <a href="/admin">Acceso al equipo</a>
-        </div>
-      </footer>
+      <SiteFooter contactUrl={liveData.contactUrl} />
       <WhatsAppContact contactUrl={liveData.contactUrl} />
     </>
   );

@@ -1,0 +1,228 @@
+/* Rompetráfico horizontal (después de las primeras 6 cards) */
+.campaign-banner.banner-between-results {
+  position: relative;
+  width: 100%;
+  margin-block: 22px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f1f5f9;
+  box-shadow: 0 3px 12px #051d2e12;
+}
+
+.campaign-banner.banner-between-results .banner-slide,
+.campaign-banner.banner-between-results .banner-slide > a,
+.campaign-banner.banner-between-results picture {
+  display: block;
+  width: 100%;
+}
+
+.campaign-banner.banner-between-results img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 130;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Banners al final de la grilla de productos (1 ancho completo o 2: rectangular + cuadrado con contador) */
+.catalog-end-banners {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  margin-top: 24px;
+}
+
+.catalog-end-banners.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.catalog-end-banners.is-pair {
+  grid-template-columns: minmax(0, 900fr) minmax(0, 640fr);
+  align-items: stretch;
+}
+
+.grid-end-banner-card {
+  position: relative;
+  min-width: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #051d2e;
+  box-shadow: 0 4px 16px #051d2e17;
+}
+
+.grid-end-banner-square {
+  aspect-ratio: 640 / 640;
+}
+
+.grid-end-banner-rectangular {
+  aspect-ratio: 900 / 640;
+}
+
+.grid-end-banner-link {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: #fff;
+  text-decoration: none;
+}
+
+.grid-end-banner-media,
+.grid-end-banner-media > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.grid-end-banner-pair .grid-end-banner-media > img,
+.catalog-end-banners.is-pair .grid-end-banner-media > img {
+  object-fit: cover;
+}
+
+.catalog-end-banners.is-single .grid-end-banner-card:not(.has-overlay) .grid-end-banner-media > img {
+  height: auto;
+  object-fit: contain;
+}
+
+.catalog-end-banners.is-single .grid-end-banner-card.has-overlay {
+  min-height: 320px;
+}
+
+.catalog-end-banners.is-single .grid-end-banner-card.has-overlay .grid-end-banner-media > img {
+  object-fit: cover;
+}
+
+.grid-end-banner-card.has-overlay .grid-end-banner-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #051d2e59 0%,
+    #051d2e80 55%,
+    #051d2e99 100%
+  );
+}
+
+.grid-end-banner-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  padding: 16px;
+}
+
+.grid-end-banner-frame {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px 16px;
+  border: 1px solid #ffffff8c;
+  text-align: center;
+}
+
+.grid-end-banner-rectangular .grid-end-banner-frame {
+  align-items: flex-start;
+  text-align: left;
+  padding: 24px 28px;
+}
+
+.grid-end-banner-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ffffffeb;
+}
+
+.grid-end-banner-title {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 25px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+/* Contador regresivo en 4 bloques (DÍAS, HRS, MINS, SEGS) */
+.grid-end-countdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(52px, 64px));
+  gap: 8px;
+  margin-block: 4px;
+}
+
+.grid-end-countdown-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 6px 7px;
+  background: #ffffff26;
+  backdrop-filter: blur(6px);
+  border: 1px solid #ffffff38;
+}
+
+.grid-end-countdown-value {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.grid-end-countdown-label {
+  margin-top: 4px;
+  padding-top: 4px;
+  width: 100%;
+  border-top: 1px solid #ffffff2e;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffffffd9;
+}
+
+.grid-end-banner-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 9px 18px;
+  border: 1px solid #ffffffcc;
+  background: #051d2e40;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.grid-end-banner-link:hover .grid-end-banner-cta,
+.grid-end-banner-link:focus-visible .grid-end-banner-cta {
+  background: #ff7420;
+  border-color: #ff7420;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 760px) {
+  .campaign-banner.banner-between-results img {
+    height: clamp(64px, 16vw, 100px);
+  }
+
+  .catalog-end-banners.is-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-end-banner-rectangular {
+    aspect-ratio: 16 / 10;
+  }
+}

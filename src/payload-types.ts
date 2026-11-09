@@ -182,6 +182,18 @@ export interface Departure {
    * Renueva solo la etiqueta individual, sin modificar la revisión del saldo del programa.
    */
   seatsConfirmed?: boolean | null;
+  /**
+   * Se suma a la opción del programa; desmarcarla aquí no anula la etiqueta grupal. Útil para destacar una nueva fecha.
+   */
+  newBadge?: boolean | null;
+  /**
+   * Vacío: usa el texto del programa o «NUEVO».
+   */
+  newBadgeLabel?: string | null;
+  /**
+   * Vacío: se muestra hasta que la desactives. El panel utiliza America/Lima.
+   */
+  newBadgeUntil?: string | null;
   travelDate: string;
   /**
    * Contenido compartido. Edita este dato en Programas.
@@ -277,6 +289,18 @@ export interface Program {
     | boolean
     | null;
   /**
+   * Destaca el programa en la esquina de la imagen. También puedes activarla en una fecha concreta desde Salidas.
+   */
+  newBadge?: boolean | null;
+  /**
+   * Vacío: se muestra «NUEVO».
+   */
+  newBadgeLabel?: string | null;
+  /**
+   * Vacío: se muestra hasta que la desactives. El panel utiliza America/Lima.
+   */
+  newBadgeUntil?: string | null;
+  /**
    * Ideal: 800 × 800 px. Admite otros tamaños y proporciones; se muestra completa dentro de una tarjeta cuadrada, sin recortar. Máximo 12 MB. Sin imagen se usa la de Megatravel en todas las fechas.
    */
   flyer?: (number | null) | Media;
@@ -364,11 +388,25 @@ export interface Campaign {
 export interface Banner {
   id: number;
   /**
-   * Si hay varios popups vigentes, se muestra solo el de menor orden.
+   * El rompetráfico admite varios banners y los rota automáticamente sin controles. En «Final de la grilla»: si hay 1 banner ocupa todo el ancho; si hay 2, el primero es rectangular y el segundo cuadrado.
    */
   placement: 'hero' | 'between-results' | 'catalog-end' | 'popup';
   popupFormat?: ('text' | 'image') | null;
+  /**
+   * Ideal para el banner cuadrado al final de la grilla (por ejemplo, para destacar un programa con tiempo límite).
+   */
+  countdownEnabled?: boolean | null;
+  /**
+   * Define hasta cuándo cuenta el reloj. Si queda vacío, usará «Visible hasta». El panel utiliza America/Lima.
+   */
+  countdownEndsAt?: string | null;
+  /**
+   * Opcional. Aparece en pequeño encima del título.
+   */
   popupLabel?: string | null;
+  /**
+   * Obligatorio en popup con texto; opcional en los banners del final de la grilla.
+   */
   title?: string | null;
   /**
    * Puedes publicar una noticia solo con título y texto, sin imagen.
@@ -386,7 +424,7 @@ export interface Banner {
   popupFrequency?: ('session' | 'daily' | 'always') | null;
   popupDelay?: number | null;
   /**
-   * Tamaño ideal para banners (Hero, entre resultados y final): 1600 × 600 px. Popup: 1200 × 900 px. Se adapta a otros tamaños y proporciones y muestra la imagen completa, sin recortarla. Máximo 12 MB.
+   * Tamaños ideales: Hero 1600 × 300 px (altura máxima en escritorio) · Rompetráfico 1200 × 130 px (horizontal de poca altura) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.
    */
   image?: (number | null) | Media;
   staticImage?: (number | null) | Media;
@@ -587,6 +625,9 @@ export interface DeparturesSelect<T extends boolean = true> {
   seatsCheckedAt?: T;
   lastSeatsCheckedAt?: T;
   seatsConfirmed?: T;
+  newBadge?: T;
+  newBadgeLabel?: T;
+  newBadgeUntil?: T;
   travelDate?: T;
   days?: T;
   nights?: T;
@@ -628,6 +669,9 @@ export interface ProgramsSelect<T extends boolean = true> {
   seatsConfirmed?: T;
   seatsMigrationPending?: T;
   legacySeatReferences?: T;
+  newBadge?: T;
+  newBadgeLabel?: T;
+  newBadgeUntil?: T;
   flyer?: T;
   flyerSourceUrl?: T;
   bookingUrl?: T;
@@ -673,6 +717,8 @@ export interface CampaignsSelect<T extends boolean = true> {
 export interface BannersSelect<T extends boolean = true> {
   placement?: T;
   popupFormat?: T;
+  countdownEnabled?: T;
+  countdownEndsAt?: T;
   popupLabel?: T;
   title?: T;
   message?: T;
@@ -786,6 +832,24 @@ export interface Setting {
    * Al vencer se ocultan cantidad y «Últimos cupos» hasta una nueva revisión. La salida sigue publicada.
    */
   seatsValidityHours: number;
+  /**
+   * Los actualiza el sistema desde el Mega Blog. No requieren edición manual.
+   */
+  blogPosts?:
+    | {
+        sourceId: string;
+        title: string;
+        category: string;
+        dateLabel: string;
+        href: string;
+        imageUrl: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * La tarea diaria consulta el blog únicamente cuando han pasado cinco días desde esta fecha.
+   */
+  blogLastSyncedAt?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -797,6 +861,18 @@ export interface SettingsSelect<T extends boolean = true> {
   contactUrl?: T;
   contactLabel?: T;
   seatsValidityHours?: T;
+  blogPosts?:
+    | T
+    | {
+        sourceId?: T;
+        title?: T;
+        category?: T;
+        dateLabel?: T;
+        href?: T;
+        imageUrl?: T;
+        id?: T;
+      };
+  blogLastSyncedAt?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

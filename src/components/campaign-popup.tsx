@@ -101,7 +101,7 @@ export function CampaignPopup({ banner }: { banner: Banner }) {
         }}
       >
         {banner.popupFormat === "image" && <><DialogTitle className="sr-only">{banner.alt}</DialogTitle><DialogDescription className="sr-only">{banner.alt}</DialogDescription></>}
-        {banner.imageUrl && (banner.popupFormat === "image" && banner.href ? <a href={banner.href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} aria-label={`${banner.alt} (abre otra pestaña)`}>
+        {banner.imageUrl && (banner.popupFormat === "image" && banner.href ? <a className="popup-art-link" href={banner.href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} aria-label={`${banner.alt} (abre otra pestaña)`}>
           <picture className="popup-art"><source media="(prefers-reduced-motion: reduce)" srcSet={banner.staticUrl || banner.imageUrl} />{banner.mobileUrl && <source media="(max-width: 760px)" srcSet={banner.mobileUrl} />}<img src={banner.imageUrl} alt={banner.alt} width="1200" height="900" /></picture>
         </a> : (
           <picture className="popup-art">

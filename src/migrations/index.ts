@@ -6,6 +6,8 @@ import * as migration_20261102_120000_popup_formats from './20261102_120000_popu
 import * as migration_20261102_130000_departure_deletion from './20261102_130000_departure_deletion';
 import * as migration_20261102_173707_program_shared_seats from './20261102_173707_program_shared_seats';
 import * as migration_20261104_171419_r2_media_storage from './20261104_171419_r2_media_storage';
+import * as migration_20261109_014741_new_badge from './20261109_014741_new_badge';
+import * as migration_20261109_060013_blog_post_sync from './20261109_060013_blog_post_sync';
 
 export const migrations = [
   {
@@ -46,6 +48,16 @@ export const migrations = [
   {
     up: migration_20261104_171419_r2_media_storage.up,
     down: migration_20261104_171419_r2_media_storage.down,
-    name: '20261104_171419_r2_media_storage'
+    name: '20261104_171419_r2_media_storage',
+  },
+  {
+    up: migration_20261109_014741_new_badge.up,
+    down: migration_20261109_014741_new_badge.down,
+    name: '20261109_014741_new_badge',
+  },
+  {
+    up: migration_20261109_060013_blog_post_sync.up,
+    down: migration_20261109_060013_blog_post_sync.down,
+    name: '20261109_060013_blog_post_sync'
   },
 ];

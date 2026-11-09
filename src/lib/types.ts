@@ -1,4 +1,5 @@
 import type { PublicAvailability } from './availability'
+import type { PublicNewBadge } from './new-badge'
 export type Status = 'draft' | 'published' | 'withdrawn'
 export type WithdrawalReason = 'request' | 'sold-out' | 'price-change' | 'other' | 'automatic'
 export interface Promotion {
@@ -32,6 +33,12 @@ export interface Departure {
   seatsCheckedAt?: string | null
   programLastSeats?: boolean | null
   lastSeatsCheckedAt?: string | null
+  newBadge?: boolean | null
+  newBadgeLabel?: string | null
+  newBadgeUntil?: string | null
+  programNewBadge?: boolean | null
+  programNewBadgeLabel?: string | null
+  programNewBadgeUntil?: string | null
   status: Status
   advanceDays: number
   withdrawalAt: string
@@ -46,7 +53,7 @@ export interface Departure {
 }
 export type PublicPackage = Pick<Departure,
   'id' | 'program' | 'mtpe' | 'destination' | 'zone' | 'origin' | 'cruiseLine' | 'days' | 'nights' |
-  'travelDate' | 'price' | 'currency' | 'priceCondition' | 'flyerUrl' | 'bookingUrl' | 'descriptionUrl' | 'promotions' | 'priority'> & { availability?: PublicAvailability | null }
+  'travelDate' | 'price' | 'currency' | 'priceCondition' | 'flyerUrl' | 'bookingUrl' | 'descriptionUrl' | 'promotions' | 'priority'> & { availability?: PublicAvailability | null; newBadge?: PublicNewBadge | null }
 export type BannerPlacement = 'hero' | 'between-results' | 'catalog-end' | 'popup'
 export interface Banner {
   id: string
@@ -68,11 +75,22 @@ export interface Banner {
   href?: string | null
   startsAt?: string | null
   endsAt?: string | null
+  countdownEnabled?: boolean | null
+  countdownEndsAt?: string | null
+}
+export interface BlogPost {
+  sourceId: string
+  title: string
+  category: string
+  dateLabel: string
+  href: string
+  imageUrl: string
 }
 export interface CatalogData {
   packages: PublicPackage[]
   promotions: Promotion[]
   banners: Banner[]
+  blogPosts: BlogPost[]
   contactUrl: string
   contactLabel: string
 }

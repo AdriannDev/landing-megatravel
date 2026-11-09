@@ -2,7 +2,7 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 let ts
 try { ts = require('typescript') } catch { ts = require('../.qa/package/lib/typescript.js') }
-const program = ts.createProgram(['src/lib/types.ts', 'src/lib/catalog.ts', 'src/lib/lifecycle.ts', 'src/lib/csv.ts', 'src/lib/import-records.ts'], {
+const program = ts.createProgram(['src/lib/types.ts', 'src/lib/catalog.ts', 'src/lib/new-badge.ts', 'src/lib/lifecycle.ts', 'src/lib/csv.ts', 'src/lib/import-records.ts'], {
   noEmit: true, strict: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022,
   lib: ['lib.es2022.d.ts', 'lib.dom.d.ts'], module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
   allowImportingTsExtensions: true,

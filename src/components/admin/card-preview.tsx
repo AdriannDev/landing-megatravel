@@ -16,6 +16,8 @@ import {
   useSeatAvailability,
 } from "../seat-availability";
 import { PromotionLabels } from "../promotion-labels";
+import { durationLabel } from "../new-badge";
+import { programBadgeSnapshot, publicNewBadge } from "@/lib/new-badge";
 import type { Promotion } from "@/lib/types";
 const previewKeys = [
   "programRef",
@@ -36,6 +38,9 @@ const previewKeys = [
   "lastSeatsCheckedAt",
   "seatsConfirmed",
   "promotions",
+  "newBadge",
+  "newBadgeLabel",
+  "newBadgeUntil",
 ];
 export function CardPreview() {
   const { formValues, initialValues } = useFormFields(([fields]) => ({
@@ -170,6 +175,15 @@ export function CardPreview() {
     (shared ? shared.flyer?.url : uploadedUrl) ||
     String(values.flyerSourceUrl || "") ||
     DEFAULT_FLYER;
+  const newBadge = publicNewBadge({
+    newBadge: formValues.newBadge === true,
+    newBadgeLabel: formValues.newBadgeLabel ? String(formValues.newBadgeLabel) : null,
+    newBadgeUntil: formValues.newBadgeUntil ? String(formValues.newBadgeUntil) : null,
+    ...(shared ? programBadgeSnapshot(shared) : {}),
+  });
+  const days = Number(values.days || 0);
+  const nights =
+    values.nights == null || values.nights === "" ? null : Number(values.nights);
   return (
     <section
       className="mt-card-preview"
@@ -181,16 +195,28 @@ export function CardPreview() {
         etiqueta individual de esta fecha antes de guardar.
       </p>
       <div className="mt-preview-card">
-        <img
-          src={imageUrl}
-          alt={`Imagen de ${values.program || "programa"}`}
-          width="600"
-          height="600"
-          onError={(e) => {
-            if (e.currentTarget.getAttribute("src") !== DEFAULT_FLYER)
-              e.currentTarget.src = DEFAULT_FLYER;
-          }}
-        />
+        <figure className="mt-preview-media">
+          <img
+            src={imageUrl}
+            alt={`Imagen de ${values.program || "programa"}`}
+            width="600"
+            height="600"
+            onError={(e) => {
+              if (e.currentTarget.getAttribute("src") !== DEFAULT_FLYER)
+                e.currentTarget.src = DEFAULT_FLYER;
+            }}
+          />
+          {newBadge && (
+            <span className="mt-preview-new" title={newBadge.label}>
+              {newBadge.label}
+            </span>
+          )}
+        </figure>
+        <div className="mt-preview-duration-bridge">
+          <span className="mt-preview-duration">
+            {durationLabel(days, nights)}
+          </span>
+        </div>
         {availability?.lastSeats && (
           <LastSeatsBadge seats={availability.seats} />
         )}
@@ -198,8 +224,8 @@ export function CardPreview() {
           <small>MTPE {String(values.mtpe || "")}</small>
           <PromotionLabels promotions={promotions} />
           <h4>{titleCase(String(values.program || "Nombre del programa"))}</h4>
-          <p>
-            {date} · {Number(values.days || 0)} días
+          <p className="mt-preview-departure">
+            <b>SALIDA:</b> {date}
           </p>
           <SeatAvailability
             availability={availability}

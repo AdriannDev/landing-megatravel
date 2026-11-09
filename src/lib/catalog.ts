@@ -5,6 +5,7 @@ import {
   publicAvailability,
   DEFAULT_SEATS_VALIDITY_HOURS,
 } from "./availability.ts";
+import { publicNewBadge } from "./new-badge.ts";
 
 export const PAGE_SIZE = 12;
 export const normalize = (value: unknown) =>
@@ -100,6 +101,7 @@ export function toPublicPackage(
     descriptionUrl: item.descriptionUrl,
     priority: item.priority,
     availability: publicAvailability(item, validityHours, now.getTime()),
+    newBadge: publicNewBadge(item, now.getTime()),
     promotions: (item.promotions || [])
       .filter((p) => isActivePeriod(p, now))
       .map((p) => ({ id: p.id, name: p.name, label: p.label })),

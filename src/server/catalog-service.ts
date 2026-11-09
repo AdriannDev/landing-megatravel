@@ -1,6 +1,6 @@
 import 'server-only'
 import snapshot from '@/data/catalog.json'
-import type { Banner, CatalogData, Departure, Promotion } from '@/lib/types'
+import type { Banner, BlogPost, CatalogData, Departure, Promotion } from '@/lib/types'
 import { publishedPackages } from '@/lib/catalog'
 import { isActivePeriod } from '@/lib/lifecycle'
 import { cmsToDeparture, mediaUrl } from './normalize'
@@ -13,7 +13,7 @@ export async function getPublicCatalog(): Promise<CatalogData> {
   const workbookMode = process.env.CATALOG_SOURCE === 'workbook' || (process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL && process.env.USE_SQLITE !== 'true')
   if (workbookMode) {
     const packages = publishedPackages(snapshot.packages as Departure[], now)
-    return { packages, promotions: [...new Map(packages.flatMap(p => p.promotions).map(p => [p.id, p])).values()], banners: [], contactUrl: DEFAULT_CONTACT_URL, contactLabel: DEFAULT_CONTACT_LABEL }
+    return { packages, promotions: [...new Map(packages.flatMap(p => p.promotions).map(p => [p.id, p])).values()], banners: [], blogPosts: [], contactUrl: DEFAULT_CONTACT_URL, contactLabel: DEFAULT_CONTACT_LABEL }
   }
   const payload = await getCMS()
   const [departures, campaigns, banners, settings] = await Promise.all([
@@ -24,6 +24,14 @@ export async function getPublicCatalog(): Promise<CatalogData> {
   ])
   const packages = publishedPackages(departures.docs.map(cmsToDeparture), now, settings.seatsValidityHours ?? undefined)
   const promotions: Promotion[] = campaigns.docs.filter(p => isActivePeriod(p, now)).map(p => ({ id: String(p.slug || p.id), name: p.name, label: p.label }))
-  const publicBanners: Banner[] = banners.docs.filter(p => isActivePeriod(p, now) && (p.placement === 'popup' ? hasPublishablePopupContent({ popupFormat: p.popupFormat, title: p.title, imageUrl: mediaUrl(p.image) }) && (!p.image || !!mediaUrl(p.image)) : !!mediaUrl(p.image))).map(p => ({ id: String(p.id), placement: p.placement || 'hero', order: p.order || 0, startsAt: p.startsAt, endsAt: p.endsAt, imageUrl: mediaUrl(p.image), staticUrl: mediaUrl(p.staticImage), mobileUrl: mediaUrl(p.mobileImage) || null, alt: p.alt, href: p.href || null, title: p.title, message: p.message, buttonLabel: p.buttonLabel, popupFormat: p.popupFormat, popupLabel: p.popupLabel, popupSecondaryLabel: p.popupSecondaryLabel, popupKind: p.popupKind, popupFrequency: p.popupFrequency, popupDelay: p.popupDelay }))
-  return { packages, promotions, banners: publicBanners, contactUrl: settings.contactUrl || DEFAULT_CONTACT_URL, contactLabel: settings.contactLabel || DEFAULT_CONTACT_LABEL }
+  const publicBanners: Banner[] = banners.docs.filter(p => isActivePeriod(p, now) && (p.placement === 'popup' ? hasPublishablePopupContent({ popupFormat: p.popupFormat, title: p.title, imageUrl: mediaUrl(p.image) }) && (!p.image || !!mediaUrl(p.image)) : !!mediaUrl(p.image))).map(p => ({ id: String(p.id), placement: p.placement || 'hero', order: p.order || 0, startsAt: p.startsAt, endsAt: p.endsAt, imageUrl: mediaUrl(p.image), staticUrl: mediaUrl(p.staticImage), mobileUrl: mediaUrl(p.mobileImage) || null, alt: p.alt, href: p.href || null, title: p.title, message: p.message, buttonLabel: p.buttonLabel, popupFormat: p.popupFormat, popupLabel: p.popupLabel, popupSecondaryLabel: p.popupSecondaryLabel, popupKind: p.popupKind, popupFrequency: p.popupFrequency, popupDelay: p.popupDelay, countdownEnabled: p.countdownEnabled === true, countdownEndsAt: p.countdownEndsAt || null }))
+  const blogPosts: BlogPost[] = (settings.blogPosts || []).flatMap(post => {
+    const sourceId = String(post.sourceId || '').trim()
+    const title = String(post.title || '').trim()
+    const href = String(post.href || '').trim()
+    const imageUrl = String(post.imageUrl || '').trim()
+    if (!sourceId || !title || !href || !imageUrl) return []
+    return [{ sourceId, title, href, imageUrl, category: String(post.category || 'Mega Blog').trim() || 'Mega Blog', dateLabel: String(post.dateLabel || '').trim() }]
+  }).slice(0, 3)
+  return { packages, promotions, banners: publicBanners, blogPosts, contactUrl: settings.contactUrl || DEFAULT_CONTACT_URL, contactLabel: settings.contactLabel || DEFAULT_CONTACT_LABEL }
 }

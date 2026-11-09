@@ -1,66 +1,107 @@
 .whatsapp-contact {
   position: fixed;
-  right: 26px;
-  bottom: max(24px, env(safe-area-inset-bottom));
+  top: 50%;
+  right: 20px;
   z-index: 70;
-  display: flex;
+  display: inline-flex;
+  flex-direction: row-reverse;
   align-items: center;
-  gap: 12px;
-  padding: 7px 19px 7px 7px;
-  border: 1px solid #e4ede9;
+  gap: 0;
+  padding: 4px;
+  border: 0;
   border-radius: 999px;
-  background: #fff;
-  color: var(--ink);
-  box-shadow: 0 8px 28px #082d2526, 0 2px 8px #082d2512;
-  transition: transform .2s, box-shadow .2s;
+  background: #25d366;
+  color: #fff;
+  box-shadow:
+    0 8px 24px #25d36659,
+    0 2px 8px #051d2e1f;
+  transform: translateY(-50%);
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.whatsapp-contact:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px #082d2533, 0 3px 10px #082d2517;
+.whatsapp-contact:hover,
+.whatsapp-contact:focus-visible {
+  background: #20bd5a;
+  box-shadow:
+    0 12px 28px #25d36673,
+    0 4px 12px #051d2e29;
 }
 
 .whatsapp-contact-icon {
   display: grid;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
   place-items: center;
   border-radius: 50%;
-  background: #128c4e;
+  background: transparent;
   color: #fff;
 }
 
+/* El texto inicia oculto y emerge suavemente con transición pura (sin conflicto entre @keyframes y :hover). */
 .whatsapp-contact-copy {
   display: grid;
-  gap: 3px;
-  font-size: 10px;
+  gap: 2px;
+  max-width: 0;
+  opacity: 0;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 10.5px;
   line-height: 1.2;
-  color: #718198;
+  color: #fff;
+  pointer-events: none;
+  transition:
+    max-width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.25s ease,
+    padding 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .whatsapp-contact-copy strong {
-  font-size: 13px;
-  color: var(--blue-dark);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #fff;
 }
 
-.site-footer:has(+ .whatsapp-contact) .footer-bottom {
-  padding-right: 150px;
+.whatsapp-contact.is-expanded .whatsapp-contact-copy,
+.whatsapp-contact:hover .whatsapp-contact-copy,
+.whatsapp-contact:focus-visible .whatsapp-contact-copy {
+  max-width: 165px;
+  opacity: 1;
+  padding: 0 6px 0 16px;
 }
 
 @media (max-width: 760px) {
   .whatsapp-contact {
-    right: 16px;
-    bottom: max(16px, env(safe-area-inset-bottom));
-    padding: 4px;
+    right: 12px;
+    padding: 3px;
   }
 
-  .whatsapp-contact-copy { display: none; }
+  .whatsapp-contact-icon {
+    width: 44px;
+    height: 44px;
+  }
 
-  .site-footer:has(+ .whatsapp-contact) .footer-bottom {
-    padding-right: 64px;
+  .whatsapp-contact-copy {
+    font-size: 9.5px;
+  }
+
+  .whatsapp-contact-copy strong {
+    font-size: 12px;
+  }
+
+  .whatsapp-contact.is-expanded .whatsapp-contact-copy,
+  .whatsapp-contact:hover .whatsapp-contact-copy,
+  .whatsapp-contact:focus-visible .whatsapp-contact-copy {
+    padding: 0 4px 0 13px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .whatsapp-contact { transition: none; }
+  .whatsapp-contact,
+  .whatsapp-contact-copy {
+    transition: none;
+  }
 }

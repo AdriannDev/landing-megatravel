@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24.22.1" },
+  "engines": {
+    "node": ">=24.22.1"
+  },
   "scripts": {
     "dev": "next dev --webpack",
     "build": "payload generate:importmap && next build --webpack",
@@ -17,6 +19,8 @@
     "generate:importmap": "payload generate:importmap",
     "migrate:create": "node --env-file-if-exists=.env.local node_modules/payload/bin.js migrate:create",
     "migrate": "node --env-file-if-exists=.env.local node_modules/payload/bin.js migrate",
+    "sync:blog": "tsx --env-file-if-exists=.env.local scripts/sync-blog.ts",
+    "seed:banner-placeholders": "tsx --env-file-if-exists=.env.local scripts/seed-banner-placeholders.ts",
     "migrate:programs": "tsx --env-file-if-exists=.env.local scripts/migrate-programs.ts",
     "migrate:seats:sqlite": "tsx --env-file-if-exists=.env.local scripts/migrate-program-seats-sqlite.ts",
     "import:workbook": "node scripts/prepare-workbook.mjs",
@@ -38,6 +42,7 @@
     "@payloadcms/ui": "3.90.2",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.3",
+    "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "graphql": "^16.11.0",
