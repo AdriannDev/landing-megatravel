@@ -8,6 +8,7 @@ import * as migration_20261102_173707_program_shared_seats from './20261102_1737
 import * as migration_20261104_171419_r2_media_storage from './20261104_171419_r2_media_storage';
 import * as migration_20261109_014741_new_badge from './20261109_014741_new_badge';
 import * as migration_20261109_060013_blog_post_sync from './20261109_060013_blog_post_sync';
+import * as migration_20261109_201333_date_overrides from './20261109_201333_date_overrides';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20261109_060013_blog_post_sync.up,
     down: migration_20261109_060013_blog_post_sync.down,
-    name: '20261109_060013_blog_post_sync'
+    name: '20261109_060013_blog_post_sync',
+  },
+  {
+    up: migration_20261109_201333_date_overrides.up,
+    down: migration_20261109_201333_date_overrides.down,
+    name: '20261109_201333_date_overrides'
   },
 ];

@@ -32,6 +32,8 @@ Los cupos se proyectan como `availability: { seats, lastSeats, expiresAt } | nul
 
 `programs` guarda `program`, `mtpe` único normalizado (sin espacios extremos, en mayúsculas), `destination`, `zone`, `days`, `nights`, `cruiseLine`, `flyer`, `flyerSourceUrl`, `flyerDownloadWarning`, `bookingUrl` y `descriptionUrl`. `departures.programRef` vincula cada fecha. Los campos compartidos antiguos se conservan como proyecciones de lectura y búsqueda para las columnas, exportación y versiones; las escrituras derivan sus valores del programa. Las actualizaciones del programa sincronizan las proyecciones en la misma transacción. Las versiones conservan sus valores históricos.
 
+Las salidas pueden definir `destinationOverride` y `bookingUrlOverride` cuando el destino o enlace de reserva difiere del programa. Si están vacíos, se utiliza el valor compartido. Estos valores se conservan al actualizar el programa y se incluyen en la proyección pública y la exportación.
+
 ## Campos de Salidas
 
 | Campo | Tipo/función | Observaciones |
@@ -207,7 +209,7 @@ También acepta multipart con `data` (el mismo JSON) y `flyer` (archivo opcional
 
 El reporte contiene `dryRun`, `total`, `accepted`, `errors` y resultados por fila. Las filas inválidas se reportan individualmente. Un fallo de descarga puede conservar el enlace y producir una advertencia sin rechazar la fila completa. La validación sin importar no garantiza la disponibilidad posterior del servidor de imágenes.
 
-La importación agrupa por MTPE y rechaza todo grupo con valores comunes contradictorios en el archivo, conservando los encabezados y `source_key`. Cada grupo aceptado actualiza su programa y fechas dentro de una transacción. La exportación resuelve el contenido vigente del programa y conserva vacío `flyer_url` cuando no hay arte original.
+La importación agrupa por MTPE y rechaza todo grupo con valores comunes contradictorios en el archivo, conservando los encabezados y `source_key`. El destino y el enlace de reserva pueden variar por fecha. Cada grupo aceptado actualiza su programa y fechas dentro de una transacción. La exportación resuelve el contenido vigente de cada salida y conserva vacío `flyer_url` cuando no hay arte original.
 
 Los banners públicos incluyen `placement` (`hero`, `between-results`, `catalog-end`), `order`, periodo, URLs comerciales y texto alternativo. Los anteriores sin ubicación se proyectan como `hero`. Se carga la imagen visible del hero con prioridad alta; las inferiores se difieren. No se envían campos administrativos adicionales.
 

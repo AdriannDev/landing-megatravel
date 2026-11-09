@@ -44,7 +44,7 @@ export function planImport(rows: Record<string, string>[], options: { now?: Date
   // Include invalid and duplicate source rows so a skipped row cannot hide a conflict.
   for (const row of rows) {
     const mtpe = normalizeMTPE(row.mtpe)
-    const signature = JSON.stringify([row.program?.trim(), row.destination || '', row.zone || '', Number(row.days), row.nights ? Number(row.nights) : null, row.cruise_line || null, row.flyer_url || '', row.booking_url || '', row.description_url || ''])
+    const signature = JSON.stringify([row.program?.trim(), row.zone || '', Number(row.days), row.nights ? Number(row.nights) : null, row.cruise_line || null, row.flyer_url || '', row.description_url || ''])
     if (signatures.has(mtpe) && signatures.get(mtpe) !== signature) inconsistent.add(mtpe)
     signatures.set(mtpe, signature)
   }

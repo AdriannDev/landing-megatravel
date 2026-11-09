@@ -11,7 +11,7 @@ Entra en `/admin` con tu cuenta: abre directamente la tabla de Salidas, ordenada
 3. Elige **Guardar como borrador** o **Publicar salidas**. También puedes usar **Nueva fecha** para partir de una salida existente y elegir entre crear borradores o publicar directamente. El programa y sus fechas se guardan juntos; si una fecha falla, no quedan salidas parciales. Se rechaza un MTPE/origen/fecha repetido, incluso si la salida anterior está retirada.
 4. Al publicar se validan precio, moneda, enlaces HTTPS y vigencia. Si guardaste borradores, ábrelos para revisarlos y publicarlos más adelante. La imagen es opcional: sin ella aparece una imagen de Megatravel.
 
-**Programas** guarda el contenido común una sola vez por MTPE. Edita allí nombre, destino, zona, duración, naviera, flyer y enlaces. El cambio aparece en todas sus fechas, incluidas las ya publicadas; las pestañas públicas abiertas se actualizan en hasta 30 segundos. El MTPE identifica el programa y no se cambia después de crearlo. El precio, moneda, condición, origen, promociones, prioridad, fecha, anticipación y estado se editan por salida.
+**Programas** guarda el contenido común una sola vez por MTPE. Edita allí nombre, destino, zona, duración, naviera, flyer y enlaces. El cambio aparece en todas sus fechas, incluidas las ya publicadas; las pestañas públicas abiertas se actualizan en hasta 30 segundos. Una salida puede tener un destino o enlace de reserva propio: esos valores prevalecen sobre los del programa para esa fecha. El MTPE identifica el programa y no se cambia después de crearlo. El precio, moneda, condición, origen, promociones, prioridad, fecha, anticipación y estado se editan por salida.
 
 La imagen predeterminada no rellena el campo de flyer: los programas pendientes de arte siguen siendo identificables. Sube el flyer al programa para sustituirla en todas sus fechas. Si una imagen falla al cargar, también se usa el respaldo de Megatravel. La herramienta secundaria «Duplicar un programa y crear salidas» reutiliza el programa compartido.
 
@@ -41,7 +41,7 @@ Se admiten archivos JPEG, PNG, WebP y GIF de hasta 12 MB. Las imágenes estátic
 
 El campo de enlace queda disponible para migrar imágenes existentes del Excel. Al guardar un enlace nuevo, el CMS intenta descargarlo automáticamente. Si falla, muestra el motivo y conserva el enlace para mostrar el flyer. «Copiar imágenes desde sus enlaces» permite reintentar hasta 50 pendientes por operación, conserva el original y reutiliza copias ya existentes. Repite la operación si quedan pendientes.
 
-Para CSV, exporta primero el catálogo; conserva `source_key` al editar filas existentes. Las columnas y claves se mantienen. Todas las filas de un MTPE deben coincidir en sus datos compartidos; una contradicción rechaza ese grupo completo. La importación guarda cada grupo de MTPE en una transacción y reporta los fallos por fila. No reactiva salidas retiradas: esa revisión se hace en el formulario.
+Para CSV, exporta primero el catálogo; conserva `source_key` al editar filas existentes. Las columnas y claves se mantienen. Las filas de un MTPE deben coincidir en sus datos compartidos; el destino y el enlace de reserva pueden variar por fecha. Una contradicción en los demás datos compartidos rechaza ese grupo completo. La importación guarda cada grupo de MTPE en una transacción y reporta los fallos por fila. No reactiva salidas retiradas: esa revisión se hace en el formulario.
 
 ## Promociones y banners
 

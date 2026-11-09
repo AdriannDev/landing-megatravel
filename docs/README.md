@@ -20,7 +20,7 @@ Esta documentación describe el código y su operación. Distingue la configurac
 | Rotar credenciales y elegir almacenamiento o copias | [Guía práctica de Railway](guia-railway-operacion.md) |
 | Activar R2 y optimizar imágenes | [R2 e imágenes](r2-imagenes.md) |
 | Usar el CMS como editor comercial | [Guía de editores](editores.md) |
-| Consultar el plan futuro de automatización por correo y consolidado | [Plan de automatización de cupos](plan-automatizacion-cupos.md) |
+| Consultar el plan futuro de automatización de cupos por correo | [Plan de automatización de cupos](plan-automatizacion-cupos.md) |
 
 Lectura sugerida: arquitectura → mantenimiento → configuración. Para una tarea concreta, empieza por la tabla «Dónde hacer cada cambio» de la guía de mantenimiento.
 

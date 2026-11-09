@@ -170,6 +170,15 @@ try {
   assert.ok(dates.docs.every(doc => cmsToDeparture(doc).program === 'Nombre actualizado' && cmsToDeparture(doc).flyerUrl.endsWith(uploaded.filename!)))
   const indexed = await payload.find({ collection: 'departures', req, overrideAccess: false, depth: 0, where: { program: { contains: 'actualizado' } } })
   assert.equal(indexed.totalDocs, 2); checks++
+  await payload.update({ collection: 'departures', id: batch.created[1].id, req, overrideAccess: false, data: { destinationOverride: destination.id, bookingUrlOverride: 'https://example.com/reserva-fecha' } })
+  await payload.update({ collection: 'programs', id: shared.id, req, overrideAccess: false, data: { bookingUrl: 'https://example.com/reserva-compartida' } })
+  const specificDate = cmsToDeparture(await payload.findByID({ collection: 'departures', id: batch.created[1].id, req, depth: 2 }))
+  const commonDate = cmsToDeparture(await payload.findByID({ collection: 'departures', id: batch.created[0].id, req, depth: 2 }))
+  assert.equal(specificDate.destination, 'Madrid'); assert.equal(specificDate.bookingUrl, 'https://example.com/reserva-fecha')
+  assert.equal(commonDate.destination, 'Cusco'); assert.equal(commonDate.bookingUrl, 'https://example.com/reserva-compartida'); checks++
+  await payload.update({ collection: 'departures', id: batch.created[1].id, req, overrideAccess: false, data: { destinationOverride: null, bookingUrlOverride: null } })
+  const resetDate = cmsToDeparture(await payload.findByID({ collection: 'departures', id: batch.created[1].id, req, depth: 2 }))
+  assert.equal(resetDate.destination, 'Cusco'); assert.equal(resetDate.bookingUrl, 'https://example.com/reserva-compartida'); checks++
   assert.equal(dates.docs.find(doc => doc.id === batch.created[0].id)?.availableSeats, 15)
   assert.equal(dates.docs.find(doc => doc.id === batch.created[1].id)?.availableSeats, 15)
   assert.equal(dates.docs.find(doc => doc.id === batch.created[1].id)?.lastSeats, true); checks++

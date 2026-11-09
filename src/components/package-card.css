@@ -1,6 +1,8 @@
 /* Card de producto: etiqueta «Nuevo» en diagonal, duración entre imagen y texto, y colores de la card.
    Selectores prefijados con .package-card para prevalecer sobre globals.css. */
 .package-card {
+  --card-yellow: #ffd43b;
+  --card-red: #ff0000;
   --card-orange: #ff7420;
   --card-orange-hover: #e8620f;
   --card-orange-active: #cc540c;
@@ -64,17 +66,17 @@
 @keyframes new-badge-color-trip {
   0%,
   18% {
-    background: var(--card-orange);
+    background: var(--card-yellow);
     color: var(--card-ink);
   }
   32%,
   68% {
-    background: var(--card-blue);
+    background: var(--card-red);
     color: #fff;
   }
   82%,
   100% {
-    background: var(--card-orange);
+    background: var(--card-yellow);
     color: var(--card-ink);
   }
 }

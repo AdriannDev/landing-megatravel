@@ -14,11 +14,21 @@ test('CSV comparte un programa por MTPE y permite precios y fechas distintos', (
   assert.equal(result.accepted[0].item.mtpe, 'MT01'); assert.equal(result.accepted[0].item.flyerUrl, '')
 })
 test('CSV rechaza todas las filas de un MTPE contradictorio y aísla otros programas', () => {
-  for (const [field, value] of [['program', 'Otro'], ['days', '12'], ['flyer_url', 'https://example.com/arte.png'], ['booking_url', 'https://example.com/reserva']]) {
+  for (const [field, value] of [['program', 'Otro'], ['days', '12'], ['flyer_url', 'https://example.com/arte.png']]) {
     const result = planImport([row, { ...row, source_key: '2', travel_date: '2029-06-10', [field]: value }, { ...row, source_key: '3', mtpe: 'MT02' }])
     assert.equal(result.accepted.length, 1, field); assert.equal(result.accepted[0].item.mtpe, 'MT02')
     assert.equal(result.errors.length, 2)
   }
+})
+test('el destino y el enlace de reserva pueden variar por fecha sin perder los valores compartidos', () => {
+  const second = { ...row, source_key: '2', travel_date: '2029-06-10', destination: 'Lisboa', booking_url: 'https://example.com/otra-salida' }
+  assert.equal(planImport([row, second]).accepted.length, 2)
+  const program = { id: 1, program: 'Europa', destination: { id: 1, name: 'Madrid' }, bookingUrl: row.booking_url }
+  const date = resolveProgram({ programRef: program, destinationOverride: { id: 2, name: 'Lisboa' }, bookingUrlOverride: second.booking_url })
+  assert.equal(date.destination.name, 'Lisboa')
+  assert.equal(date.bookingUrl, second.booking_url)
+  assert.equal(resolveProgram({ programRef: program, destinationOverride: null, bookingUrlOverride: '' }).destination.name, 'Madrid')
+  assert.equal(resolveProgram({ programRef: program, destinationOverride: null, bookingUrlOverride: '' }).bookingUrl, row.booking_url)
 })
 test('CSV rechaza fechas repetidas para MTPE y origen aunque cambie source_key', () => {
   const result = planImport([row, { ...row, source_key: '2' }])

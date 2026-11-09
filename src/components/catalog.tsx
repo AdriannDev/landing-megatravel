@@ -14,6 +14,8 @@ import {
   RotateCcw,
   Plane,
   ArrowUpRight,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import type { CatalogData, CatalogFilters, PublicPackage } from "@/lib/types";
 import {
@@ -35,6 +37,7 @@ import { WhatsAppContact } from "./whatsapp-contact";
 import { SiteFooter } from "./site-footer";
 import { bannersAt } from "@/lib/banners";
 import { Button } from "./ui/button";
+import "./catalog-view.css";
 import {
   Dialog,
   DialogContent,
@@ -176,6 +179,7 @@ export function Catalog({
     parseFilters(new URLSearchParams(initialQuery)),
   );
   const [query, setQuery] = useState(filters.q);
+  const [view, setView] = useState<"grid" | "list">("grid");
   const [clock, setClock] = useState(() => Date.now());
   const resultRef = useRef<HTMLDivElement>(null);
   const lastNoResults = useRef("");
@@ -546,6 +550,28 @@ export function Catalog({
                         <option value="duration">Menor duración</option>
                       </select>
                     </label>
+                    <div className="catalog-view-toggle" role="group" aria-label="Vista de los resultados">
+                      <button
+                        type="button"
+                        aria-label="Ver en tarjetas"
+                        aria-pressed={view === "grid"}
+                        title="Ver en tarjetas"
+                        onClick={() => setView("grid")}
+                      >
+                        <LayoutGrid size={17} aria-hidden="true" />
+                        <span>Tarjetas</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Ver en lista"
+                        aria-pressed={view === "list"}
+                        title="Ver en lista"
+                        onClick={() => setView("list")}
+                      >
+                        <List size={18} aria-hidden="true" />
+                        <span>Lista</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {count > 0 && (
@@ -596,11 +622,12 @@ export function Catalog({
                 )}
                 {result.items.length ? (
                   <>
-                    <div className="package-grid">
+                    <div className={`package-grid${view === "list" ? " package-grid--list" : ""}`}>
                       {result.items.slice(0, 6).map((item) => (
                         <PackageCard
                           item={item}
                           contactUrl={liveData.contactUrl}
+                          view={view}
                           key={item.id}
                         />
                       ))}
@@ -610,11 +637,12 @@ export function Catalog({
                       placement="between-results"
                     />
                     {result.items.length > 6 && (
-                      <div className="package-grid package-grid-continuation">
+                      <div className={`package-grid package-grid-continuation${view === "list" ? " package-grid--list" : ""}`}>
                         {result.items.slice(6).map((item) => (
                           <PackageCard
                             item={item}
                             contactUrl={liveData.contactUrl}
+                            view={view}
                             key={item.id}
                           />
                         ))}

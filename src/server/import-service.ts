@@ -32,6 +32,8 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
     try {
       const run = async () => {
       let programRef: number | string | undefined
+      let sharedDestination: number | string | null = null
+      let sharedBookingUrl = ''
       for (const { row, item } of entries) {
       const existing = await payload.find({ collection: 'departures', overrideAccess: false, req, depth: 0, limit: 1, where: { sourceKey: { equals: item.sourceKey } } })
       const original = existing.docs[0]
@@ -80,8 +82,12 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
         if (!flyer && found.docs[0]?.flyerSourceUrl === data.flyerSourceUrl) common.flyer = relationID(found.docs[0].flyer) as any
         const program = found.docs[0] ? await payload.update({ collection: 'programs', id: found.docs[0].id, req, overrideAccess: false, data: common, context }) : await payload.create({ collection: 'programs', req, overrideAccess: false, data: common, context })
         programRef = program.id
+        sharedDestination = relationID(program.destination)
+        sharedBookingUrl = program.bookingUrl || ''
       }
       data.programRef = programRef as any
+      data.destinationOverride = String(destination) !== String(sharedDestination) ? destination : null
+      data.bookingUrlOverride = item.bookingUrl !== sharedBookingUrl ? item.bookingUrl : null
       const doc = original ? await payload.update({ collection: 'departures', id: original.id, overrideAccess: false, req, data, context }) : await payload.create({ collection: 'departures', overrideAccess: false, req, data, context })
       groupResults.push({ row, status: original ? 'updated' : 'created', id: doc.id, ...(warning ? { message: 'Se conserva el enlace de la imagen: ' + warning } : {}) })
       }

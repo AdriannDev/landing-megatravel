@@ -136,6 +136,7 @@ export const Departures: CollectionConfig = {
           { name: 'zone', label: 'Zona', type: 'text', required: true, index: true },
           { name: 'origin', label: 'Origen', type: 'relationship', relationTo: 'origins', required: true },
         ] },
+        { name: 'destinationOverride', label: 'Destino distinto para esta fecha (opcional)', type: 'relationship', relationTo: 'destinations', admin: { description: 'Solo si esta salida tiene un destino diferente al del programa. Vacío utiliza el destino compartido.' } },
         { name: 'cruiseLine', label: 'Naviera (solo cruceros)', type: 'relationship', relationTo: 'cruise-lines' },
         { type: 'row', fields: [
           { name: 'price', label: 'Precio desde', type: 'number', min: 0, required: true },
@@ -168,6 +169,7 @@ export const Departures: CollectionConfig = {
         { name: 'flyer', label: 'Imagen del programa', type: 'upload', relationTo: 'media' },
         { name: 'flyerSourceUrl', label: 'O pegar enlace de imagen (HTTPS)', type: 'text', validate: urlValidation, admin: { description: 'Al guardar se intenta descargar automáticamente. Si falla, se conserva el enlace para mostrar la imagen.' } },
         { name: 'bookingUrl', label: 'Reservar en Meganet', type: 'text', validate: urlValidation },
+        { name: 'bookingUrlOverride', label: 'Enlace de reserva para esta fecha (opcional)', type: 'text', validate: urlValidation, admin: { description: 'Solo si esta salida tiene un enlace propio. Vacío utiliza el enlace compartido del programa.' } },
         { name: 'descriptionUrl', label: 'Ver descriptivo', type: 'text', validate: urlValidation },
         { name: 'cardPreview', type: 'ui', admin: { components: { Field: '/components/admin/card-preview#CardPreview' } } },
       ] },

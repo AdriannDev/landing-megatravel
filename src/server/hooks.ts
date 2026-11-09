@@ -46,7 +46,7 @@ export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, origi
   return data
 }
 
-const tracked = ['program', 'mtpe', 'destination', 'zone', 'origin', 'cruiseLine', 'days', 'nights', 'travelDate', 'price', 'currency', 'priceCondition', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'descriptionUrl', 'promotions', 'priority', 'advanceDays', 'status', 'withdrawalReason', 'withdrawalNote', 'availableSeats', 'lastSeats', 'programLastSeats', 'seatsCheckedAt', 'lastSeatsCheckedAt', 'newBadge', 'newBadgeLabel', 'newBadgeUntil']
+const tracked = ['program', 'mtpe', 'destination', 'destinationOverride', 'zone', 'origin', 'cruiseLine', 'days', 'nights', 'travelDate', 'price', 'currency', 'priceCondition', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'bookingUrlOverride', 'descriptionUrl', 'promotions', 'priority', 'advanceDays', 'status', 'withdrawalReason', 'withdrawalNote', 'availableSeats', 'lastSeats', 'programLastSeats', 'seatsCheckedAt', 'lastSeatsCheckedAt', 'newBadge', 'newBadgeLabel', 'newBadgeUntil']
 const compact = (value: unknown): unknown => Array.isArray(value) ? value.map(compact) : value && typeof value === 'object' && 'id' in value ? value.id : value ?? null
 export const recordDepartureAudit: CollectionAfterChangeHook = async ({ doc, previousDoc, req, operation, context }) => {
   const changes = Object.fromEntries(tracked.filter(key => JSON.stringify(compact(doc[key])) !== JSON.stringify(compact(previousDoc?.[key]))).map(key => [key, { before: compact(previousDoc?.[key]), after: compact(doc[key]) }]))

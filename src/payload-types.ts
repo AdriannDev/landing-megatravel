@@ -150,6 +150,10 @@ export interface Departure {
   zone?: string | null;
   origin: number | Origin;
   /**
+   * Solo si esta salida tiene un destino diferente al del programa. Vacío utiliza el destino compartido.
+   */
+  destinationOverride?: (number | null) | Destination;
+  /**
    * Contenido compartido. Edita este dato en Programas.
    */
   cruiseLine?: (number | null) | CruiseLine;
@@ -220,6 +224,10 @@ export interface Departure {
    * Contenido compartido. Edita este dato en Programas.
    */
   bookingUrl?: string | null;
+  /**
+   * Solo si esta salida tiene un enlace propio. Vacío utiliza el enlace compartido del programa.
+   */
+  bookingUrlOverride?: string | null;
   /**
    * Contenido compartido. Edita este dato en Programas.
    */
@@ -613,6 +621,7 @@ export interface DeparturesSelect<T extends boolean = true> {
   destination?: T;
   zone?: T;
   origin?: T;
+  destinationOverride?: T;
   cruiseLine?: T;
   price?: T;
   currency?: T;
@@ -636,6 +645,7 @@ export interface DeparturesSelect<T extends boolean = true> {
   flyer?: T;
   flyerSourceUrl?: T;
   bookingUrl?: T;
+  bookingUrlOverride?: T;
   descriptionUrl?: T;
   status?: T;
   reviewConfirmed?: T;

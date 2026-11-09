@@ -2412,7 +2412,7 @@ svg {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  color: #9f4816;
+  color: #FF7420;
   text-transform: uppercase;
   font-size: 10px;
   font-weight: 700;
@@ -2504,23 +2504,22 @@ svg {
   overflow-wrap: anywhere;
   text-align: center;
   border-radius: 4px;
-  background: #c85112;
+  background: #FF7420;
   color: white;
 }
 .popup-actions .button:hover {
-  background: #ad410b;
-  box-shadow: 0 3px 12px #c8511226;
+  background: #FF6C1C;
 }
 .popup-dismiss {
   background: transparent;
   border: 0;
-  color: #64748b;
+  color: #0049FC;
   font-size: 12px;
   min-height: 44px;
   padding: 10px 0;
 }
 .popup-dismiss:hover {
-  color: var(--ink);
+  color: #0244eb;
   text-decoration: underline;
   text-underline-offset: 4px;
 }

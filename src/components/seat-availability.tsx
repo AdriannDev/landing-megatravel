@@ -34,10 +34,10 @@ export function LastSeatsBadge({ seats }: { seats?: number | null }) {
         <Flame size={23} aria-hidden="true" />
       </span>
       <div className="last-seats-copy">
-        <strong>¡Últimos cupos!</strong>
+        <strong>¡Últimas sillas!</strong>
         <span>
           {seats != null
-            ? `${seats} ${seats === 1 ? "cupo referencial · sujeto" : "cupos referenciales · sujetos"} a confirmación`
+            ? `${seats} ${seats === 1 ? "silla disponible · sujeta" : "sillas disponibles · sujetas"} a confirmación`
             : "Disponibilidad limitada · sujeta a confirmación"}
         </span>
       </div>
@@ -73,7 +73,7 @@ export function SeatAvailability({
         <p className="seat-quantity">
           <Armchair size={14} aria-hidden="true" />
           <span>
-            Cupos referenciales:{" "}
+            Disponibilidad:{" "}
             <strong>
               {availability.seats}{" "}
               {availability.seats === 1 ? "silla" : "sillas"}
