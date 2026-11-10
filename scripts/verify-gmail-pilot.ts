@@ -40,10 +40,14 @@ try {
       const start = Number(query.uid.split(':')[0]), all = [...messages.keys()]
       return all.filter(uid => uid >= start || uid === Math.max(...all)) // '*' reversed-range behavior.
     },
-    async fetchOne(uid: number, query: unknown, options: unknown) {
-      assert.deepEqual(query, { uid: true, size: true, source: { start: 0, maxLength: 1_000_001 } }); assert.deepEqual(options, { uid: true })
+    async fetchOne(uid: number, query: { uid: boolean; size: boolean; source: { start: number; maxLength: number } }, options: unknown) {
+      assert.equal(query.uid, true)
+      assert.equal(query.size, true)
+      assert.equal(query.source.start, 0)
+      assert.deepEqual(options, { uid: true })
       fetched.push(uid); if (uid === failUid) throw new Error('interrupted')
-      const source = messages.get(uid); return source ? { uid, source, size: source.length } : false
+      const source = messages.get(uid)
+      return source ? { uid, source: source.subarray(0, query.source.maxLength), size: source.length } : false
     },
   } as unknown as GmailClient)
 
@@ -129,7 +133,29 @@ try {
   assert.equal(await realBalance(), 9)
   assert.equal((await realAudit()).length, 0); checks++
 
-  await readReal(signed(realBody()))
+  // A signature image can make a valid reservation larger than the previous 1 MB limit.
+  const signature = Buffer.alloc(2_200_000).toString('base64').match(/.{1,76}/g)!.join('\r\n')
+  const withSignature = Buffer.from([
+    'Authentication-Results: mx.google.com; dmarc=pass header.from=example.test',
+    'From: Avisos <reservas@example.test>',
+    'MIME-Version: 1.0',
+    'Content-Type: multipart/mixed; boundary="signature"',
+    '',
+    '--signature',
+    'Content-Type: text/plain; charset=utf-8',
+    '',
+    realBody(),
+    '--signature',
+    'Content-Type: image/png; name="firma.png"',
+    'Content-Transfer-Encoding: base64',
+    'Content-Disposition: attachment; filename="firma.png"',
+    '',
+    signature,
+    '--signature--',
+    '',
+  ].join('\r\n'))
+  assert.ok(withSignature.length > 2_900_000)
+  await readReal(withSignature)
   assert.equal(await realBalance(), 6)
   assert.equal((await payload.findByID({ collection: 'departures', id: realProgram.created[0].id, req, context: { skipProgramResolution: true } })).availableSeats, 6)
   assert.deepEqual((await realAudit()).map(log => log.changes), [{

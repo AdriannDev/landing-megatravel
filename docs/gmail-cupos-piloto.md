@@ -43,7 +43,7 @@ El estado persistente guarda proveedor, huella del buzón/carpeta, UIDVALIDITY y
 
 Una reserva del lector de nueve minutos se renueva por mensaje. PostgreSQL usa un bloqueo transaccional entre procesos; SQLite local serializa escritores. Un trabajador que pierde la reserva no puede avanzar el cursor. Los mensajes borrados de la carpeta nunca se interpretan como cancelaciones. Errores de autenticación y conexión devuelven un error sin exponer credenciales, cuerpos ni respuestas privadas del servidor, y liberan la reserva cuando el proceso puede terminar normalmente; tras una interrupción abrupta la reserva vence automáticamente.
 
-Solo se guardan campos comerciales normalizados, huellas, saldos, resultado y motivo. No se guardan cuerpos, asuntos, adjuntos ni datos de pasajeros. Los mensajes mayores a 1 MB y los MIME ilegibles se registran para revisión sin guardar su contenido.
+Solo se guardan campos comerciales normalizados, huellas, saldos, resultado y motivo. No se guardan cuerpos, asuntos, adjuntos ni datos de pasajeros. Los mensajes mayores a 5 MB y los MIME ilegibles se registran para revisión sin guardar su contenido.
 
 ## Saldo inicial, plantillas y validación
 

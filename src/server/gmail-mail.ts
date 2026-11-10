@@ -9,7 +9,7 @@ import { lockMailPilot, processPilotMail, type LiveMailSettings } from './mail-p
 export type GmailConfig = { user: string; password: string; folder: string; senders: string[]; live?: LiveMailSettings }
 export type GmailClient = Pick<ImapFlow, 'connect' | 'mailboxOpen' | 'search' | 'fetchOne' | 'logout' | 'close' | 'on'>
 export type GmailClientFactory = (config: GmailConfig) => GmailClient
-const MAX_BYTES = 1_000_000
+const MAX_BYTES = 5_000_000
 const LEASE_MS = 9 * 60_000
 class GmailReaderStateError extends Error {}
 export function gmailMailConfig(live?: LiveMailSettings): GmailConfig {
@@ -91,8 +91,10 @@ export async function syncGmailMailbox(payload: Payload, config: GmailConfig = g
       const message = await client.fetchOne(uid, { uid: true, size: true, source: { start: 0, maxLength: MAX_BYTES + 1 } }, { uid: true })
       let normalized
       if (!message) normalized = null // Expunged after search: not a business cancellation.
-      else if (!message.source || (message.size || 0) > MAX_BYTES || message.source.length > MAX_BYTES)
-        normalized = { body: '', trusted: false, reviewReason: 'Mensaje ausente o demasiado grande. Revisa el aviso completo.' }
+      else if ((message.size ?? 0) > MAX_BYTES || (message.source?.length ?? 0) > MAX_BYTES)
+        normalized = { body: '', trusted: false, reviewReason: `El mensaje supera el límite de ${MAX_BYTES / 1_000_000} MB. Revisa el aviso completo.` }
+      else if (!message.source)
+        normalized = { body: '', trusted: false, reviewReason: 'Gmail no devolvió el contenido del mensaje. Revisa el aviso completo.' }
       else {
         try { normalized = await normalizeGmailMessage(message.source, config.senders, Boolean(config.live)) }
         catch { normalized = { body: '', trusted: false, reviewReason: 'No se pudo interpretar el formato MIME. Revisa el aviso completo.' } }
