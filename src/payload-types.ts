@@ -30,6 +30,10 @@ export interface Config {
     origins: Origin;
     'cruise-lines': CruiseLine;
     'audit-log': AuditLog;
+    'seat-pilot-pools': SeatPilotPool;
+    'seat-pilot-reservations': SeatPilotReservation;
+    'seat-mail-events': SeatMailEvent;
+    'mail-sync-cursors': MailSyncCursor;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -47,6 +51,10 @@ export interface Config {
     origins: OriginsSelect<false> | OriginsSelect<true>;
     'cruise-lines': CruiseLinesSelect<false> | CruiseLinesSelect<true>;
     'audit-log': AuditLogSelect<false> | AuditLogSelect<true>;
+    'seat-pilot-pools': SeatPilotPoolsSelect<false> | SeatPilotPoolsSelect<true>;
+    'seat-pilot-reservations': SeatPilotReservationsSelect<false> | SeatPilotReservationsSelect<true>;
+    'seat-mail-events': SeatMailEventsSelect<false> | SeatMailEventsSelect<true>;
+    'mail-sync-cursors': MailSyncCursorsSelect<false> | MailSyncCursorsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -464,7 +472,9 @@ export interface Banner {
  */
 export interface AuditLog {
   id: number;
-  departureId: string;
+  entityType?: ('departure' | 'program') | null;
+  programId?: string | null;
+  departureId?: string | null;
   program: string;
   event: 'created' | 'updated' | 'withdrawn' | 'reactivated' | 'deleted';
   actor?: (number | null) | User;
@@ -478,6 +488,97 @@ export interface AuditLog {
     | number
     | boolean
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Simulación privada. Estos registros nunca modifican los cupos del catálogo.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seat-pilot-pools".
+ */
+export interface SeatPilotPool {
+  id: number;
+  mtpe: string;
+  programId: string;
+  programCreatedAt: string;
+  programName: string;
+  initialSeats: number;
+  remainingSeats: number;
+  cutoffAt: string;
+  actorLabel: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Simulación privada. Estos registros nunca modifican los cupos del catálogo.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seat-pilot-reservations".
+ */
+export interface SeatPilotReservation {
+  id: number;
+  key: string;
+  mtpe: string;
+  reservation: string;
+  state:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Simulación privada. Estos registros nunca modifican los cupos del catálogo.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seat-mail-events".
+ */
+export interface SeatMailEvent {
+  id: number;
+  messageKey: string;
+  eventKey?: string | null;
+  duplicateOf?: string | null;
+  mtpe?: string | null;
+  reservation?: string | null;
+  outcome: 'proposed' | 'review' | 'duplicate';
+  reason: string;
+  event?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  delta?: number | null;
+  balanceBefore?: number | null;
+  balanceAfter?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Simulación privada. Estos registros nunca modifican los cupos del catálogo.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mail-sync-cursors".
+ */
+export interface MailSyncCursor {
+  id: number;
+  key: string;
+  provider?: ('gmail-imap' | 'microsoft-graph') | null;
+  uidValidity?: string | null;
+  lastUid?: number | null;
+  cursor?: string | null;
+  owner?: string | null;
+  leaseUntil?: string | null;
+  lastSuccessAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -544,6 +645,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'audit-log';
         value: number | AuditLog;
+      } | null)
+    | ({
+        relationTo: 'seat-pilot-pools';
+        value: number | SeatPilotPool;
+      } | null)
+    | ({
+        relationTo: 'seat-pilot-reservations';
+        value: number | SeatPilotReservation;
+      } | null)
+    | ({
+        relationTo: 'seat-mail-events';
+        value: number | SeatMailEvent;
+      } | null)
+    | ({
+        relationTo: 'mail-sync-cursors';
+        value: number | MailSyncCursor;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -786,12 +903,77 @@ export interface CruiseLinesSelect<T extends boolean = true> {
  * via the `definition` "audit-log_select".
  */
 export interface AuditLogSelect<T extends boolean = true> {
+  entityType?: T;
+  programId?: T;
   departureId?: T;
   program?: T;
   event?: T;
   actor?: T;
   actorLabel?: T;
   changes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seat-pilot-pools_select".
+ */
+export interface SeatPilotPoolsSelect<T extends boolean = true> {
+  mtpe?: T;
+  programId?: T;
+  programCreatedAt?: T;
+  programName?: T;
+  initialSeats?: T;
+  remainingSeats?: T;
+  cutoffAt?: T;
+  actorLabel?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seat-pilot-reservations_select".
+ */
+export interface SeatPilotReservationsSelect<T extends boolean = true> {
+  key?: T;
+  mtpe?: T;
+  reservation?: T;
+  state?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seat-mail-events_select".
+ */
+export interface SeatMailEventsSelect<T extends boolean = true> {
+  messageKey?: T;
+  eventKey?: T;
+  duplicateOf?: T;
+  mtpe?: T;
+  reservation?: T;
+  outcome?: T;
+  reason?: T;
+  event?: T;
+  delta?: T;
+  balanceBefore?: T;
+  balanceAfter?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mail-sync-cursors_select".
+ */
+export interface MailSyncCursorsSelect<T extends boolean = true> {
+  key?: T;
+  provider?: T;
+  uidValidity?: T;
+  lastUid?: T;
+  cursor?: T;
+  owner?: T;
+  leaseUntil?: T;
+  lastSuccessAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

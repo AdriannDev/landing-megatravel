@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useRef, useState } from "react";
 import styles from "./departure-actions.module.css";
+import { trapDialogFocus } from './modal-focus';
 
 export function DepartureActions({
   id,
@@ -29,6 +30,7 @@ export function DepartureActions({
     [note, setNote] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const submitting = useRef(false);
   useEffect(() => setReady(true), []);
   const restoreFocus = () => trigger.current?.focus({ preventScroll: true });
   useEffect(() => {
@@ -82,11 +84,14 @@ export function DepartureActions({
   }
   function closeDialog() {
     if (!busy) {
+      dialog.current?.close();
       setMode(null);
       restoreFocus();
     }
   }
   async function submit() {
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setError("");
     try {
@@ -98,6 +103,7 @@ export function DepartureActions({
       const body = await response.json();
       if (!response.ok)
         throw new Error(body.error || "No se pudo completar la operación.");
+      dialog.current?.close();
       setMode(null);
       restoreFocus();
       router.refresh();
@@ -105,6 +111,7 @@ export function DepartureActions({
     } catch (e) {
       setError((e as Error).message);
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -121,7 +128,7 @@ export function DepartureActions({
         onClick={(event) => {
           const box = event.currentTarget.getBoundingClientRect();
           const height =
-            user?.role === "admin" && status === "draft" ? 152 : 112;
+            user?.role === "admin" ? 152 : 112;
           setPosition({
             top: Math.max(
               8,
@@ -193,13 +200,13 @@ export function DepartureActions({
                 Retirar
               </button>
             )}
-            {user?.role === "admin" && status === "draft" && (
+            {user?.role === "admin" && (
               <button
                 role="menuitem"
                 type="button"
                 onClick={() => choose("delete")}
               >
-                Eliminar borrador
+                Eliminar salida
               </button>
             )}
           </div>,
@@ -211,6 +218,7 @@ export function DepartureActions({
             ref={dialog}
             className={styles.dialog}
             aria-labelledby={titleId}
+            onKeyDown={trapDialogFocus}
             onCancel={(e) => {
               e.preventDefault();
               closeDialog();
@@ -228,14 +236,13 @@ export function DepartureActions({
             >
               <h2 id={titleId}>
                 {mode === "delete"
-                  ? "¿Eliminar este borrador?"
+                  ? "¿Eliminar esta salida?"
                   : "Retirar salida"}
               </h2>
               <p>{program}</p>
               {mode === "delete" ? (
                 <p>
-                  Esta acción elimina el borrador y queda registrada en el
-                  historial.
+                  Esta acción elimina la salida y conserva una copia de sus datos en el historial.
                 </p>
               ) : (
                 <>

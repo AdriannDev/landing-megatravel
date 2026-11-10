@@ -12,6 +12,7 @@ import { DEFAULT_SEATS_VALIDITY_HOURS, MAX_SEATS_VALIDITY_HOURS, validSeatCount 
 import { getSeatSettings } from '../server/availability-settings'
 import { optimizeMedia } from '../server/optimize-media'
 import { DEFAULT_NEW_BADGE_LABEL, NEW_BADGE_MAX_LENGTH } from '../lib/new-badge'
+import { recordProgramDeletion } from '../server/deletion-service'
 
 const urlValidation = (value: unknown) => !value || safeExternalUrl(value) || 'Usa un enlace HTTPS completo, sin usuario ni contraseña.'
 // «Nuevo» badge: same three fields in Programas (all dates) and Salidas (one date).
@@ -105,7 +106,8 @@ Banners.fields = pairedFields(Banners.fields, [['placement', 'popupFormat'], ['c
 
 export const Departures: CollectionConfig = {
   slug: 'departures', labels: { singular: 'Salida', plural: 'Salidas' },
-  access: { create: isEditor, read: isEditor, update: isEditor, delete: ({ req }) => req.user?.role === 'admin' ? { status: { equals: 'draft' } } : false, readVersions: isEditor },
+  access: { create: isEditor, read: isEditor, update: isEditor, delete: isAdmin, readVersions: isEditor },
+  disableBulkDelete: true,
   defaultSort: 'travelDate',
   admin: {
     group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'travelDate', 'price', 'origin', 'status', 'seatsCheckedAt', 'withdrawalAt'],
@@ -116,7 +118,7 @@ export const Departures: CollectionConfig = {
       return departureViewWhere(view, new Date(), hours)
     },
     preview: data => `/preview/${data.id}`,
-    components: { beforeListTable: ['/components/admin/workspace-tools#WorkspaceTools'] },
+    components: { beforeListTable: ['/components/admin/workspace-tools#WorkspaceTools', '/components/admin/delete-records#BulkDepartureDelete'] },
     description: 'Una tarjeta por fecha. El contenido compartido se edita en Programas.',
   },
   disableDuplicate: true,
@@ -215,10 +217,11 @@ tableCells(Departures.fields)
 
 export const Programs: CollectionConfig = {
   slug: 'programs', labels: { singular: 'Programa', plural: 'Programas' },
-  access: { ...contentAccess, delete: never, readVersions: isEditor },
-  admin: { group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'destination', 'availableSeats', 'lastSeats', 'flyer'], listSearchableFields: ['program', 'mtpe'], description: 'Un programa por MTPE. El saldo de cupos, la imagen y la información compartida se aplican a todas sus fechas.' },
+  access: { ...contentAccess, delete: ({ req }) => req.user?.role === 'admin' && req.context.confirmedProgramDeletion === true, readVersions: isEditor },
+  disableBulkDelete: true,
+  admin: { group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'destination', 'availableSeats', 'lastSeats', 'flyer'], listSearchableFields: ['program', 'mtpe'], description: 'Un programa por MTPE. El saldo de cupos, la imagen y la información compartida se aplican a todas sus fechas.', components: { beforeListTable: ['/components/admin/delete-records#BulkProgramDelete'], edit: { beforeDocumentControls: ['/components/admin/delete-records#ProgramDocumentDelete'] } } },
   versions: { maxPerDoc: 50 },
-  hooks: { beforeChange: [prepareProgram], afterChange: [syncProgramSnapshots] },
+  hooks: { beforeChange: [prepareProgram], afterChange: [syncProgramSnapshots], beforeDelete: [recordProgramDeletion] },
   fields: [
     { type: 'row', fields: [
       { name: 'program', label: 'Nombre del programa', type: 'text', required: true, index: true, admin: { width: '50%' } },
@@ -255,7 +258,9 @@ export const AuditLog: CollectionConfig = {
   access: { read: isEditor, create: never, update: never, delete: never },
   admin: { group: 'Control', useAsTitle: 'program', defaultColumns: ['createdAt', 'program', 'event', 'actorLabel'], description: 'Registro de cambios comerciales, retiros y reactivaciones. Solo lectura.' },
   fields: [
-    { name: 'departureId', label: 'Identificador de salida', type: 'text', required: true, index: true },
+    { name: 'entityType', label: 'Tipo de registro', type: 'select', defaultValue: 'departure', options: [{ label: 'Salida', value: 'departure' }, { label: 'Programa', value: 'program' }] },
+    { name: 'programId', label: 'Identificador de programa', type: 'text', index: true },
+    { name: 'departureId', label: 'Identificador de salida', type: 'text', index: true },
     { name: 'program', label: 'Programa', type: 'text', required: true },
     { name: 'event', label: 'Acción', type: 'select', required: true, options: [{ label: 'Creada', value: 'created' }, { label: 'Actualizada', value: 'updated' }, { label: 'Retirada', value: 'withdrawn' }, { label: 'Reactivada', value: 'reactivated' }, { label: 'Eliminada', value: 'deleted' }] },
     { name: 'actor', label: 'Usuario', type: 'relationship', relationTo: 'users' },

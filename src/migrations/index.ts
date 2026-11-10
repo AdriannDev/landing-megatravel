@@ -10,6 +10,8 @@ import * as migration_20261109_014741_new_badge from './20261109_014741_new_badg
 import * as migration_20261109_060013_blog_post_sync from './20261109_060013_blog_post_sync';
 import * as migration_20261109_201333_date_overrides from './20261109_201333_date_overrides';
 import * as migration_20261110_050200_program_video from './20261110_050200_program_video';
+import * as migration_20261110_185708_panel_deletion_and_mail_pilot from './20261110_185708_panel_deletion_and_mail_pilot';
+import * as migration_20261110_210000_gmail_mail_cursor from './20261110_210000_gmail_mail_cursor';
 
 export const migrations = [
   {
@@ -70,6 +72,16 @@ export const migrations = [
   {
     up: migration_20261110_050200_program_video.up,
     down: migration_20261110_050200_program_video.down,
-    name: '20261110_050200_program_video'
+    name: '20261110_050200_program_video',
+  },
+  {
+    up: migration_20261110_185708_panel_deletion_and_mail_pilot.up,
+    down: migration_20261110_185708_panel_deletion_and_mail_pilot.down,
+    name: '20261110_185708_panel_deletion_and_mail_pilot'
+  },
+  {
+    up: migration_20261110_210000_gmail_mail_cursor.up,
+    down: migration_20261110_210000_gmail_mail_cursor.down,
+    name: '20261110_210000_gmail_mail_cursor',
   },
 ];

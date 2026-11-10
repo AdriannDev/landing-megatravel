@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       if (reason === 'other' && (typeof note !== 'string' || !note.trim())) throw new AdminError('Explica el motivo del retiro.', 400)
       await payload.update({ collection: 'departures', id, req, overrideAccess: false, data: { status: 'withdrawn', withdrawalReason: reason, withdrawalNote: typeof note === 'string' ? note.trim() : '' } })
     } else if (action === 'delete') {
-      if (user.role !== 'admin') throw new AdminError('Solo un administrador puede eliminar borradores.', 403)
+      if (user.role !== 'admin') throw new AdminError('Solo un administrador puede eliminar salidas.', 403)
       await payload.delete({ collection: 'departures', id, req, overrideAccess: false })
     } else throw new AdminError('Operación no válida.', 400)
     return NextResponse.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } })

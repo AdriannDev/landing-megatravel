@@ -273,3 +273,12 @@ El parser admite BOM, comas o punto y coma, campos entrecomillados y saltos dent
 La moneda y condición USD por persona en habitación doble fueron confirmadas por el usuario, porque el Excel no las declara como columnas. El script considera activa la primera hoja, conserva los otros estados históricos y excluye la hoja que empieza por `BACKUP` de la publicación/importación normalizada; su contenido permanece en la extracción original.
 
 El reporte inicial registra 411 filas preparadas, con 233 publicables, 10 borradores y 168 históricos. Es un corte de la preparación inicial, no un contador permanente de salidas disponibles. Las 10 filas incompletas y sus referencias están en [el reporte de preparación](../migration/workbook-report.json).
+
+## Borrado confirmado y piloto privado
+
+- `POST /api/admin-tools/delete-records`: solo administrador y origen autorizado. Enviar `collection` (`programs` o `departures`), `ids` (1–200) y `action: preview`. Devuelve programas, salidas, `preparedAt` y `token`. Confirmar con `action: delete` y ese resumen en `confirmation`. El token caduca a los 15 minutos e identifica usuario y datos revisados. Si cambian, responde 409 sin borrar. La selección completa es transaccional. Las cantidades devueltas corresponden a registros eliminados; un error no devuelve éxito.
+- `POST /api/admin-tools/mail-pilot`: solo administrador y origen autorizado. `action: baseline` requiere `mtpe`, `initialSeats` y `cutoffAt` con zona horaria. `action: simulate` recibe `body` comercial anonimizado. Siempre devuelve `mode: simulation`. No modifica cupos públicos.
+- Colecciones privadas de solo lectura para administradores: `seat-pilot-pools`, `seat-pilot-reservations`, `seat-mail-events` y `mail-sync-cursors`. El cursor incremental se oculta en el panel. Los datos del piloto y auditoría usan identificadores de texto para sobrevivir al borrado del programa original.
+- Gmail guarda `provider`, `uidValidity` y `lastUid` en `mail-sync-cursors`. Cada mensaje y su progreso se confirman junto con el saldo simulado en una transacción; no se almacenan cuerpos ni pasajeros. Ver [Gmail y Railway](gmail-cupos-piloto.md).
+
+El historial admite `entityType: departure | program`, `programId` y `departureId` opcional. Las eliminaciones contienen `changes.deleted.before` con el documento comercial y `after: null`. Los registros anteriores mantienen sus identificadores y reciben el tipo salida por defecto.

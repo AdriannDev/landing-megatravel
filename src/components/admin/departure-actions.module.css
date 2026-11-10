@@ -76,6 +76,7 @@
 }
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 }
@@ -92,3 +93,42 @@
   color: white;
   border-color: #103f80;
 }
+.dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  box-sizing: border-box;
+  width: min(480px, calc(100vw - 32px));
+  max-width: 480px;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #dce4ee;
+  border-radius: 12px;
+  padding: 24px;
+  background: white;
+  color: #172e4e;
+  box-shadow: 0 20px 60px #112d5050;
+  font: 14px/1.5 system-ui, sans-serif;
+}
+.dialog::backdrop { background: #10213899; }
+.dialog form { display: flex; flex-direction: column; gap: 16px; }
+.dialog h2 { margin: 0; font-size: 22px; line-height: 1.25; }
+.dialog p { margin: 0; overflow-wrap: anywhere; }
+.dialog label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.dialog select, .dialog textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #aebdd0;
+  border-radius: 6px;
+  background: white;
+  color: #172e4e;
+  font: inherit;
+}
+.dialog textarea { min-height: 96px; resize: vertical; }
+.dialog [role="alert"] { color: #a62626; }
+.dialog :focus-visible, .menu :focus-visible, .trigger:focus-visible { outline: 3px solid #507fc5; outline-offset: 3px; }
+.dialog button:disabled { cursor: wait; opacity: .6; }
+.bulk { margin: 12px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.deleteButton { color: #9e2222; background: white; border: 1px solid #d8b5b5; border-radius: 6px; padding: 8px 12px; cursor: pointer; font: inherit; }

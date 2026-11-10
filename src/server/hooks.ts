@@ -5,6 +5,7 @@ import { retirementAt, validateTransition, isPublishable } from '../lib/lifecycl
 import { cmsToDeparture } from './normalize'
 import { departureKey, normalizeMTPE, relationID, sharedData, programSeatSnapshot } from '../lib/programs.ts'
 import { prepareDateLastSeats } from '../lib/availability.ts'
+import { lockCommercialRecords } from './transactions.ts'
 
 export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, originalDoc, operation, req, context }) => {
   if (operation === 'create') {
@@ -61,13 +62,13 @@ export const recordDepartureAudit: CollectionAfterChangeHook = async ({ doc, pre
   return doc
 }
 
-// Las salidas publicadas o retiradas se conservan para mantener su trazabilidad.
 export const recordDepartureDeletion: CollectionBeforeDeleteHook = async ({ id, req }) => {
-  if (req.user?.role !== 'admin') throw new APIError('Solo un administrador puede eliminar borradores.', 403)
+  if (req.user?.role !== 'admin') throw new APIError('Solo un administrador puede eliminar salidas.', 403)
+  await lockCommercialRecords(req, 'departures', [id])
   const doc = await req.payload.findByID({ collection: 'departures', id, req, overrideAccess: false, depth: 0 })
-  if (doc.status !== 'draft') throw new APIError('Solo se pueden eliminar salidas en borrador.', 400)
   await req.payload.create({ collection: 'audit-log', req, overrideAccess: true, data: {
-    departureId: String(doc.stableId || doc.id), program: doc.program || 'Salida sin nombre', event: 'deleted' as any,
-    actor: req.user.id, actorLabel: req.user.email || 'Administrador', changes: { deleted: { before: false, after: true }, travelDate: { before: doc.travelDate, after: null } },
+    entityType: 'departure', programId: String(relationID(doc.programRef) ?? ''),
+    departureId: String(doc.stableId || doc.id), program: doc.program || 'Salida sin nombre', event: 'deleted',
+    actor: req.user.id, actorLabel: req.user.email || 'Administrador', changes: { deleted: { before: doc, after: null } },
   } })
 }

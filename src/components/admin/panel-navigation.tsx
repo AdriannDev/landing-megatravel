@@ -13,6 +13,7 @@ const administration = [
   ["Usuarios", "/collections/users"],
   ["Configuración del catálogo", "/globals/settings"],
   ["Historial de cambios", "/collections/audit-log"],
+  ["Piloto de correo", "/seat-mail-pilot"],
 ] as const;
 
 function usePanelLinks() {
@@ -23,7 +24,7 @@ function usePanelLinks() {
     admin,
     adminLinks: administration.filter(
       ([label]) =>
-        label !== "Configuración del catálogo" || user?.role === "admin",
+        !["Configuración del catálogo", "Piloto de correo"].includes(label) || user?.role === "admin",
     ),
   };
 }

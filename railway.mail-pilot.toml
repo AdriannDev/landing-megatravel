@@ -1,0 +1,10 @@
+# Select this config only for the separate mail pilot cron service.
+# The command exits without opening the database when SEAT_MAIL_PILOT_ENABLED is not true.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "npm run mail:pilot"
+cronSchedule = "*/10 * * * *"
+restartPolicyType = "NEVER"

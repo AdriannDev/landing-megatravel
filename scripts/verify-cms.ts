@@ -249,7 +249,7 @@ try {
   const toDelete = await createDepartures(payload, req, { programId: shared.id, origin: 'Lima', departures: [{ date: '2035-01-10', price: 1700 }] })
   const deletingDoc = await payload.findByID({ collection: 'departures', id: toDelete.created[0].id, req, depth: 0 })
   await assert.rejects(() => payload.delete({ collection: 'departures', id: deletingDoc.id, req, overrideAccess: false }))
-  await assert.rejects(() => payload.delete({ collection: 'departures', id: direct.created[0].id, req: adminReq, overrideAccess: false }))
+  await payload.delete({ collection: 'departures', id: direct.created[0].id, req: adminReq, overrideAccess: false })
   await payload.delete({ collection: 'departures', id: deletingDoc.id, req: adminReq, overrideAccess: false })
   const deletedLogs = await payload.find({ collection: 'audit-log', req, overrideAccess: false, where: { departureId: { equals: deletingDoc.stableId } }, depth: 0 })
   assert.ok(deletedLogs.docs.some(log => String(log.event) === 'deleted' && log.actorLabel === admin.email)); checks++

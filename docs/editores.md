@@ -66,3 +66,13 @@ Elige Promoción o Noticia, añade un enlace HTTPS y el texto del botón si lo n
 En escritorio, la imagen aparece a la izquierda y el contenido a la derecha; en móvil, la imagen queda arriba. Las promociones con fecha de fin muestran una cuenta regresiva hasta esa fecha y se cierran al vencer. Las noticias y las promociones sin fecha de fin se muestran sin contador.
 
 La frecuencia se cuenta desde que se muestra el anuncio en ese navegador. Una nueva fecha «Visible desde» inicia otra campaña. Si el navegador bloquea el almacenamiento, se muestra una vez mientras el catálogo permanece abierto. El popup espera si hay otra ventana del catálogo abierta o la pestaña está oculta.
+
+## Eliminación y piloto de correo
+
+Un administrador puede eliminar salidas publicadas, retiradas o en borrador desde la fila, ficha o selección múltiple. Los editores no pueden eliminarlas. La selección múltiple permite hasta 200 registros de la página y muestra las cantidades antes de confirmar.
+
+En Programas, «Eliminar programa» muestra cuántos programas y salidas se eliminarán. La eliminación guarda una copia comercial en el historial y es irreversible. Imágenes, destinos, orígenes y otras referencias reutilizables permanecen. Si falla una parte, se revierte la selección completa. Si alguien edita la selección durante la confirmación, es necesario consultar de nuevo el resumen.
+
+El retiro conserva el motivo obligatorio; «Otro» requiere explicación. El diálogo se puede cerrar con Escape y devuelve el foco al botón de opciones.
+
+El piloto está en Administración → Piloto de correo, disponible solo para administradores. Trabaja con saldos simulados independientes. Gmail y Railway leen automáticamente los avisos cada diez minutos. Ver [configuración y pruebas de Gmail](gmail-cupos-piloto.md).
