@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Armchair, Flame } from "lucide-react";
+import { Armchair } from "lucide-react";
 import {
   visibleAvailability,
   type PublicAvailability,
@@ -31,10 +31,10 @@ export function LastSeatsBadge({ seats }: { seats?: number | null }) {
   return (
     <div className="last-seats-badge">
       <span className="last-seats-icon">
-        <Flame size={23} aria-hidden="true" />
+        <Armchair size={22} strokeWidth={1.8} aria-hidden="true" />
       </span>
       <div className="last-seats-copy">
-        <strong>¡Últimas sillas!</strong>
+        <strong>¡Últimos cupos!</strong>
         <span>
           {seats != null
             ? `${seats} ${seats === 1 ? "silla disponible · sujeta" : "sillas disponibles · sujetas"} a confirmación`

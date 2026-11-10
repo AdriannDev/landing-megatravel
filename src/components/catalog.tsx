@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Headphones,
-  Sparkles,
   RotateCcw,
   Plane,
   ArrowUpRight,
@@ -457,7 +456,6 @@ export function Catalog({
                       })
                     }
                   >
-                    <Sparkles size={14} />
                     {titleCase(p.label)}
                   </button>
                 ))}
