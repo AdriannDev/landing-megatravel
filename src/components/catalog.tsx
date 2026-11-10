@@ -7,8 +7,6 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Globe2,
-  ShieldCheck,
   Headphones,
   Sparkles,
   RotateCcw,
@@ -31,6 +29,7 @@ import { track } from "@/lib/analytics";
 import { Brand } from "./brand";
 import { PackageCard } from "./package-card";
 import { CampaignBanner } from "./campaign-banner";
+import { HeroBenefits } from "./hero-benefits";
 import { CampaignPopup } from "./campaign-popup";
 import { BlogSection } from "./blog-section";
 import { WhatsAppContact } from "./whatsapp-contact";
@@ -65,6 +64,11 @@ const monthName = (value: string) =>
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(value + "-01T12:00:00Z"));
+
+function openDatePicker(input: HTMLInputElement) {
+  try { input.showPicker?.(); }
+  catch { /* El campo nativo sigue disponible si el navegador no permite abrirlo por código. */ }
+}
 
 function FilterPanel({
   packages,
@@ -111,6 +115,8 @@ function FilterPanel({
         <input
           id={`${prefix}-from`}
           type="date"
+          onClick={(e) => openDatePicker(e.currentTarget)}
+          onKeyDown={(e) => { if (e.key === "Enter") openDatePicker(e.currentTarget); }}
           value={filters.from}
           onChange={(e) => update({ from: e.target.value })}
         />
@@ -118,11 +124,13 @@ function FilterPanel({
         <input
           id={`${prefix}-to`}
           type="date"
+          onClick={(e) => openDatePicker(e.currentTarget)}
+          onKeyDown={(e) => { if (e.key === "Enter") openDatePicker(e.currentTarget); }}
           min={filters.from || undefined}
           value={filters.to}
           onChange={(e) => update({ to: e.target.value })}
         />
-        <p>Para una fecha exacta, elige el mismo día.</p>
+        <p>Selecciona las fechas en el calendario. Para una fecha exacta, elige el mismo día.</p>
       </fieldset>
       {(Object.keys(filterNames) as MultiFilter[])
         .filter((key) => options[key].length)
@@ -370,6 +378,7 @@ export function Catalog({
               <span>Mega Travel</span>
             </h1>
           </div>
+          <HeroBenefits />
           <CampaignBanner banners={heroBanners} />
         </section>
         <section
@@ -402,20 +411,6 @@ export function Catalog({
               Buscar viajes <ArrowRight size={17} />
             </Button>
           </form>
-          <div className="search-assurances">
-            <span>
-              <ShieldCheck size={15} />
-              Respaldo Megatravel
-            </span>
-            <span>
-              <Globe2 size={15} />
-              Un mundo de posibilidades
-            </span>
-            <span>
-              <Headphones size={15} />
-              Atención a tu agencia
-            </span>
-          </div>
         </section>
         <div className="catalog-background">
           <section

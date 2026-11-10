@@ -9,6 +9,7 @@ import * as migration_20261104_171419_r2_media_storage from './20261104_171419_r
 import * as migration_20261109_014741_new_badge from './20261109_014741_new_badge';
 import * as migration_20261109_060013_blog_post_sync from './20261109_060013_blog_post_sync';
 import * as migration_20261109_201333_date_overrides from './20261109_201333_date_overrides';
+import * as migration_20261110_050200_program_video from './20261110_050200_program_video';
 
 export const migrations = [
   {
@@ -64,6 +65,11 @@ export const migrations = [
   {
     up: migration_20261109_201333_date_overrides.up,
     down: migration_20261109_201333_date_overrides.down,
-    name: '20261109_201333_date_overrides'
+    name: '20261109_201333_date_overrides',
+  },
+  {
+    up: migration_20261110_050200_program_video.up,
+    down: migration_20261110_050200_program_video.down,
+    name: '20261110_050200_program_video'
   },
 ];

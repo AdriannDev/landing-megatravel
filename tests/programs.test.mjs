@@ -53,6 +53,13 @@ test('contenido compartido reemplaza incluso un flyer vacío y conserva precio y
   assert.equal(doc.price, 99); assert.equal(doc.origin, 'Lima')
   assert.equal(toPublicPackage({ ...doc, id: '1', promotions: [] }).flyerUrl, DEFAULT_FLYER)
 })
+test('la proyección pública solo expone enlaces de video HTTPS válidos', () => {
+  const item = { id: '1', promotions: [], videoUrl: 'https://www.youtube.com/watch?v=abc' }
+  assert.equal(toPublicPackage(item).videoUrl, item.videoUrl)
+  for (const value of [null, '', 'javascript:alert(1)', 'http://example.com/reel', 'https://user:pass@example.com/reel']) {
+    assert.equal(toPublicPackage({ ...item, videoUrl: value }).videoUrl, null)
+  }
+})
 test('vistas usan vigencia con corte exclusivo y URL conserva la vista', () => {
   const now = new Date('2026-10-28T05:00:00Z')
   assert.equal(departureViewWhere('published', now).and[1].withdrawalAt.greater_than, now.toISOString())

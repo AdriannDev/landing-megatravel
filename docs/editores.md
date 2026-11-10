@@ -9,11 +9,13 @@ Entra en `/admin` con tu cuenta: abre directamente la tabla de Salidas, ordenada
 1. Pulsa **Nueva salida**. Selecciona un programa existente o completa uno nuevo: MTPE, nombre, destino, zona, duración, naviera opcional, imagen y enlaces de Meganet y Café. Para la imagen puedes elegir una ya cargada en la biblioteca, subir un archivo, usar un enlace HTTPS o dejar la predeterminada.
 2. Indica origen, moneda y condiciones. Usa «Añadir otra fecha» para introducir entre 1 y 30 filas de fecha/precio.
 3. Elige **Guardar como borrador** o **Publicar salidas**. También puedes usar **Nueva fecha** para partir de una salida existente y elegir entre crear borradores o publicar directamente. El programa y sus fechas se guardan juntos; si una fecha falla, no quedan salidas parciales. Se rechaza un MTPE/origen/fecha repetido, incluso si la salida anterior está retirada.
-4. Al publicar se validan precio, moneda, enlaces HTTPS y vigencia. Si guardaste borradores, ábrelos para revisarlos y publicarlos más adelante. La imagen es opcional: sin ella aparece una imagen de Megatravel.
+4. Al publicar se validan precio, moneda, enlaces HTTPS y vigencia. Si guardaste borradores, ábrelos para revisarlos y publicarlos más adelante. La imagen es opcional: sin ella aparece un fondo gris con el tamaño recomendado.
 
 **Programas** guarda el contenido común una sola vez por MTPE. Edita allí nombre, destino, zona, duración, naviera, flyer y enlaces. El cambio aparece en todas sus fechas, incluidas las ya publicadas; las pestañas públicas abiertas se actualizan en hasta 30 segundos. Una salida puede tener un destino o enlace de reserva propio: esos valores prevalecen sobre los del programa para esa fecha. El MTPE identifica el programa y no se cambia después de crearlo. El precio, moneda, condición, origen, promociones, prioridad, fecha, anticipación y estado se editan por salida.
 
-La imagen predeterminada no rellena el campo de flyer: los programas pendientes de arte siguen siendo identificables. Sube el flyer al programa para sustituirla en todas sus fechas. Si una imagen falla al cargar, también se usa el respaldo de Megatravel. La herramienta secundaria «Duplicar un programa y crear salidas» reutiliza el programa compartido.
+La imagen predeterminada no rellena el campo de flyer: muestra un fondo gris con el tamaño recomendado, **800 × 800 px**. Sube el flyer al programa para sustituirla en todas sus fechas. Si una imagen falla al cargar, también se usa este respaldo. La herramienta secundaria «Duplicar un programa y crear salidas» reutiliza el programa compartido.
+
+Para añadir un video, abre **Programas**, selecciona el programa y pega un enlace HTTPS de YouTube o de un reel en **Enlace del video del programa**. El botón de reproducción aparecerá en las tarjetas de todas sus salidas y abrirá el video en otra pestaña. Puedes reemplazar el enlace por otro video o borrarlo para ocultar el botón; hay un enlace activo por programa. En la vista de lista compacta aparece como «Ver video».
 
 La tarjeta se retira automáticamente 30 días antes de la salida. Puedes cambiar esa anticipación, por ejemplo a 15 días. El formulario muestra el corte calculado antes de publicar. La fecha de salida siempre se escribe como AAAA-MM-DD para evitar cambios por huso horario.
 
@@ -47,11 +49,13 @@ Para CSV, exporta primero el catálogo; conserva `source_key` al editar filas ex
 
 Crea promociones con nombre, etiqueta pública e identificador; el periodo es opcional si no hay una fecha definida. Asócialas a las salidas. Las promociones del mismo filtro se combinan con OR; distintos filtros se combinan con AND.
 
-Cada banner tiene imagen de escritorio, alternativa estática y versión móvil opcional. Recomendamos **1600 × 600 px** para escritorio y una versión **800 × 800 px** para móvil. Se muestra el arte completo, sin recortarlo. Añade texto alternativo, ubicación, orden, enlace y periodo; marca Publicado para habilitarlo.
+Cada banner tiene imagen de escritorio, alternativa estática y versión móvil opcional. Para el hero recomendamos **1600 × 300 px** en escritorio y **800 × 800 px** en móvil. El rompetráfico usa **1200 × 70 px** en escritorio y **800 × 70 px** en móvil; su altura máxima visible es de **70 px**. Los placeholders son fondos grises con sus dimensiones centradas. Añade texto alternativo, ubicación, orden, enlace y periodo; marca Publicado para habilitarlo.
 
 Las ubicaciones son **Hero**, a todo el ancho del contenido bajo la presentación; **Entre resultados**, después de las primeras seis tarjetas si hay más; y **Final del catálogo**, antes del contacto. Un espacio sin banners vigentes no deja huecos. Los banners anteriores pertenecen al hero.
 
 El hero avanza cada seis segundos y ofrece flechas, indicadores y pausa. El arte ocupa todo el carrusel: las flechas se superponen a ambos extremos y la pausa queda en la esquina inferior derecha, con controles semitransparentes. Se pausa al interactuar, al ocultar la pestaña y ante movimiento reducido; la alternativa estática evita animaciones. La reproducción se puede reanudar desde su botón cuando la preferencia lo permite. Las otras ubicaciones se navegan manualmente. En el catálogo, los grupos de filtros empiezan cerrados y Desde/Hasta permanece visible; abrir un grupo no cambia la selección.
+
+Los beneficios sobre el hero avanzan cada cuatro segundos solo en móvil. Se pueden deslizar manualmente y pausar o reanudar con su botón; al interactuar con la fila se detienen. El avance se suspende fuera de pantalla, en pestañas ocultas y con movimiento reducido. Desde/Hasta abre el calendario nativo al pulsar el campo. Para regenerar los fondos grises sin tocar el CMS: `npm run seed:banner-placeholders -- --assets-only`; sin ese argumento, también se actualizan los medios y banners de ejemplo asociados.
 
 ## Popup de promociones o noticias
 

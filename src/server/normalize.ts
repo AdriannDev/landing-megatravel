@@ -18,6 +18,7 @@ export function cmsToDeparture(doc: Document): Departure {
     days: doc.days, nights: doc.nights, travelDate: String(doc.travelDate || '').slice(0, 10),
     price: doc.price, currency: doc.currency, priceCondition: doc.priceCondition || '',
     flyerUrl: mediaUrl(doc.flyer) || doc.flyerSourceUrl || '',
+    videoUrl: doc.programRef && typeof doc.programRef === 'object' ? doc.programRef.videoUrl || null : null,
     bookingUrl: doc.bookingUrl || '', descriptionUrl: doc.descriptionUrl || '', priority: doc.priority || 0,
     availableSeats: doc.availableSeats ?? null, lastSeats: doc.lastSeats === true, seatsCheckedAt: doc.seatsCheckedAt || null,
     ...(doc.programRef || 'programLastSeats' in doc ? { programLastSeats: doc.programLastSeats === true, lastSeatsCheckedAt: doc.lastSeatsCheckedAt || null } : {}),

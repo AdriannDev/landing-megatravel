@@ -75,8 +75,11 @@
 
 @media (max-width: 760px) {
   .whatsapp-contact {
+    top: auto;
+    bottom: 16px;
     right: 12px;
     padding: 3px;
+    transform: none;
   }
 
   .whatsapp-contact-icon {

@@ -71,7 +71,7 @@ export function SeatAvailability({
     <div className="seat-availability">
       {showQuantity && availability?.seats != null && (
         <p className="seat-quantity">
-          <Armchair size={14} aria-hidden="true" />
+          <Armchair size={17} aria-hidden="true" />
           <span>
             Disponibilidad:{" "}
             <strong>

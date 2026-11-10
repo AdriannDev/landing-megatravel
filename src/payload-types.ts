@@ -309,13 +309,17 @@ export interface Program {
    */
   newBadgeUntil?: string | null;
   /**
-   * Ideal: 800 × 800 px. Admite otros tamaños y proporciones; se muestra completa dentro de una tarjeta cuadrada, sin recortar. Máximo 12 MB. Sin imagen se usa la de Megatravel en todas las fechas.
+   * Ideal: 800 × 800 px. Admite otros tamaños y proporciones; se muestra completa dentro de una tarjeta cuadrada, sin recortar. Máximo 12 MB. Sin imagen se usa un fondo gris con el tamaño recomendado en todas las fechas.
    */
   flyer?: (number | null) | Media;
   /**
    * Ideal: 800 × 800 px. Se admiten otros tamaños y proporciones. Se conserva el enlace si no se puede copiar la imagen.
    */
   flyerSourceUrl?: string | null;
+  /**
+   * Pega un enlace HTTPS de YouTube o de un reel. Se muestra en todas las salidas de este programa; puedes cambiarlo o borrarlo cuando quieras.
+   */
+  videoUrl?: string | null;
   bookingUrl?: string | null;
   descriptionUrl?: string | null;
   updatedAt: string;
@@ -432,12 +436,12 @@ export interface Banner {
   popupFrequency?: ('session' | 'daily' | 'always') | null;
   popupDelay?: number | null;
   /**
-   * Tamaños ideales: Hero 1600 × 300 px (altura máxima en escritorio) · Rompetráfico 1200 × 130 px (horizontal de poca altura) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.
+   * Tamaños ideales: Hero 1600 × 300 px · Rompetráfico 1200 × 70 px (altura máxima 70 px) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.
    */
   image?: (number | null) | Media;
   staticImage?: (number | null) | Media;
   /**
-   * Ideal: 800 × 800 px. Admite otras proporciones y muestra la imagen completa. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.
+   * Ideal: 800 × 800 px; para rompetráfico, 800 × 70 px. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.
    */
   mobileImage?: (number | null) | Media;
   alt: string;
@@ -684,6 +688,7 @@ export interface ProgramsSelect<T extends boolean = true> {
   newBadgeUntil?: T;
   flyer?: T;
   flyerSourceUrl?: T;
+  videoUrl?: T;
   bookingUrl?: T;
   descriptionUrl?: T;
   updatedAt?: T;

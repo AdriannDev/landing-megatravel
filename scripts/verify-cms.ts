@@ -170,6 +170,19 @@ try {
   assert.ok(dates.docs.every(doc => cmsToDeparture(doc).program === 'Nombre actualizado' && cmsToDeparture(doc).flyerUrl.endsWith(uploaded.filename!)))
   const indexed = await payload.find({ collection: 'departures', req, overrideAccess: false, depth: 0, where: { program: { contains: 'actualizado' } } })
   assert.equal(indexed.totalDocs, 2); checks++
+  for (const videoUrl of ['https://www.youtube.com/watch?v=abc', 'https://www.instagram.com/reel/example/']) {
+    await payload.update({ collection: 'programs', id: shared.id, req, overrideAccess: false, data: { videoUrl } })
+    for (const depth of [0, 2]) {
+      const videoDates = await payload.find({ collection: 'departures', req, overrideAccess: false, depth, where: { programRef: { equals: shared.id } } })
+      assert.equal(videoDates.totalDocs, 2)
+      assert.ok(videoDates.docs.every(doc => publishedPackages([cmsToDeparture(doc)])[0].videoUrl === videoUrl))
+    }
+  }
+  await assert.rejects(() => payload.update({ collection: 'programs', id: shared.id, req, overrideAccess: false, data: { videoUrl: 'javascript:alert(1)' } }))
+  await assert.rejects(() => payload.update({ collection: 'programs', id: shared.id, req, overrideAccess: false, data: { videoUrl: 'http://example.com/video' } }))
+  await payload.update({ collection: 'programs', id: shared.id, req, overrideAccess: false, data: { videoUrl: null } })
+  const withoutVideo = await payload.find({ collection: 'departures', req, overrideAccess: false, depth: 2, where: { programRef: { equals: shared.id } } })
+  assert.ok(withoutVideo.docs.every(doc => publishedPackages([cmsToDeparture(doc)])[0].videoUrl === null)); checks++
   await payload.update({ collection: 'departures', id: batch.created[1].id, req, overrideAccess: false, data: { destinationOverride: destination.id, bookingUrlOverride: 'https://example.com/reserva-fecha' } })
   await payload.update({ collection: 'programs', id: shared.id, req, overrideAccess: false, data: { bookingUrl: 'https://example.com/reserva-compartida' } })
   const specificDate = cmsToDeparture(await payload.findByID({ collection: 'departures', id: batch.created[1].id, req, depth: 2 }))

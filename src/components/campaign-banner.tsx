@@ -246,7 +246,7 @@ export function CampaignBanner({
         src={staticArt ? staticImage : banner.imageUrl}
         alt={banner.alt}
         width={placement === "between-results" ? "1200" : "1600"}
-        height={placement === "between-results" ? "130" : "300"}
+        height={placement === "between-results" ? "70" : "300"}
         loading={placement === "hero" ? "eager" : "lazy"}
         fetchPriority={placement === "hero" ? "high" : "low"}
       />

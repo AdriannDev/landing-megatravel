@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   FileText,
   Plane,
+  Play,
 } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import type { PublicPackage } from "@/lib/types";
@@ -21,6 +22,22 @@ import {
 import { PromotionLabels } from "./promotion-labels";
 import { NewBadge, durationLabel } from "./new-badge";
 import "./package-card.css";
+
+function VideoLink({ item, compact = false }: { item: PublicPackage; compact?: boolean }) {
+  if (!item.videoUrl) return null;
+  return (
+    <a
+      className={compact ? "list-video-link" : "package-video-overlay"}
+      href={item.videoUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Ver video de ${titleCase(item.program)}, abre otra pestaña`}
+    >
+      <Play size={compact ? 15 : 18} fill={compact ? "currentColor" : "none"} strokeWidth={1.6} aria-hidden="true" />
+      {compact && <span>Ver video</span>}
+    </a>
+  );
+}
 
 function PackageActions({ item, preview }: { item: PublicPackage; preview: boolean }) {
   return (
@@ -147,6 +164,7 @@ export function PackageCard({
             onError={() => setFailedUrl(item.flyerUrl)}
           />
           {item.newBadge && <NewBadge label={item.newBadge.label} />}
+          <VideoLink item={item} />
         </div>
         <div className="list-content" ref={listContentRef}>
           <div className="list-details">
@@ -157,6 +175,7 @@ export function PackageCard({
               {item.newBadge && <span className="list-mobile-new">{item.newBadge.label}</span>}
             </div>
             <h3>{titleCase(item.program)}</h3>
+            <VideoLink item={item} compact />
             <PromotionLabels promotions={item.promotions} />
             <div className="list-route">
               <span><MapPin size={14} aria-hidden="true" />{titleCase(item.destination)}</span>
@@ -203,6 +222,7 @@ export function PackageCard({
             onError={() => setFailedUrl(item.flyerUrl)}
           />
           {item.newBadge && <NewBadge label={item.newBadge.label} />}
+          <VideoLink item={item} />
         </div>
         <div className="duration-bridge">
           <span className="duration-pill">

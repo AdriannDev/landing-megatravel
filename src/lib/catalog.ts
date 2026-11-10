@@ -1,5 +1,5 @@
 import type { CatalogFilters, Departure, PublicPackage } from "./types.ts";
-import { isActivePeriod, isDateOnly, isPublishable } from "./lifecycle.ts";
+import { isActivePeriod, isDateOnly, isPublishable, safeExternalUrl } from "./lifecycle.ts";
 import { DEFAULT_FLYER } from "./flyer.ts";
 import {
   publicAvailability,
@@ -97,6 +97,7 @@ export function toPublicPackage(
     currency: item.currency,
     priceCondition: item.priceCondition,
     flyerUrl: item.flyerUrl || DEFAULT_FLYER,
+    videoUrl: safeExternalUrl(item.videoUrl) ? item.videoUrl : null,
     bookingUrl: item.bookingUrl,
     descriptionUrl: item.descriptionUrl,
     priority: item.priority,

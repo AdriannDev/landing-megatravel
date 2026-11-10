@@ -456,23 +456,6 @@ svg {
 .main-search .button {
   padding-inline: 27px;
 }
-.search-assurances {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 32px;
-  margin-top: 15px;
-  font-size: 9px;
-  color: #7b8c9f;
-}
-.search-assurances span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.search-assurances svg {
-  color: #8ca1b6;
-}
 .catalog-background {
   background: var(--background);
   border-top: 1px solid #eaf0f5;
@@ -1426,17 +1409,6 @@ svg {
     font-size: 12px;
     border-radius: 5px;
   }
-  .search-assurances {
-    gap: 15px;
-    margin-top: 12px;
-    font-size: 7px;
-  }
-  .search-assurances svg {
-    width: 12px;
-  }
-  .search-assurances > span:nth-child(2) {
-    display: none;
-  }
   .catalog-section {
     padding-top: 26px;
     padding-bottom: 28px;
@@ -1825,9 +1797,6 @@ svg {
     font-size: 12px;
     min-height: 44px;
   }
-  .search-assurances {
-    font-size: 11px;
-  }
   .catalog-heading p {
     font-size: 13px;
   }
@@ -1851,11 +1820,13 @@ svg {
     font-size: 11px;
   }
   .date-filter input {
-    font-size: 11px;
-    height: 36px;
+    font-size: 13px;
+    height: 44px;
+    padding: 9px;
+    cursor: pointer;
   }
   .date-filter p {
-    font-size: 10px;
+    font-size: 11px;
   }
   .filter-group summary {
     font-size: 12px;
@@ -1958,9 +1929,6 @@ svg {
   }
   .catalog-heading p {
     font-size: 12px;
-  }
-  .search-assurances {
-    font-size: 9px;
   }
   .results-toolbar p {
     font-size: 12px;
@@ -2140,6 +2108,97 @@ svg {
 }
 .hero-heading {
   max-width: 900px;
+}
+.hero-benefits {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hero-benefits-wrap { min-width: 0; }
+.hero-benefits-tools { display: none; }
+.hero-benefits:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+.hero-benefits li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: #203b56;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.hero-benefit-icon {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  color: var(--blue);
+}
+.hero-benefit-icon svg {
+  width: 32px;
+  height: 32px;
+}
+.hero-benefit-icon .benefit-icon-accent {
+  stroke: var(--orange);
+}
+@media (min-width: 761px) and (max-width: 1050px) {
+  .hero-benefits {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .hero-benefits-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #64748b;
+    font-size: 11px;
+  }
+  .hero-benefits-tools > span,
+  .hero-benefits-tools button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hero-benefits-tools button {
+    min-height: 44px;
+    border: 0;
+    padding: 6px 0 6px 12px;
+    background: transparent;
+    color: var(--blue);
+    font-size: 11px;
+  }
+  .hero-benefits {
+    display: flex;
+    gap: 24px;
+    overflow-x: auto;
+    padding-block: 4px 12px;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #b9c9db transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hero-benefits li {
+    flex: 0 0 216px;
+    scroll-snap-align: start;
+  }
+  .hero-benefits::-webkit-scrollbar {
+    height: 3px;
+  }
+  .hero-benefits::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: #b9c9db;
+  }
 }
 .campaign-banner {
   width: 100%;

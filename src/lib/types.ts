@@ -24,6 +24,7 @@ export interface Departure {
   currency: 'USD' | 'PEN'
   priceCondition: string
   flyerUrl: string
+  videoUrl?: string | null
   bookingUrl: string
   descriptionUrl: string
   promotions: Promotion[]
@@ -53,7 +54,7 @@ export interface Departure {
 }
 export type PublicPackage = Pick<Departure,
   'id' | 'program' | 'mtpe' | 'destination' | 'zone' | 'origin' | 'cruiseLine' | 'days' | 'nights' |
-  'travelDate' | 'price' | 'currency' | 'priceCondition' | 'flyerUrl' | 'bookingUrl' | 'descriptionUrl' | 'promotions' | 'priority'> & { availability?: PublicAvailability | null; newBadge?: PublicNewBadge | null }
+  'travelDate' | 'price' | 'currency' | 'priceCondition' | 'flyerUrl' | 'videoUrl' | 'bookingUrl' | 'descriptionUrl' | 'promotions' | 'priority'> & { availability?: PublicAvailability | null; newBadge?: PublicNewBadge | null }
 export type BannerPlacement = 'hero' | 'between-results' | 'catalog-end' | 'popup'
 export interface Banner {
   id: string

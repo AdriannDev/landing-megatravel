@@ -121,6 +121,25 @@
   overflow-wrap: anywhere;
 }
 
+.package-list-card .list-video-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: #0049fc;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.package-list-card .list-video-link:hover {
+  text-decoration: underline;
+}
+.package-list-card .list-video-link:focus-visible {
+  outline: 3px solid #0049fc;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .package-list-card .card-promotions {
   margin: 0;
 }
@@ -181,13 +200,13 @@
 }
 
 .package-list-card .last-seats-copy > strong {
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 
 .package-list-card .last-seats-copy > span {
-  font-size: 10px;
-  line-height: 1.3;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .package-list-card .seat-availability {
@@ -196,13 +215,13 @@
 
 .package-list-card .seat-availability .seat-quantity {
   margin-bottom: 2px;
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .package-list-card .seat-availability .seat-confirmation {
-  font-size: 10px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .package-list-card .list-actions {
@@ -372,6 +391,10 @@
     }
 
     .package-list-card .list-mobile-new {
+      display: none;
+    }
+
+    .package-list-card:not(.list-compact) .list-video-link {
       display: none;
     }
 
