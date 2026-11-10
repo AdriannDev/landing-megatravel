@@ -492,8 +492,6 @@ export interface AuditLog {
   createdAt: string;
 }
 /**
- * Simulación privada. Estos registros nunca modifican los cupos del catálogo.
- *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "seat-pilot-pools".
  */
@@ -511,8 +509,6 @@ export interface SeatPilotPool {
   createdAt: string;
 }
 /**
- * Simulación privada. Estos registros nunca modifican los cupos del catálogo.
- *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "seat-pilot-reservations".
  */
@@ -534,8 +530,6 @@ export interface SeatPilotReservation {
   createdAt: string;
 }
 /**
- * Simulación privada. Estos registros nunca modifican los cupos del catálogo.
- *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "seat-mail-events".
  */
@@ -564,8 +558,6 @@ export interface SeatMailEvent {
   createdAt: string;
 }
 /**
- * Simulación privada. Estos registros nunca modifican los cupos del catálogo.
- *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "mail-sync-cursors".
  */

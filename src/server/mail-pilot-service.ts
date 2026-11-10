@@ -9,9 +9,10 @@ import {
   reservationKey,
   type ReservationState,
 } from "../lib/mail-pilot.ts";
-import { inTransaction, postgresTransaction } from "./transactions.ts";
+import { inTransaction, lockCommercialRecords, postgresTransaction } from "./transactions.ts";
 import { normalizeMTPE } from "../lib/programs.ts";
 import { isDateOnly } from "../lib/lifecycle.ts";
+import type { SeatPilotPool } from "../payload-types.ts";
 
 // PostgreSQL serializes all pilot writes across workers. SQLite uses BEGIN IMMEDIATE.
 // Keep this lock in the transaction which reads and writes the balances/cursors.
@@ -107,10 +108,13 @@ export type PilotMail = {
   trusted: boolean;
   reviewReason?: string;
 };
-export async function processPilotMail(req: PayloadRequest, mail: PilotMail) {
+export type LiveMailSettings = { cutoffAt: string; mtpes: string[] };
+
+export async function processPilotMail(req: PayloadRequest, mail: PilotMail, live?: LiveMailSettings) {
   return inTransaction(req, async () => {
     await lockMailPilot(req);
-    const messageKey = digest(`${mail.mailbox}:${mail.id}`);
+    const namespace = live ? "live:" : "";
+    const messageKey = digest(`${namespace}${mail.mailbox}:${mail.id}`);
     const seen = await req.payload.find({
       collection: "seat-mail-events",
       req,
@@ -122,8 +126,8 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail) {
     const extraction = mail.reviewReason ? { reason: mail.reviewReason } : mail.trusted
       ? extractMailEvent(mail)
       : { reason: "Remitente no autorizado. Revisa la procedencia del aviso." };
-    const event = extraction.event,
-      fingerprint = event ? eventKey(event) : undefined;
+    const event = extraction.event;
+    const fingerprint = event && (live ? digest(`live:${eventKey(event)}`) : eventKey(event));
     const save = (data: Record<string, unknown>) =>
       req.payload.create({
         collection: "seat-mail-events",
@@ -133,7 +137,7 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail) {
           messageKey,
           mtpe: event?.mtpe,
           reservation: event?.reservation,
-          event,
+          event: event && live ? { ...event, mode: "live" } : event,
           ...data,
         } as any,
       });
@@ -157,18 +161,22 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail) {
       return review(
         "La fecha del evento está en el futuro; revisa su orden antes de procesarlo.",
       );
-    const pools = await req.payload.find({
-      collection: "seat-pilot-pools",
-      req,
-      overrideAccess: true,
-      where: { mtpe: { equals: event.mtpe } },
-      limit: 1,
-    });
-    const pool = pools.docs[0];
-    if (!pool)
-      return review(
-        "No existe un saldo inicial conciliado para este programa.",
-      );
+    let pool: SeatPilotPool | undefined;
+    if (live) {
+      if (Date.parse(event.occurredAt) <= Date.parse(live.cutoffAt))
+        return review("Aviso anterior o igual al inicio de la actualización de cupos reales.");
+      if (live.mtpes.length && !live.mtpes.includes(event.mtpe))
+        return review("Este MTPE está fuera del alcance de la actualización de cupos reales.");
+    } else {
+      pool = (await req.payload.find({
+        collection: "seat-pilot-pools",
+        req,
+        overrideAccess: true,
+        where: { mtpe: { equals: event.mtpe } },
+        limit: 1,
+      })).docs[0];
+      if (!pool) return review("No existe un saldo inicial conciliado para este programa.");
+    }
     const programs = await req.payload.find({
       collection: "programs",
       req,
@@ -176,8 +184,7 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail) {
       depth: 0,
       where: {
         and: [
-          { id: { equals: pool.programId } },
-          { createdAt: { equals: pool.programCreatedAt } },
+          ...(pool ? [{ id: { equals: pool.programId } }, { createdAt: { equals: pool.programCreatedAt } }] : []),
           {
             mtpe: {
               in: [
@@ -188,24 +195,38 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail) {
           },
         ],
       },
-      limit: 1,
+      limit: 2,
     });
-    if (!programs.docs.length)
-      return review("El programa original fue eliminado o cambió de código.");
+    if (programs.docs.length !== 1)
+      return review(live ? "El MTPE no identifica un único programa." : "El programa original fue eliminado o cambió de código.");
+    let program = programs.docs[0];
+    if (live) {
+      // Read the balance again under the program's row lock before computing the delta.
+      await lockCommercialRecords(req, "programs", [program.id]);
+      const current = await req.payload.find({
+        collection: "programs", req, overrideAccess: true, depth: 0, limit: 1,
+        where: { and: [{ id: { equals: program.id } }, { createdAt: { equals: program.createdAt } }] },
+      });
+      if (!current.docs[0]) return review("El programa original fue eliminado.");
+      program = current.docs[0];
+    }
+    const balanceBefore = pool?.remainingSeats ?? program.availableSeats;
+    if (balanceBefore == null || !Number.isSafeInteger(balanceBefore) || balanceBefore < 0 || (live && program.seatsMigrationPending))
+      return review("El programa necesita un saldo de cupos registrado y conciliado.");
     const departures = await req.payload.count({
       collection: "departures",
       req,
       overrideAccess: true,
       where: {
         and: [
-          { programRef: { equals: pool.programId } },
+          { programRef: { equals: program.id } },
           { travelDate: { equals: event.travelDate } },
         ],
       },
     });
     if (!departures.totalDocs)
       return review("No existe una salida del programa para esta fecha.");
-    const key = reservationKey(event);
+    const key = live ? digest(`live:${program.id}:${program.createdAt}:${reservationKey(event)}`) : reservationKey(event);
     const reservations = await req.payload.find({
       collection: "seat-pilot-reservations",
       req,
@@ -215,12 +236,12 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail) {
     });
     const previous = reservations.docs[0];
     const movement = proposeMovement(
-      pool,
+      live ? { remainingSeats: balanceBefore, cutoffAt: live.cutoffAt } : pool!,
       previous?.state as ReservationState | undefined,
       event,
     );
     if (movement.reason) return review(movement.reason);
-    const state = { ...event, eventKey: fingerprint! };
+    const state = { ...event, eventKey: fingerprint!, ...(live ? { mode: "live" } : {}) };
     if (previous)
       await req.payload.update({
         collection: "seat-pilot-reservations",
@@ -236,19 +257,33 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail) {
         overrideAccess: true,
         data: { key, mtpe: event.mtpe, reservation: event.reservation, state },
       });
-    await req.payload.update({
-      collection: "seat-pilot-pools",
-      id: pool.id,
-      req,
-      overrideAccess: true,
-      data: { remainingSeats: movement.remainingSeats },
-    });
+    if (pool) {
+      await req.payload.update({
+        collection: "seat-pilot-pools", id: pool.id, req, overrideAccess: true,
+        data: { remainingSeats: movement.remainingSeats },
+      });
+    } else if (movement.delta) {
+      await req.payload.update({
+        collection: "programs", id: program.id, req, overrideAccess: true,
+        data: { availableSeats: movement.remainingSeats },
+      });
+      await req.payload.create({
+        collection: "audit-log", req, overrideAccess: true,
+        data: {
+          entityType: "program", programId: String(program.id), program: program.program,
+          event: "updated", actorLabel: "Automatización de cupos por Gmail",
+          changes: { availableSeats: { before: balanceBefore, after: movement.remainingSeats }, reservation: event.reservation, mailEventKey: fingerprint },
+        },
+      });
+    }
     return save({
       eventKey: fingerprint,
       outcome: "proposed",
-      reason: "Movimiento aplicado únicamente al saldo simulado.",
+      reason: live
+        ? movement.delta ? "Movimiento aplicado a los cupos reales del programa." : "Aviso registrado. El saldo real conserva la misma cantidad."
+        : "Movimiento aplicado únicamente al saldo simulado.",
       delta: movement.delta,
-      balanceBefore: pool.remainingSeats,
+      balanceBefore,
       balanceAfter: movement.remainingSeats,
     });
   });

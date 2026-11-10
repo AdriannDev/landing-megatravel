@@ -100,9 +100,72 @@ try {
   assert.doesNotMatch(JSON.stringify(events), /PRIVATE-PASSENGER|private-secret|Aviso privado|Content-Type/)
   assert.equal((await payload.findByID({ collection: 'programs', id: program.programId, req })).availableSeats, 15)
   assert.equal((await payload.findByID({ collection: 'departures', id: program.created[0].id, req })).availableSeats, 15); checks++
+
+  // Exercise the same IMAP entry point with a real program balance and no simulated pool.
+  const realProgram = await createDepartures(payload, req, {
+    program: { program: 'MAGIA TURCA', mtpe: '20141', destination: 'Estambul', zone: 'Europa', days: 8, availableSeats: 9, seatsConfirmed: true, bookingUrl: 'https://www.megatravel.pe/', descriptionUrl: 'https://cafe.megatravel.pe/' },
+    origin: 'Lima', departures: [{ date: '2035-11-21', price: 2000 }],
+  })
+  const live = { ...gmail, live: { cutoffAt: '2026-11-01T00:00:00Z', mtpes: ['20141'] } }
+  const realBalance = async () => (await payload.findByID({ collection: 'programs', id: realProgram.programId, req })).availableSeats
+  const realAudit = async () => (await payload.find({ collection: 'audit-log', req, pagination: false, where: { programId: { equals: String(realProgram.programId) } } })).docs
+  const realBody = (overrides: Record<string, string> = {}) => body({ MTPE: 'MTPE-20141', Reserva: 'REAL-001', ...overrides })
+  const signed = (text: string) => Buffer.concat([Buffer.from('Authentication-Results: mx.google.com; dmarc=pass header.from=example.test\r\n'), mime(text)])
+  messages.clear()
+  let realUid = 0
+  const readReal = async (source: Buffer) => {
+    messages.set(++realUid, source)
+    const result = await syncGmailMailbox(payload, live, factory)
+    assert.equal(result.mode, 'live')
+    assert.equal(result.processed, 1)
+  }
+  const spoofed = Buffer.concat([
+    Buffer.from('Authentication-Results: mx.google.com; dmarc=fail header.from=example.test\r\n'),
+    signed(realBody()),
+  ])
+  await readReal(spoofed)
+  await readReal(signed(realBody({ Reserva: 'ANTES-CORTE', 'Fecha del evento': '2026-10-31T12:00:00-05:00' })))
+  await readReal(signed(body({ Reserva: 'FUERA-ALCANCE' })))
+  assert.equal(await realBalance(), 9)
+  assert.equal((await realAudit()).length, 0); checks++
+
+  await readReal(signed(realBody()))
+  assert.equal(await realBalance(), 6)
+  assert.equal((await payload.findByID({ collection: 'departures', id: realProgram.created[0].id, req, context: { skipProgramResolution: true } })).availableSeats, 6)
+  assert.deepEqual((await realAudit()).map(log => log.changes), [{
+    availableSeats: { before: 9, after: 6 }, reservation: 'REAL-001',
+    mailEventKey: (await payload.find({ collection: 'seat-mail-events', req, where: { reservation: { equals: 'REAL-001' } } })).docs[0].eventKey,
+  }]); checks++
+  await readReal(signed(realBody()))
+  await readReal(signed(realBody({ Estado: 'Confirmada', Tipo: 'confirmación', Versión: '2' })))
+  assert.equal(await realBalance(), 6)
+  assert.equal((await realAudit()).length, 1); checks++
+  await readReal(signed(realBody({ Sillas: '2', Estado: 'Confirmada', Tipo: 'modificación', Versión: '3' })))
+  assert.equal(await realBalance(), 7)
+  await readReal(signed(realBody({ Sillas: '0', Estado: 'Cancelada', Tipo: 'cancelación', Versión: '4' })))
+  await readReal(signed(realBody({ Reserva: 'EXCESO', Sillas: '10' })))
+  assert.equal(await realBalance(), 9)
+  assert.equal((await realAudit()).length, 3)
+  assert.equal(await balance(), 12); checks++
+
+  // If recording the event fails, roll back the public seat update, audit and IMAP progress.
+  messages.set(++realUid, signed(realBody({ Reserva: 'REAL-ROLLBACK' })))
+  payload.collections['seat-mail-events'].config.hooks.beforeChange.push(() => { throw new Error('deliberate live failure') })
+  try { await assert.rejects(syncGmailMailbox(payload, live, factory), /progreso confirmado/) }
+  finally { payload.collections['seat-mail-events'].config.hooks.beforeChange.pop() }
+  assert.equal(await realBalance(), 9)
+  assert.equal((await realAudit()).length, 3)
+  assert.equal((await syncGmailMailbox(payload, live, factory)).processed, 1)
+  assert.equal(await realBalance(), 6)
+  assert.equal((await syncGmailMailbox(payload, live, factory)).processed, 0); checks++
+
   process.env.SEAT_MAIL_PILOT_ENABLED = 'false'; process.env.SEAT_MAIL_PROVIDER = 'unsupported'
+  process.env.SEAT_MAIL_MODE = 'simulation'
   assert.equal((await runMailPilot(payload)).status, 'disabled')
   process.env.SEAT_MAIL_PILOT_ENABLED = 'true'
   await assert.rejects(runMailPilot(payload), /SEAT_MAIL_PROVIDER/); checks++
-  console.log(`${checks} comprobaciones Gmail correctas: reenvíos, UID, reinicios, concurrencia, rollback, privacidad y cupos públicos intactos.`)
+  process.env.SEAT_MAIL_PROVIDER = 'gmail-imap'; process.env.SEAT_MAIL_MODE = 'live'
+  delete process.env.SEAT_MAIL_LIVE_FROM
+  await assert.rejects(runMailPilot(payload), /SEAT_MAIL_LIVE_FROM/); checks++
+  console.log(`${checks} comprobaciones Gmail correctas: simulación, cupos reales, autenticación, reenvíos, concurrencia, privacidad y reversión.`)
 } finally { await payload.destroy() }

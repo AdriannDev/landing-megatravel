@@ -57,7 +57,7 @@ export function extractMailEvent(input: { subject?: string; body: string; html?:
   return { event: { mtpe: pilotMTPE(code), reservation, travelDate, seats: status === 'cancelled' || status === 'expired' ? 0 : seats, status, kind, occurredAt: new Date(occurred).toISOString(), ...(versionText ? { version: Number(versionText) } : {}) } }
 }
 
-export function proposeMovement(pool: { initialSeats: number; remainingSeats: number; cutoffAt: string }, previous: ReservationState | undefined, event: MailEvent): { reason?: string; delta?: number; remainingSeats?: number } {
+export function proposeMovement(pool: { initialSeats?: number; remainingSeats: number; cutoffAt: string }, previous: ReservationState | undefined, event: MailEvent): { reason?: string; delta?: number; remainingSeats?: number } {
   if (Date.parse(event.occurredAt) <= Date.parse(pool.cutoffAt)) return { reason: 'Evento anterior o igual a la fecha de corte del saldo inicial.' }
   if (previous) {
     if ((event.version == null) !== (previous.version == null)) return { reason: 'No se pueden comparar eventos con y sin versión.' }
@@ -68,6 +68,6 @@ export function proposeMovement(pool: { initialSeats: number; remainingSeats: nu
   } else if (event.kind !== 'reservation') return { reason: 'Reserva desconocida. Revisa el estado anterior antes de proponer cupos.' }
   const delta = (previous?.seats || 0) - event.seats
   const remainingSeats = pool.remainingSeats + delta
-  if (!Number.isSafeInteger(remainingSeats) || remainingSeats < 0 || remainingSeats > pool.initialSeats) return { reason: 'El movimiento produciría un saldo incoherente.' }
+  if (!Number.isSafeInteger(remainingSeats) || remainingSeats < 0 || (pool.initialSeats != null && remainingSeats > pool.initialSeats)) return { reason: 'El movimiento produciría un saldo incoherente.' }
   return { delta, remainingSeats }
 }

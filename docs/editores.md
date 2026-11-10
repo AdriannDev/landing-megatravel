@@ -75,4 +75,4 @@ En Programas, «Eliminar programa» muestra cuántos programas y salidas se elim
 
 El retiro conserva el motivo obligatorio; «Otro» requiere explicación. El diálogo se puede cerrar con Escape y devuelve el foco al botón de opciones.
 
-El piloto está en Administración → Piloto de correo, disponible solo para administradores. Trabaja con saldos simulados independientes. Gmail y Railway leen automáticamente los avisos cada diez minutos. Ver [configuración y pruebas de Gmail](gmail-cupos-piloto.md).
+El piloto está en Administración → Piloto de correo, disponible solo para administradores. Gmail y Railway leen los avisos cada diez minutos. En modo real, los movimientos se aplican al saldo de Programas y aparecen en el historial. [Configuración y pruebas de Gmail](gmail-cupos-piloto.md).

@@ -46,8 +46,8 @@ export function MailPilot() {
     <section className="mt-workspace">
       <h1>Piloto de cupos por correo</h1>
       <p>
-        Modo simulación. Los movimientos solo afectan al saldo de prueba; los
-        cupos públicos se mantienen independientes.
+        Consulta en Avisos y movimientos si el lector aplicó cupos reales o calculó
+        un saldo simulado. Los formularios de esta página son para pruebas manuales.
       </p>
       <p>
         <a href="/admin/collections/seat-mail-events">
@@ -55,7 +55,7 @@ export function MailPilot() {
         </a>{" "}
         · <a href="/admin/collections/seat-pilot-pools">Saldos simulados</a> ·{" "}
         <a href="/admin/collections/seat-pilot-reservations">
-          Reservas simuladas
+          Reservas por correo
         </a>
         {" "}· <a href="/admin/collections/mail-sync-cursors">Estado de lectores</a>
       </p>

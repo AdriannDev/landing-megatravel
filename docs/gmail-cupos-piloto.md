@@ -1,6 +1,6 @@
 # Gmail dedicado y piloto automático en Railway
 
-El servicio lee los avisos y actualiza **saldos simulados** automáticamente. No modifica los cupos públicos. Usa un saldo por programa compartido por todas sus fechas y orígenes. Microsoft Graph sigue disponible como alternativa explícita con `SEAT_MAIL_PROVIDER=microsoft-graph`; ver [su guía](microsoft-cupos-piloto.md).
+El servicio lee los avisos de Gmail y trabaja en simulación por defecto. El modo real actualiza el saldo de cupos del programa, que comparten sus fechas y orígenes. Microsoft Graph sigue disponible para simulación con `SEAT_MAIL_PROVIDER=microsoft-graph`. [Guía de Microsoft Graph](microsoft-cupos-piloto.md).
 
 ## Preparar el buzón y los reenvíos
 
@@ -14,8 +14,11 @@ El servicio lee los avisos y actualiza **saldos simulados** automáticamente. No
 
 | Variable | Valor |
 | --- | --- |
-| `SEAT_MAIL_PILOT_ENABLED` | `false` hasta validar cuenta, reenvíos y saldo inicial; después `true` habilita lectura en simulación |
+| `SEAT_MAIL_PILOT_ENABLED` | `false` pausa la lectura. `true` la habilita en el modo configurado |
 | `SEAT_MAIL_PROVIDER` | `gmail-imap` |
+| `SEAT_MAIL_MODE` | `simulation` por defecto o `live` para actualizar los cupos del programa |
+| `SEAT_MAIL_LIVE_FROM` | Fecha y hora de inicio con zona horaria. Requerida en modo real |
+| `SEAT_MAIL_LIVE_MTPES` | Códigos MTPE separados por comas. Vacío habilita todos los programas elegibles |
 | `GMAIL_USER` | Dirección del Gmail dedicado |
 | `GMAIL_APP_PASSWORD` | Contraseña de aplicación privada; se admiten espacios de presentación |
 | `GMAIL_FOLDER` | `INBOX` por defecto |
@@ -28,7 +31,7 @@ No usar prefijos `NEXT_PUBLIC_` para estas variables. En Railway usar `NODE_ENV=
 ## Servicio programado de Railway
 
 1. Respaldar PostgreSQL y ejecutar las migraciones del CMS con `npm run migrate` antes de activar el cron. Incluyen `20261110_185708_panel_deletion_and_mail_pilot` y `20261110_210000_gmail_mail_cursor`. Verificar primero en staging; esta entrega verifica SQLite, no una conexión real a PostgreSQL.
-2. Crear un **servicio cron separado**, con el mismo repositorio y base PostgreSQL. Seleccionar `/railway.mail-pilot.toml` como configuración. El Dockerfile incluye el código, `tsx`, ImapFlow y MailParser que usa el comando.
+2. Crear un **servicio cron separado**, con el mismo repositorio y base PostgreSQL. Configurar los ajustes del cron en Railway. El Dockerfile incluye el código, `tsx`, ImapFlow y MailParser que usa el comando.
 3. Configurar `npm run mail:pilot`, frecuencia `*/10 * * * *`, reinicio `NEVER` y sin healthcheck HTTP. No cambiar el cron de retiros ni poner un bucle o temporizador dentro del servidor web. Con el piloto deshabilitado el comando termina antes de importar el CMS o abrir Gmail/la base.
 4. Copiar las variables privadas anteriores. Mantener `SEAT_MAIL_PILOT_ENABLED=false` hasta completar la validación. Tras habilitarlo, revisar el resultado del cron y **Administración → Piloto de correo → Estado de lectores**.
 
@@ -61,7 +64,15 @@ Tipos: reserva, modificación, confirmación, cancelación y vencimiento. Estado
 
 Ejecutar `npm test`, `npm run test:integration`, `npm run test:panel-pilot`, `npm run test:gmail-pilot`, `npm run test:local-schema`, `npm run typecheck` y `npm run build`. Las pruebas Gmail usan MIME y transporte IMAP simulados con transacciones reales de Payload; no acreditan la autenticación de una cuenta real ni las plantillas de Meganet.
 
-Antes de plantear movimientos públicos, completar **siete días de simulación** desde un saldo conciliado y contrastar cada movimiento con Meganet. La actualización pública se implementará y habilitará en una etapa posterior.
+## Probar con los cupos del programa
+
+En **Programas**, verifica la cantidad de sillas del MTPE que vas a probar. El lector toma ese saldo como base y registra los movimientos en el historial del programa. Los avisos con saldo sin informar, fechas sin salida o reservas desconocidas que se intentan modificar, confirmar o cancelar quedan para revisión.
+
+En el servicio `correo-piloto`, configura `SEAT_MAIL_MODE=live` y `SEAT_MAIL_LIVE_FROM` con el instante a partir del cual quieres aplicar movimientos, por ejemplo `2026-11-10T19:00:00-05:00`. Para limitar la prueba a MAGIA TURCA usa `SEAT_MAIL_LIVE_MTPES=20141`. Activa `SEAT_MAIL_PILOT_ENABLED=true` tras aplicar el despliegue que incluye el modo real. Envía el aviso con una fecha de evento posterior al inicio configurado.
+
+El modo real requiere un remitente permitido y un resultado DMARC válido de Gmail para su dominio. Consulta el detalle de los avisos para detectar reenvíos que requieran revisión. El historial de mensajes y reservas reales usa identificadores propios para que los registros de simulación no interfieran con los descuentos.
+
+Tras una reserva de tres sillas desde un saldo registrado de nueve, comprueba **6** en Programas y el detalle «Movimiento aplicado a los cupos reales del programa» en Avisos y movimientos. El cambio queda en el historial con el responsable «Automatización de cupos por Gmail». Repetir el mismo evento conserva el saldo. Una cancelación válida de esa reserva devuelve sus tres sillas. `SEAT_MAIL_PILOT_ENABLED=false` pausa la lectura de las próximas ejecuciones.
 
 ## Reparación de SQLite local
 
