@@ -50,13 +50,13 @@ function GridEndBannerCard({
   const media = (
     <picture className="grid-end-banner-media">
       <source
-        media="(max-width: 640px) and (prefers-reduced-motion: reduce)"
+        media="(max-width: 760px) and (prefers-reduced-motion: reduce)"
         srcSet={mobileStatic}
       />
       <source media="(prefers-reduced-motion: reduce)" srcSet={staticImage} />
       {banner.mobileUrl && (
         <source
-          media="(max-width: 640px)"
+          media="(max-width: 760px)"
           srcSet={reduced ? mobileStatic : banner.mobileUrl}
         />
       )}
@@ -122,7 +122,7 @@ function GridEndBannerCard({
 
   return (
     <article
-      className={`grid-end-banner-card grid-end-banner-${variant}${hasOverlay ? " has-overlay" : ""}`}
+      className={`grid-end-banner-card grid-end-banner-${variant}${hasOverlay ? " has-overlay" : ""}${banner.countdownEnabled ? " has-countdown" : ""}`}
     >
       {banner.href ? (
         <a
@@ -225,10 +225,10 @@ export function CampaignBanner({
   const picture = (
     <picture key={banner.id}>
       <source
-        media="(max-width: 640px) and (prefers-reduced-motion: reduce)"
+        media="(max-width: 760px) and (prefers-reduced-motion: reduce)"
         srcSet={mobileStatic}
         width="800"
-        height="800"
+        height={placement === "between-results" ? "160" : "800"}
       />
       <source
         media="(prefers-reduced-motion: reduce)"
@@ -236,10 +236,10 @@ export function CampaignBanner({
       />
       {banner.mobileUrl && (
         <source
-          media="(max-width: 640px)"
+          media="(max-width: 760px)"
           srcSet={staticArt ? mobileStatic : banner.mobileUrl}
           width="800"
-          height="800"
+          height={placement === "between-results" ? "160" : "800"}
         />
       )}
       <img
@@ -298,19 +298,6 @@ export function CampaignBanner({
           >
             <ChevronLeft size={21} aria-hidden="true" />
           </button>
-          <div className="banner-indicators">
-            {banners.map((item, i) => (
-              <button
-                type="button"
-                key={item.id}
-                aria-label={`Ir al banner ${i + 1}`}
-                aria-current={i === current ? "true" : undefined}
-                onClick={() => navigate(i)}
-              >
-                <span />
-              </button>
-            ))}
-          </div>
           <button
             className="banner-arrow banner-next"
             type="button"

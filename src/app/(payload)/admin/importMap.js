@@ -10,6 +10,7 @@ import { BulkDepartureDelete as BulkDepartureDelete_b67f14c16c7d4161f37d03109cf3
 import { BulkProgramDelete as BulkProgramDelete_b67f14c16c7d4161f37d03109cf37c16 } from '../../../components/admin/delete-records'
 import { ProgramDocumentDelete as ProgramDocumentDelete_b67f14c16c7d4161f37d03109cf37c16 } from '../../../components/admin/delete-records'
 import { PopupPreview as PopupPreview_bdcaee27f9c0503162cee4876f3fd152 } from '../../../components/admin/popup-preview'
+import { FeaturedDepartureField as FeaturedDepartureField_46df8f553b3ef07739a186c2fcfa4a5d } from '../../../components/admin/featured-departure-field'
 import { PanelIcon as PanelIcon_8080e1ef1118adf03a39f8c4df3468b1 } from '../../../components/admin/brand'
 import { PanelLogo as PanelLogo_8080e1ef1118adf03a39f8c4df3468b1 } from '../../../components/admin/brand'
 import { PanelNavigation as PanelNavigation_143cf35d08d11e96cad4e1658483ebbf } from '../../../components/admin/panel-navigation'
@@ -33,6 +34,7 @@ export const importMap = {
   "/components/admin/delete-records#BulkProgramDelete": BulkProgramDelete_b67f14c16c7d4161f37d03109cf37c16,
   "/components/admin/delete-records#ProgramDocumentDelete": ProgramDocumentDelete_b67f14c16c7d4161f37d03109cf37c16,
   "/components/admin/popup-preview#PopupPreview": PopupPreview_bdcaee27f9c0503162cee4876f3fd152,
+  "/components/admin/featured-departure-field#FeaturedDepartureField": FeaturedDepartureField_46df8f553b3ef07739a186c2fcfa4a5d,
   "/components/admin/brand#PanelIcon": PanelIcon_8080e1ef1118adf03a39f8c4df3468b1,
   "/components/admin/brand#PanelLogo": PanelLogo_8080e1ef1118adf03a39f8c4df3468b1,
   "/components/admin/panel-navigation#PanelNavigation": PanelNavigation_143cf35d08d11e96cad4e1658483ebbf,

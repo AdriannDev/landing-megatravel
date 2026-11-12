@@ -1,13 +1,14 @@
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import type { CollectionConfig, Field, GlobalConfig } from 'payload'
+import { ValidationError } from 'payload'
 import { contentAccess, isAdmin, isEditor, never } from '../server/access'
 import { isDateOnly, safeExternalUrl } from '../lib/lifecycle'
 import { prepareDeparture, recordDepartureAudit, recordDepartureDeletion } from '../server/hooks'
 import { DEFAULT_CONTACT_URL, DEFAULT_CONTACT_LABEL } from '../lib/brand-config'
 import { prepareProgram, resolveDepartureProgram, syncProgramSnapshots } from '../server/program-hooks'
 import { departureViewWhere, parseDepartureView } from '../lib/admin-views'
-import { sharedFields } from '../lib/programs'
+import { relationID, sharedFields } from '../lib/programs'
 import { DEFAULT_SEATS_VALIDITY_HOURS, MAX_SEATS_VALIDITY_HOURS, validSeatCount } from '../lib/availability'
 import { getSeatSettings } from '../server/availability-settings'
 import { optimizeMedia } from '../server/optimize-media'
@@ -69,7 +70,7 @@ export const Banners: CollectionConfig = {
   slug: 'banners', labels: { singular: 'Banner', plural: 'Banners' }, access: contentAccess,
   admin: { group: 'Contenido', useAsTitle: 'alt', defaultColumns: ['alt', 'placement', 'enabled', 'order', 'startsAt', 'endsAt'] },
   fields: [
-    { name: 'placement', label: 'Ubicación', type: 'select', required: true, defaultValue: 'hero', options: [{ label: 'Hero', value: 'hero' }, { label: 'Rompetráfico (después de 6 productos)', value: 'between-results' }, { label: 'Final de la grilla (1 o 2 banners)', value: 'catalog-end' }, { label: 'Popup (ventana emergente)', value: 'popup' }], admin: { description: 'El rompetráfico admite varios banners y los rota automáticamente sin controles. En «Final de la grilla»: si hay 1 banner ocupa todo el ancho; si hay 2, el primero es rectangular y el segundo cuadrado.' } },
+    { name: 'placement', label: 'Ubicación', type: 'select', required: true, defaultValue: 'hero', options: [{ label: 'Hero', value: 'hero' }, { label: 'Rompetráfico entre resultados', value: 'between-results' }, { label: 'Final de la grilla (1 o 2 banners)', value: 'catalog-end' }, { label: 'Popup (ventana emergente)', value: 'popup' }], admin: { description: 'El rompetráfico aparece después de 6 productos; con fila destacada en escritorio, después de 2 grandes y 6 normales. Admite varios banners y los rota automáticamente sin controles. En «Final de la grilla»: si hay 1 banner ocupa todo el ancho; si hay 2, el primero es rectangular y el segundo cuadrado.' } },
     { name: 'popupFormat', label: 'Formato del popup', type: 'select', defaultValue: 'text', options: [{ label: 'Imagen con texto', value: 'text' }, { label: 'Solo imagen', value: 'image' }], admin: { condition: data => data.placement === 'popup' } },
     { name: 'countdownEnabled', label: 'Mostrar contador regresivo sobre el banner', type: 'checkbox', defaultValue: false, admin: { condition: data => data.placement === 'catalog-end', description: 'Ideal para el banner cuadrado al final de la grilla (por ejemplo, para destacar un programa con tiempo límite).' } },
     { name: 'countdownEndsAt', label: 'Fecha y hora límite del contador', type: 'date', admin: { condition: data => data.placement === 'catalog-end' && data.countdownEnabled === true, date: { pickerAppearance: 'dayAndTime' }, description: 'Define hasta cuándo cuenta el reloj. Si queda vacío, usará «Visible hasta». El panel utiliza America/Lima.' } },
@@ -81,9 +82,9 @@ export const Banners: CollectionConfig = {
     { name: 'popupSecondaryLabel', label: 'Texto de acción secundaria', type: 'text', maxLength: 60, admin: { condition: data => data.placement === 'popup' && data.popupFormat !== 'image', description: 'Si queda vacío se mostrará «Seguir explorando».' } },
     { name: 'popupFrequency', label: 'Frecuencia del popup', type: 'select', defaultValue: 'session', options: [{ label: 'Una vez por sesión', value: 'session' }, { label: 'Una vez cada 24 horas', value: 'daily' }, { label: 'Cada visita al catálogo', value: 'always' }], admin: { condition: data => data.placement === 'popup' } },
     { name: 'popupDelay', label: 'Espera antes de abrir (segundos)', type: 'number', defaultValue: 2, min: 0, max: 60, admin: { condition: data => data.placement === 'popup' } },
-    { name: 'image', label: 'Imagen o GIF de escritorio', type: 'upload', relationTo: 'media', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => (siblingData?.placement === 'popup' && siblingData?.popupFormat !== 'image') || !!value || 'Selecciona una imagen.', admin: { description: 'Tamaños ideales: Hero 1600 × 300 px · Rompetráfico 1200 × 70 px (altura máxima 70 px) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.' } },
+    { name: 'image', label: 'Imagen o GIF de escritorio', type: 'upload', relationTo: 'media', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => (siblingData?.placement === 'popup' && siblingData?.popupFormat !== 'image') || !!value || 'Selecciona una imagen.', admin: { description: 'Tamaños ideales: Hero 1600 × 300 px · Rompetráfico 1200 × 70 px (se muestra completo, con altura proporcional) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.' } },
     { name: 'staticImage', label: 'Alternativa estática', type: 'upload', relationTo: 'media', admin: { hidden: true } },
-    { name: 'mobileImage', label: 'Imagen para móvil (opcional)', type: 'upload', relationTo: 'media', admin: { description: 'Ideal: 800 × 800 px; para rompetráfico, 800 × 70 px. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.' } },
+    { name: 'mobileImage', label: 'Imagen para móvil (opcional)', type: 'upload', relationTo: 'media', admin: { description: 'Hero y banners finales: 800 × 800 px. Rompetráfico: 800 × 160 px, con texto adaptado a móvil. Se muestra la imagen completa. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.' } },
     { name: 'alt', label: 'Texto alternativo', type: 'text', required: true },
     { name: 'href', label: 'Enlace opcional', type: 'text', validate: urlValidation },
     { name: 'popupPreview', type: 'ui', admin: { condition: data => data.placement === 'popup', components: { Field: '/components/admin/popup-preview#PopupPreview' } } },
@@ -271,17 +272,28 @@ export const AuditLog: CollectionConfig = {
 export const Settings: GlobalConfig = {
   slug: 'settings', label: 'Configuración del catálogo', access: { read: isAdmin, update: isAdmin },
   admin: { group: 'Configuración' },
+  hooks: { beforeValidate: [({ data, originalDoc, req }) => {
+    const merged = { ...originalDoc, ...data }
+    const first = relationID(merged.featuredDeparture1), second = relationID(merged.featuredDeparture2)
+    if (first != null && second != null && String(first) === String(second)) throw new ValidationError({ global: 'settings', req, errors: [{ path: 'featuredDeparture2', message: 'Elige una salida distinta para cada espacio destacado.' }] })
+    return data
+  }] },
   fields: [
     { name: 'contactUrl', label: 'Enlace de contacto comercial', type: 'text', required: true, defaultValue: DEFAULT_CONTACT_URL, validate: urlValidation },
     { name: 'contactLabel', label: 'Texto del botón de contacto', type: 'text', required: true, defaultValue: DEFAULT_CONTACT_LABEL },
+    { type: 'collapsible', label: 'Salidas fijadas al inicio', admin: { initCollapsed: false }, fields: [
+      { name: 'featuredDeparture1', label: 'Destacada 1 (opcional)', type: 'relationship', relationTo: 'departures', maxDepth: 0, admin: { components: { Field: '/components/admin/featured-departure-field#FeaturedDepartureField' } } },
+      { name: 'featuredDeparture2', label: 'Destacada 2 (opcional)', type: 'relationship', relationTo: 'departures', maxDepth: 0, admin: { components: { Field: '/components/admin/featured-departure-field#FeaturedDepartureField' } } },
+    ] },
     { name: 'seatsValidityHours', label: 'Vigencia de cupos referenciales (horas)', type: 'number', required: true, defaultValue: DEFAULT_SEATS_VALIDITY_HOURS, min: 1, max: MAX_SEATS_VALIDITY_HOURS, validate: (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_SEATS_VALIDITY_HOURS || 'Indica horas enteras entre 1 y 720.', admin: { step: 1, description: 'Al vencer se ocultan cantidad y «Últimos cupos» hasta una nueva revisión. La salida sigue publicada.' } },
-    { name: 'blogPosts', label: 'Artículos automáticos de Mega Blog', type: 'array', maxRows: 3, admin: { readOnly: true, description: 'Los actualiza el sistema desde el Mega Blog. No requieren edición manual.' }, fields: [
+    { name: 'blogPosts', label: 'Artículos automáticos de Mega Blog', type: 'array', maxRows: 6, admin: { readOnly: true, description: 'El sistema prepara seis artículos y sus imágenes optimizadas desde Mega Blog. No requieren edición manual.' }, fields: [
       { name: 'sourceId', label: 'ID en Mega Blog', type: 'text', required: true, admin: { readOnly: true } },
       { name: 'title', label: 'Título', type: 'text', required: true, admin: { readOnly: true } },
       { name: 'category', label: 'Categoría', type: 'text', required: true, admin: { readOnly: true } },
-      { name: 'dateLabel', label: 'Fecha publicada', type: 'text', required: true, admin: { readOnly: true } },
+      { name: 'dateLabel', label: 'Fecha publicada', type: 'text', admin: { readOnly: true, description: 'Algunos artículos de la web oficial no publican fecha.' } },
       { name: 'href', label: 'Enlace del artículo', type: 'text', required: true, admin: { readOnly: true } },
       { name: 'imageUrl', label: 'Imagen de origen', type: 'text', required: true, admin: { readOnly: true } },
+      { name: 'image', label: 'Miniatura optimizada', type: 'upload', relationTo: 'media', admin: { readOnly: true } },
     ] },
     { name: 'blogLastSyncedAt', label: 'Última sincronización correcta de Mega Blog', type: 'date', admin: { readOnly: true, description: 'La tarea diaria consulta el blog únicamente cuando han pasado cinco días desde esta fecha.' } },
   ],

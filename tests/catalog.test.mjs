@@ -33,6 +33,29 @@ test('orden por precio, fecha, duración y destacados', () => {
   assert.equal(filterCatalog(items, { ...emptyFilters(), sort: 'duration' }).items[0].id, '2')
   assert.equal(filterCatalog(items.map(i => ({ ...i, priority: i.id === '3' ? 5 : 0 })), emptyFilters()).items[0].id, '3')
 })
+
+test('fija hasta dos salidas en el orden configurado sin saltarse los filtros', () => {
+  const data = items.map(item => ({ ...item, priority: item.id === '1' ? 100 : 0 }))
+  assert.deepEqual(filterCatalog(data, emptyFilters(), ['3', '2']).items.map(i => i.id), ['3', '2', '1'])
+  assert.deepEqual(filterCatalog(data, { ...emptyFilters(), origins: ['Lima'] }, ['2', '3']).items.map(i => i.id), ['3', '1'])
+  assert.deepEqual(filterCatalog(data, emptyFilters(), ['2', '2', 'missing', '3']).items.map(i => i.id), ['2', '1', '3'])
+  for (const sort of ['date', 'price-asc', 'price-desc', 'duration']) {
+    const filters = { ...emptyFilters(), sort }
+    assert.deepEqual(filterCatalog(data, filters, ['3', '2']), filterCatalog(data, filters))
+  }
+})
+
+test('las fijadas cuentan dentro de las doce por página y no se repiten', () => {
+  const data = Array.from({ length: 26 }, (_, i) => ({ ...base, id: String(i).padStart(2, '0') }))
+  const featured = ['25', '24']
+  const first = filterCatalog(data, emptyFilters(), featured)
+  const rest = [2, 3].flatMap(page => filterCatalog(data, { ...emptyFilters(), page }, featured).items)
+  assert.deepEqual(first.items.slice(0, 2).map(i => i.id), featured)
+  assert.equal(first.items.length, 12)
+  assert.equal(first.total, 26)
+  assert.equal(new Set([...first.items, ...rest].map(i => i.id)).size, 26)
+  assert.equal(rest.some(i => featured.includes(i.id)), false)
+})
 test('API pública proyecta solo campos comerciales', () => {
   const output = toPublicPackage(base, new Date('2026-10-23'))
   for (const key of ['withdrawalReason', 'withdrawalNote', 'retiredBy', 'sourceSheet', 'advanceDays', 'status']) assert.equal(key in output, false)

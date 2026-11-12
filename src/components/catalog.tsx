@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { Fragment, useEffect, useMemo, useState, useRef } from "react";
 import {
   Search,
   SlidersHorizontal,
@@ -229,9 +229,11 @@ export function Catalog({
   );
   // Server always enforces actual per-departure cutoff; no private rule fields are sent to the browser.
   const result = useMemo(
-    () => filterCatalog(packages, filters),
-    [packages, filters],
+    () => filterCatalog(packages, filters, liveData.featuredPackageIds),
+    [packages, filters, liveData.featuredPackageIds],
   );
+  const hasFeaturedRow = view === "grid" && result.page === 1 && filters.sort === "featured" &&
+    !!result.items[0] && (liveData.featuredPackageIds || []).includes(result.items[0].id);
   const heroBanners = bannersAt(liveData.banners, "hero", new Date(clock));
   const betweenBanners = bannersAt(
     liveData.banners,
@@ -615,32 +617,18 @@ export function Catalog({
                 )}
                 {result.items.length ? (
                   <>
-                    <div className={`package-grid${view === "list" ? " package-grid--list" : ""}`}>
-                      {result.items.slice(0, 6).map((item) => (
-                        <PackageCard
-                          item={item}
-                          contactUrl={liveData.contactUrl}
-                          view={view}
-                          key={item.id}
-                        />
+                    <div className={`package-grid${view === "list" ? " package-grid--list" : ""}${hasFeaturedRow ? " package-grid--featured" : ""}`}>
+                      {result.items.map((item, index) => (
+                        <Fragment key={item.id}>
+                          <PackageCard item={item} contactUrl={liveData.contactUrl} view={view} />
+                          {betweenBanners.length > 0 && index === Math.min(5, result.items.length - 1) && (
+                            <div className="catalog-interstitial">
+                              <CampaignBanner banners={betweenBanners} placement="between-results" />
+                            </div>
+                          )}
+                        </Fragment>
                       ))}
                     </div>
-                    <CampaignBanner
-                      banners={betweenBanners}
-                      placement="between-results"
-                    />
-                    {result.items.length > 6 && (
-                      <div className={`package-grid package-grid-continuation${view === "list" ? " package-grid--list" : ""}`}>
-                        {result.items.slice(6).map((item) => (
-                          <PackageCard
-                            item={item}
-                            contactUrl={liveData.contactUrl}
-                            view={view}
-                            key={item.id}
-                          />
-                        ))}
-                      </div>
-                    )}
                     <CampaignBanner
                       banners={finalBanners}
                       placement="catalog-end"

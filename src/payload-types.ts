@@ -408,7 +408,7 @@ export interface Campaign {
 export interface Banner {
   id: number;
   /**
-   * El rompetráfico admite varios banners y los rota automáticamente sin controles. En «Final de la grilla»: si hay 1 banner ocupa todo el ancho; si hay 2, el primero es rectangular y el segundo cuadrado.
+   * El rompetráfico aparece después de 6 productos; con fila destacada en escritorio, después de 2 grandes y 6 normales. Admite varios banners y los rota automáticamente sin controles. En «Final de la grilla»: si hay 1 banner ocupa todo el ancho; si hay 2, el primero es rectangular y el segundo cuadrado.
    */
   placement: 'hero' | 'between-results' | 'catalog-end' | 'popup';
   popupFormat?: ('text' | 'image') | null;
@@ -444,12 +444,12 @@ export interface Banner {
   popupFrequency?: ('session' | 'daily' | 'always') | null;
   popupDelay?: number | null;
   /**
-   * Tamaños ideales: Hero 1600 × 300 px · Rompetráfico 1200 × 70 px (altura máxima 70 px) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.
+   * Tamaños ideales: Hero 1600 × 300 px · Rompetráfico 1200 × 70 px (se muestra completo, con altura proporcional) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.
    */
   image?: (number | null) | Media;
   staticImage?: (number | null) | Media;
   /**
-   * Ideal: 800 × 800 px; para rompetráfico, 800 × 70 px. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.
+   * Hero y banners finales: 800 × 800 px. Rompetráfico: 800 × 160 px, con texto adaptado a móvil. Se muestra la imagen completa. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.
    */
   mobileImage?: (number | null) | Media;
   alt: string;
@@ -1017,21 +1017,27 @@ export interface Setting {
   id: number;
   contactUrl: string;
   contactLabel: string;
+  featuredDeparture1?: (number | null) | Departure;
+  featuredDeparture2?: (number | null) | Departure;
   /**
    * Al vencer se ocultan cantidad y «Últimos cupos» hasta una nueva revisión. La salida sigue publicada.
    */
   seatsValidityHours: number;
   /**
-   * Los actualiza el sistema desde el Mega Blog. No requieren edición manual.
+   * El sistema prepara seis artículos y sus imágenes optimizadas desde Mega Blog. No requieren edición manual.
    */
   blogPosts?:
     | {
         sourceId: string;
         title: string;
         category: string;
-        dateLabel: string;
+        /**
+         * Algunos artículos de la web oficial no publican fecha.
+         */
+        dateLabel?: string | null;
         href: string;
         imageUrl: string;
+        image?: (number | null) | Media;
         id?: string | null;
       }[]
     | null;
@@ -1049,6 +1055,8 @@ export interface Setting {
 export interface SettingsSelect<T extends boolean = true> {
   contactUrl?: T;
   contactLabel?: T;
+  featuredDeparture1?: T;
+  featuredDeparture2?: T;
   seatsValidityHours?: T;
   blogPosts?:
     | T
@@ -1059,6 +1067,7 @@ export interface SettingsSelect<T extends boolean = true> {
         dateLabel?: T;
         href?: T;
         imageUrl?: T;
+        image?: T;
         id?: T;
       };
   blogLastSyncedAt?: T;

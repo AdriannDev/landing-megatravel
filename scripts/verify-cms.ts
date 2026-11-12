@@ -301,5 +301,25 @@ try {
   await assert.rejects(payload.create({ collection: 'banners', overrideAccess: true, data: { placement: 'popup', alt: 'Noticia sin título' } })); checks++
   await assert.rejects(payload.update({ collection: 'banners', id: popup.id, overrideAccess: true, data: { href: 'javascript:alert(1)' } })); checks++
   await assert.rejects(payload.find({ collection: 'banners', overrideAccess: false }), (error: unknown) => (error as { status?: number }).status === 403); checks++
+  // Featured slots persist through background blog updates and clear on deletion.
+  const { syncMegaTravelBlog } = await import('../src/server/blog-service')
+  const featuredSettings = await payload.updateGlobal({ slug: 'settings', req: adminReq, overrideAccess: false, data: { featuredDeparture1: cronCurrent.id, featuredDeparture2: cronDraft.id } })
+  assert.equal(featuredSettings.featuredDeparture1 && typeof featuredSettings.featuredDeparture1 === 'object' ? featuredSettings.featuredDeparture1.id : featuredSettings.featuredDeparture1, cronCurrent.id); checks++
+  await assert.rejects(payload.updateGlobal({ slug: 'settings', req: adminReq, overrideAccess: false, data: { featuredDeparture2: cronCurrent.id } }), (error: unknown) => JSON.stringify((error as { data?: unknown }).data).includes('distinta')); checks++
+  await assert.rejects(payload.updateGlobal({ slug: 'settings', req, overrideAccess: false, data: { featuredDeparture1: null } })); checks++
+  const blogHTML = Array.from({ length: 6 }, (_, i) => `<a href="/es/blog/post/${9000 + i}/prueba"><img src="https://tr2storage.blob.core.windows.net/headerimages/test-${i}.png"><span>DESTINOS</span><h3>Artículo ${i}</h3>${i < 4 ? '<span>12 nov, 2026</span>' : ''}</a>`).join('')
+  const syncResult = await syncMegaTravelBlog(payload, { force: true, fetcher: async (url) => new Response(String(url).endsWith('/es/blog') ? blogHTML : new Uint8Array(image)) })
+  assert.deepEqual(syncResult, { status: 'updated', posts: 6 }); checks++
+  const blogSettings = await payload.findGlobal({ slug: 'settings', overrideAccess: true, depth: 1 })
+  assert.equal(blogSettings.blogPosts?.length, 6)
+  assert.ok(blogSettings.blogPosts?.every(post => post.image && typeof post.image === 'object' && post.image.mimeType === 'image/webp' && !!post.image.url))
+  assert.equal(blogSettings.featuredDeparture1, cronCurrent.id); checks++
+  const beforeCached = await payload.count({ collection: 'media', overrideAccess: true })
+  assert.equal((await syncMegaTravelBlog(payload, { force: true, fetcher: async (url) => { assert.ok(String(url).endsWith('/es/blog')); return new Response(blogHTML) } })).status, 'updated')
+  assert.equal((await payload.count({ collection: 'media', overrideAccess: true })).totalDocs, beforeCached.totalDocs); checks++
+  await payload.delete({ collection: 'departures', id: cronDraft.id, req: adminReq, overrideAccess: false })
+  assert.equal((await payload.findGlobal({ slug: 'settings', overrideAccess: true, depth: 0 })).featuredDeparture2, null); checks++
+  await payload.updateGlobal({ slug: 'settings', req: adminReq, overrideAccess: false, data: { featuredDeparture1: null } })
+  assert.equal((await payload.findGlobal({ slug: 'settings', overrideAccess: true, depth: 0 })).featuredDeparture1, null); checks++
   console.log(`${checks} comprobaciones de integración correctas. Base aislada: ${process.env.SQLITE_URL}`)
 } finally { await payload.destroy() }

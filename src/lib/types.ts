@@ -89,6 +89,7 @@ export interface BlogPost {
 }
 export interface CatalogData {
   packages: PublicPackage[]
+  featuredPackageIds: string[]
   promotions: Promotion[]
   banners: Banner[]
   blogPosts: BlogPost[]

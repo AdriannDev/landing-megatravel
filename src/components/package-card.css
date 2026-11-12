@@ -20,10 +20,10 @@
   width: 44px;
   height: 44px;
   place-items: center;
-  border: 1px solid #ffffff99;
+  border: 1px solid var(--card-orange);
   border-radius: 14px;
-  background: #ffffffe0;
-  color: var(--blue);
+  background: var(--card-orange);
+  color: #fff;
   box-shadow: 0 2px 8px #051d2e1a;
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
@@ -41,7 +41,7 @@
   pointer-events: auto;
 }
 .package-card .package-video-overlay:hover {
-  background: #fff;
+  background: var(--card-orange-hover);
 }
 .package-card .package-video-overlay:active {
   transform: scale(0.96);
@@ -62,20 +62,21 @@
    Sin ícono ni bordes redondeados; el flash va y vuelve cambiando de color en cada sentido. */
 .package-card .new-badge {
   position: absolute;
-  top: 36px;
-  left: 36px;
+  top: 50px;
+  left: 50px;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 160px;
-  padding: 5px 24px;
+  width: 200px;
+  min-height: 28px;
+  padding: 4px 38px;
   border-radius: 0;
   background: var(--card-orange);
   color: var(--card-ink);
   font-size: 8.5px;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: 0.05em;
   text-align: center;
   text-transform: uppercase;
@@ -88,10 +89,9 @@
 }
 .package-card .new-badge-text {
   display: block;
-  max-width: 96px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 124px;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .package-card .new-badge::after {
   content: "";
@@ -178,7 +178,7 @@
 }
 .package-card .departure-meta > .departure-date {
   gap: 5px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--card-ink);
 }
 .package-card .departure-date > svg {
@@ -254,14 +254,15 @@
 /* Móvil a dos columnas */
 @media (max-width: 760px) {
   .package-card .new-badge {
-    top: 28px;
-    left: 28px;
-    width: 130px;
-    padding: 4px 18px;
+    top: 42px;
+    left: 42px;
+    width: 168px;
+    min-height: 23px;
+    padding: 3px 33px;
     font-size: 7px;
   }
   .package-card .new-badge-text {
-    max-width: 76px;
+    max-width: 102px;
   }
   .package-card .duration-bridge {
     padding: 0 11px;
@@ -287,14 +288,15 @@
 /* Móvil a una columna */
 @media (max-width: 480px) {
   .package-card .new-badge {
-    top: 38px;
-    left: 38px;
-    width: 168px;
-    padding: 5px 24px;
+    top: 54px;
+    left: 54px;
+    width: 208px;
+    min-height: 30px;
+    padding: 4px 38px;
     font-size: 9px;
   }
   .package-card .new-badge-text {
-    max-width: 100px;
+    max-width: 132px;
   }
   .package-card .duration-bridge {
     padding: 0 18px;

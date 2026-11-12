@@ -1,16 +1,17 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, MoveHorizontal } from "lucide-react";
+import { Luggage, Pause, Play, MoveHorizontal } from "lucide-react";
 
 const benefits = [
-  { icon: "ready", text: "Respuesta rápida y viajes armados" },
-  { icon: "earnings", text: "Más ganancias con High Ticket" },
-  { icon: "media", text: "Material audiovisual gratis" },
-  { icon: "training", text: "Capacitaciones para vender más" },
-  { icon: "trip", text: "Oportunidad de Fam Trip gratis" },
+  { icon: "ready", text: "Respuesta rápida y viajes organizados" },
+  { icon: "earnings", text: "Más ganancias con ventas High Ticket" },
+  { icon: "media", text: "Material audiovisual gratis para tus ventas" },
+  { icon: "training", text: "Capacitaciones para vender mucho más" },
+  { icon: "trip", text: "Oportunidades de Fam Trips gratuitos" },
 ] as const;
 
 function BenefitIcon({ kind }: { kind: (typeof benefits)[number]["icon"] }) {
+  if (kind === "trip") return <Luggage size={32} strokeWidth={1.5} aria-hidden="true" />;
   return (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {kind === "ready" && <>
@@ -31,11 +32,6 @@ function BenefitIcon({ kind }: { kind: (typeof benefits)[number]["icon"] }) {
         <rect x="3" y="4" width="26" height="18" rx="2" />
         <path d="M16 22v6M11 29l5-3 5 3M8 9h7M8 13h4" />
         <path className="benefit-icon-accent" d="m17 16 3-4 3 2 3-6" />
-      </>}
-      {kind === "trip" && <>
-        <path d="M11 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M10 28v1M22 28v1" />
-        <rect x="6" y="7" width="20" height="21" rx="3" />
-        <path className="benefit-icon-accent" d="m11 20 10-7M17 13l4 .1-.7 4.4M11 17l3 1M15 23l1-4" />
       </>}
     </svg>
   );

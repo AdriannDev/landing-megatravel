@@ -7,8 +7,7 @@
     "node": ">=24.22.1"
   },
   "scripts": {
-    "predev": "npm run db:prepare:local",
-    "dev": "next dev --webpack",
+    "dev": "npm run db:prepare:local && next dev --webpack",
     "db:prepare:local": "tsx --env-file-if-exists=.env.local scripts/prepare-local-schema.ts",
     "build": "payload generate:importmap && next build --webpack",
     "start": "node scripts/start.mjs",

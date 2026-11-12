@@ -1,6 +1,10 @@
 import type { Where } from 'payload'
 import { DEFAULT_SEATS_VALIDITY_HOURS, seatsValidityHours } from './availability.ts'
 
+export function departureSelectionLabel(item: { program: string; mtpe: string; date: string; origin: string }) {
+  return [item.program, `Salida ${item.date.slice(0, 10) || 'sin fecha'}`, item.origin, `MTPE ${item.mtpe}`].filter(Boolean).join(' · ')
+}
+
 export const departureViews = { published: 'Publicadas', expiring: 'Próximas a retirarse', 'seats-review': 'Cupos por revisar', draft: 'Borradores', withdrawn: 'Retiradas' } as const
 export type DepartureView = keyof typeof departureViews
 export const parseDepartureView = (value: unknown): DepartureView => typeof value === 'string' && value in departureViews ? value as DepartureView : 'published'
