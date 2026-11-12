@@ -266,6 +266,10 @@
     aspect-ratio: 1;
     min-height: 0;
   }
+  .catalog-end-banners .grid-end-banner-rectangular,
+  .catalog-end-banners .grid-end-banner-full:not(.has-countdown) {
+    aspect-ratio: 900 / 640;
+  }
   .catalog-end-banners.is-pair .grid-end-banner-media > img,
   .catalog-end-banners.is-single .grid-end-banner-card:not(.has-overlay) .grid-end-banner-media > img,
   .catalog-end-banners.is-single .grid-end-banner-card.has-overlay .grid-end-banner-media > img {

@@ -302,7 +302,7 @@ try {
   await assert.rejects(payload.update({ collection: 'banners', id: popup.id, overrideAccess: true, data: { href: 'javascript:alert(1)' } })); checks++
   await assert.rejects(payload.find({ collection: 'banners', overrideAccess: false }), (error: unknown) => (error as { status?: number }).status === 403); checks++
   // Featured slots persist through background blog updates and clear on deletion.
-  const { syncMegaTravelBlog } = await import('../src/server/blog-service')
+  const { refreshMegaTravelBlogNow, syncMegaTravelBlog } = await import('../src/server/blog-service')
   const featuredSettings = await payload.updateGlobal({ slug: 'settings', req: adminReq, overrideAccess: false, data: { featuredDeparture1: cronCurrent.id, featuredDeparture2: cronDraft.id } })
   assert.equal(featuredSettings.featuredDeparture1 && typeof featuredSettings.featuredDeparture1 === 'object' ? featuredSettings.featuredDeparture1.id : featuredSettings.featuredDeparture1, cronCurrent.id); checks++
   await assert.rejects(payload.updateGlobal({ slug: 'settings', req: adminReq, overrideAccess: false, data: { featuredDeparture2: cronCurrent.id } }), (error: unknown) => JSON.stringify((error as { data?: unknown }).data).includes('distinta')); checks++
@@ -317,6 +317,12 @@ try {
   const beforeCached = await payload.count({ collection: 'media', overrideAccess: true })
   assert.equal((await syncMegaTravelBlog(payload, { force: true, fetcher: async (url) => { assert.ok(String(url).endsWith('/es/blog')); return new Response(blogHTML) } })).status, 'updated')
   assert.equal((await payload.count({ collection: 'media', overrideAccess: true })).totalDocs, beforeCached.totalDocs); checks++
+  await assert.rejects(() => refreshMegaTravelBlogNow(payload, req), (error: unknown) => (error as { status?: number }).status === 403); checks++
+  const manualBlog = await refreshMegaTravelBlogNow(payload, adminReq, { fetcher: async (url) => { assert.ok(String(url).endsWith('/es/blog')); return new Response(blogHTML) } })
+  assert.equal(manualBlog.posts, 6)
+  assert.equal(manualBlog.settings.featuredDeparture1, cronCurrent.id)
+  assert.equal(manualBlog.settings.featuredDeparture2, cronDraft.id)
+  assert.equal(manualBlog.settings.blogPosts?.length, 6); checks++
   await payload.delete({ collection: 'departures', id: cronDraft.id, req: adminReq, overrideAccess: false })
   assert.equal((await payload.findGlobal({ slug: 'settings', overrideAccess: true, depth: 0 })).featuredDeparture2, null); checks++
   await payload.updateGlobal({ slug: 'settings', req: adminReq, overrideAccess: false, data: { featuredDeparture1: null } })

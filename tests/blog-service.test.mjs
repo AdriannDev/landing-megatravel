@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import sharp from 'sharp'
-import { BLOG_SYNC_INTERVAL_MS, cacheBlogImage, isBlogSyncDue, parseMegaTravelBlog, syncMegaTravelBlog } from '../src/server/blog-service.ts'
+import { BLOG_SYNC_INTERVAL_MS, cacheBlogImage, isBlogSyncDue, parseMegaTravelBlog, refreshMegaTravelBlogNow, syncMegaTravelBlog } from '../src/server/blog-service.ts'
 
 const card = ({ id, title, category = 'NUEVO PRODUCTO', date = '07 nov, 2026', image = `https://tr2storage.blob.core.windows.net/headerimages/${id}.png` }) => `
   <a href="/es/blog/post/${id}/${title.toLowerCase().replaceAll(' ', '-')}">
@@ -148,4 +148,34 @@ test('rechaza imágenes externas, credenciales, puertos y descargas demasiado gr
   await assert.rejects(() => cacheBlogImage(payload, post, async () => new Response('x', { headers: { 'content-length': String(12 * 1024 * 1024 + 1) } })), /12 MB/)
   await assert.rejects(() => cacheBlogImage(payload, post, async () => new Response(new Uint8Array(12 * 1024 * 1024 + 1))), /12 MB/)
   assert.equal(state.media.length, 0)
+})
+
+test('la actualización manual ignora los cinco días y devuelve los datos guardados para renovar el panel', async () => {
+  const { payload, state, fetcher } = fakeCMS()
+  state.settings.blogLastSyncedAt = new Date().toISOString()
+  state.settings.featuredDeparture1 = 42
+  assert.equal((await syncMegaTravelBlog(payload, { fetcher })).status, 'skipped')
+  const result = await refreshMegaTravelBlogNow(payload, { user: { role: 'admin' } }, { fetcher })
+  assert.equal(result.posts, 6)
+  assert.equal(result.settings.blogPosts.length, 6)
+  assert.equal(result.settings.featuredDeparture1, 42)
+  assert.equal(state.updates, 1)
+})
+
+test('solo un administrador puede forzar la actualización del blog', async () => {
+  for (const user of [undefined, { role: 'editor' }]) {
+    const { payload, state, fetcher } = fakeCMS()
+    await assert.rejects(() => refreshMegaTravelBlogNow(payload, { user }, { fetcher }), error => error.status === 403)
+    assert.equal(state.downloads, 0)
+    assert.equal(state.updates, 0)
+  }
+})
+
+test('el fallo de una actualización manual conserva las cards y permite reintentar', async () => {
+  const { payload, state, fetcher } = fakeCMS()
+  const before = structuredClone(state.settings)
+  const req = { user: { role: 'admin' } }
+  await assert.rejects(() => refreshMegaTravelBlogNow(payload, req, { fetcher: async () => new Response('', { status: 503 }) }), error => error.status === 502)
+  assert.deepEqual(state.settings, before)
+  assert.equal((await refreshMegaTravelBlogNow(payload, req, { fetcher })).posts, 6)
 })

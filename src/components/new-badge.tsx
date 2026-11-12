@@ -1,6 +1,8 @@
+import { newBadgeTextSize } from '@/lib/new-badge'
+
 export function NewBadge({ label }: { label: string }) {
   return (
-    <span className="new-badge" title={label}>
+    <span className="new-badge" title={label} data-text-size={newBadgeTextSize(label)}>
       <span className="new-badge-text">{label}</span>
     </span>
   );

@@ -34,8 +34,8 @@
 .package-card .package-video-overlay svg {
   margin-left: 2px;
 }
-.package-card .flyer-image:hover .package-video-overlay,
-.package-card .list-media:hover .package-video-overlay,
+.package-card:hover .package-video-overlay,
+.package-card:focus-within .package-video-overlay,
 .package-card .package-video-overlay:focus-visible {
   opacity: 1;
   pointer-events: auto;
@@ -61,6 +61,8 @@
 /* Etiqueta «Nuevo»: cinta rectangular en diagonal acoplada a la esquina superior izquierda.
    Sin ícono ni bordes redondeados; el flash va y vuelve cambiando de color en cada sentido. */
 .package-card .new-badge {
+  --badge-short-size: 12px;
+  --badge-medium-size: 10px;
   position: absolute;
   top: 50px;
   left: 50px;
@@ -92,6 +94,12 @@
   max-width: 124px;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+.package-card .new-badge[data-text-size="short"] .new-badge-text {
+  font-size: var(--badge-short-size);
+}
+.package-card .new-badge[data-text-size="medium"] .new-badge-text {
+  font-size: var(--badge-medium-size);
 }
 .package-card .new-badge::after {
   content: "";
@@ -254,6 +262,8 @@
 /* Móvil a dos columnas */
 @media (max-width: 760px) {
   .package-card .new-badge {
+    --badge-short-size: 10px;
+    --badge-medium-size: 8.5px;
     top: 42px;
     left: 42px;
     width: 168px;
@@ -288,6 +298,8 @@
 /* Móvil a una columna */
 @media (max-width: 480px) {
   .package-card .new-badge {
+    --badge-short-size: 13px;
+    --badge-medium-size: 10.5px;
     top: 54px;
     left: 54px;
     width: 208px;

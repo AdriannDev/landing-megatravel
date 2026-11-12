@@ -391,12 +391,13 @@
 @media (min-width: 761px) {
   @container (min-width: 621px) {
     .package-grid--list .package-list-card {
+      --list-media-size: clamp(180px, 24cqw, 232px);
       display: grid;
-      grid-template-columns: var(--list-media-size, 200px) minmax(0, 1fr);
+      grid-template-columns: var(--list-media-size) minmax(0, 1fr);
       align-items: stretch;
     }
 
-    /* La altura del contenido determina el lado del cuadrado de la imagen. */
+    /* One thumbnail size for every row, independent of labels and copy length. */
     .package-list-card .list-media {
       position: relative;
       display: block;
@@ -449,11 +450,12 @@
       display: none;
     }
 
-    .package-list-card:not(.list-compact) .list-video-link {
+    .package-list-card .list-video-link {
       display: none;
     }
 
     .package-list-card .list-content {
+      min-height: var(--list-media-size);
       grid-template-columns: minmax(0, 1fr) minmax(155px, 205px);
       align-items: center;
       align-self: start;
@@ -478,16 +480,5 @@
       text-align: left;
     }
 
-    .package-grid--list .package-list-card.list-compact {
-      display: block;
-    }
-
-    .package-list-card.list-compact .list-media {
-      display: none;
-    }
-
-    .package-list-card.list-compact .list-mobile-new {
-      display: inline-block;
-    }
   }
 }

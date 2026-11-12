@@ -1,7 +1,7 @@
 import { load } from 'cheerio'
 import { createHash } from 'node:crypto'
 import sharp from 'sharp'
-import type { Payload } from 'payload'
+import { APIError, type Payload, type PayloadRequest } from 'payload'
 import type { BlogPost } from '@/lib/types'
 
 export const MEGA_TRAVEL_BLOG_URL = 'https://www.megatravel.pe/es/blog'
@@ -117,4 +117,12 @@ export async function syncMegaTravelBlog(payload: Payload, { force = false, now 
   } catch (error) {
     return { status: 'failed', error: error instanceof Error ? error.message : 'No se pudo actualizar Mega Blog.' }
   }
+}
+
+export async function refreshMegaTravelBlogNow(payload: Payload, req: PayloadRequest, { fetcher = fetch }: { fetcher?: typeof fetch } = {}) {
+  if (req.user?.role !== 'admin') throw new APIError('Solo un administrador puede actualizar Mega Blog.', 403)
+  const result = await syncMegaTravelBlog(payload, { force: true, fetcher })
+  if (result.status !== 'updated') throw new APIError(result.error || 'No se pudo actualizar Mega Blog. Se conservan los artículos anteriores.', 502)
+  const settings = await payload.findGlobal({ slug: 'settings', req, overrideAccess: false, depth: 0 })
+  return { posts: result.posts, settings }
 }

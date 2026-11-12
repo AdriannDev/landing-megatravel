@@ -1,11 +1,19 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { publicNewBadge, programBadgeSnapshot, DEFAULT_NEW_BADGE_LABEL } from '../src/lib/new-badge.ts'
+import { newBadgeTextSize, publicNewBadge, programBadgeSnapshot, DEFAULT_NEW_BADGE_LABEL } from '../src/lib/new-badge.ts'
 import { resolveProgram } from '../src/lib/programs.ts'
 import { toPublicPackage } from '../src/lib/catalog.ts'
 
 const now = Date.parse('2027-01-10T12:00:00.000Z')
 const program = { id: 7, newBadge: true, newBadgeLabel: 'Nuevo programa', newBadgeUntil: null }
+
+test('las etiquetas cortas usan letra mayor y las anchas conservan espacio para dos líneas', () => {
+  assert.equal(newBadgeTextSize('NUEVO'), 'short')
+  assert.equal(newBadgeTextSize('NUEVA FECHA'), 'short')
+  assert.equal(newBadgeTextSize('NUEVO PROGRAMA'), 'medium')
+  assert.equal(newBadgeTextSize('W'.repeat(24)), 'long')
+  assert.equal(newBadgeTextSize('SUPERPROMOCIONMEGATRAVEL'), 'long')
+})
 
 test('la etiqueta del programa se aplica a todas sus fechas', () => {
   const dates = [{ programRef: program, newBadge: false }, { programRef: program }].map(resolveProgram)

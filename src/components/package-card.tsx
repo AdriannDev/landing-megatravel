@@ -7,7 +7,7 @@ import {
   Plane,
   Play,
 } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { PublicPackage } from "@/lib/types";
 import { formatDate, formatMoney, titleCase } from "@/lib/catalog";
 import { Button } from "./ui/button";
@@ -97,54 +97,14 @@ export function PackageCard({
   view?: "grid" | "list";
 }) {
   const [failedUrl, setFailedUrl] = useState("");
-  const listCardRef = useRef<HTMLElement>(null);
-  const listContentRef = useRef<HTMLDivElement>(null);
   const availability = useSeatAvailability(item.availability);
   const imageUrl =
     item.flyerUrl && failedUrl !== item.flyerUrl
       ? item.flyerUrl
       : DEFAULT_FLYER;
-  useLayoutEffect(() => {
-    const card = listCardRef.current;
-    const content = listContentRef.current;
-    if (view !== "list" || !card || !content || typeof ResizeObserver === "undefined") return;
-    const media = card.querySelector<HTMLElement>(".list-media");
-    if (!media) return;
-    let frame = 0;
-    let lastWidth = 0;
-    let compact = false;
-    const measure = () => {
-      const width = card.clientWidth;
-      if (Math.abs(width - lastWidth) > 1) {
-        lastWidth = width;
-        compact = false;
-        card.classList.remove("list-compact");
-      }
-      if (compact || getComputedStyle(media).display === "none") return;
-      const size = content.getBoundingClientRect().height;
-      // En filas demasiado estrechas, mantener el detalle completo sin imagen.
-      if (size > width * 0.43) {
-        compact = true;
-        card.classList.add("list-compact");
-        return;
-      }
-      card.style.setProperty("--list-media-size", `${size}px`);
-    };
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(measure);
-    });
-    observer.observe(card);
-    observer.observe(content);
-    measure();
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(frame);
-    };
-  }, [view]);
   if (view === "list") {
     return (
-      <article className="package-card package-list-card" ref={listCardRef}>
+      <article className="package-card package-list-card">
         <div className="list-media">
           <img
             className="list-media-background"
@@ -166,7 +126,7 @@ export function PackageCard({
           {item.newBadge && <NewBadge label={item.newBadge.label} />}
           <VideoLink item={item} />
         </div>
-        <div className="list-content" ref={listContentRef}>
+        <div className="list-content">
           <div className="list-details">
             <div className="list-meta">
               <span className="region-label">{titleCase(item.zone)}</span>

@@ -84,7 +84,7 @@ export const Banners: CollectionConfig = {
     { name: 'popupDelay', label: 'Espera antes de abrir (segundos)', type: 'number', defaultValue: 2, min: 0, max: 60, admin: { condition: data => data.placement === 'popup' } },
     { name: 'image', label: 'Imagen o GIF de escritorio', type: 'upload', relationTo: 'media', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => (siblingData?.placement === 'popup' && siblingData?.popupFormat !== 'image') || !!value || 'Selecciona una imagen.', admin: { description: 'Tamaños ideales: Hero 1600 × 300 px · Rompetráfico 1200 × 70 px (se muestra completo, con altura proporcional) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.' } },
     { name: 'staticImage', label: 'Alternativa estática', type: 'upload', relationTo: 'media', admin: { hidden: true } },
-    { name: 'mobileImage', label: 'Imagen para móvil (opcional)', type: 'upload', relationTo: 'media', admin: { description: 'Hero y banners finales: 800 × 800 px. Rompetráfico: 800 × 160 px, con texto adaptado a móvil. Se muestra la imagen completa. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.' } },
+    { name: 'mobileImage', label: 'Imagen para móvil (opcional)', type: 'upload', relationTo: 'media', admin: { description: 'Hero y contador: 800 × 800 px. El banner final rectangular conserva su imagen de escritorio también en móvil. Rompetráfico: 800 × 160 px, con texto adaptado a móvil. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.' } },
     { name: 'alt', label: 'Texto alternativo', type: 'text', required: true },
     { name: 'href', label: 'Enlace opcional', type: 'text', validate: urlValidation },
     { name: 'popupPreview', type: 'ui', admin: { condition: data => data.placement === 'popup', components: { Field: '/components/admin/popup-preview#PopupPreview' } } },
@@ -286,7 +286,8 @@ export const Settings: GlobalConfig = {
       { name: 'featuredDeparture2', label: 'Destacada 2 (opcional)', type: 'relationship', relationTo: 'departures', maxDepth: 0, admin: { components: { Field: '/components/admin/featured-departure-field#FeaturedDepartureField' } } },
     ] },
     { name: 'seatsValidityHours', label: 'Vigencia de cupos referenciales (horas)', type: 'number', required: true, defaultValue: DEFAULT_SEATS_VALIDITY_HOURS, min: 1, max: MAX_SEATS_VALIDITY_HOURS, validate: (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_SEATS_VALIDITY_HOURS || 'Indica horas enteras entre 1 y 720.', admin: { step: 1, description: 'Al vencer se ocultan cantidad y «Últimos cupos» hasta una nueva revisión. La salida sigue publicada.' } },
-    { name: 'blogPosts', label: 'Artículos automáticos de Mega Blog', type: 'array', maxRows: 6, admin: { readOnly: true, description: 'El sistema prepara seis artículos y sus imágenes optimizadas desde Mega Blog. No requieren edición manual.' }, fields: [
+    { name: 'blogRefresh', type: 'ui', admin: { components: { Field: '/components/admin/blog-refresh#BlogRefresh' } } },
+    { name: 'blogPosts', label: 'Artículos automáticos de Mega Blog', type: 'array', maxRows: 6, admin: { readOnly: true, description: 'El sistema prepara seis artículos y sus imágenes optimizadas desde Mega Blog. Puedes usar «Actualizar ahora» para buscar novedades sin esperar cinco días.' }, fields: [
       { name: 'sourceId', label: 'ID en Mega Blog', type: 'text', required: true, admin: { readOnly: true } },
       { name: 'title', label: 'Título', type: 'text', required: true, admin: { readOnly: true } },
       { name: 'category', label: 'Categoría', type: 'text', required: true, admin: { readOnly: true } },

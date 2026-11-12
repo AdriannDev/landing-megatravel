@@ -19,6 +19,9 @@ function GridEndBannerCard({
   variant: "full" | "rectangular" | "square";
   reduced: boolean;
 }) {
+  // The rectangular promotion keeps the same artwork and ratio on every screen.
+  const keepDesktopArt = variant === "rectangular" || (variant === "full" && !banner.countdownEnabled);
+  const mobileImage = keepDesktopArt ? null : banner.mobileUrl;
   const deadline = banner.countdownEndsAt || banner.endsAt || null;
   const wantCountdown = Boolean(banner.countdownEnabled && deadline);
   const [now, setNow] = useState<number | null>(null);
@@ -43,8 +46,8 @@ function GridEndBannerCard({
 
   const staticImage = banner.staticUrl || banner.imageUrl;
   const mobileStatic =
-    banner.mobileUrl && !/\.gif(?:[?#]|$)/i.test(banner.mobileUrl)
-      ? banner.mobileUrl
+    mobileImage && !/\.gif(?:[?#]|$)/i.test(mobileImage)
+      ? mobileImage
       : staticImage;
 
   const media = (
@@ -54,10 +57,10 @@ function GridEndBannerCard({
         srcSet={mobileStatic}
       />
       <source media="(prefers-reduced-motion: reduce)" srcSet={staticImage} />
-      {banner.mobileUrl && (
+      {mobileImage && (
         <source
           media="(max-width: 760px)"
-          srcSet={reduced ? mobileStatic : banner.mobileUrl}
+          srcSet={reduced ? mobileStatic : mobileImage}
         />
       )}
       <img

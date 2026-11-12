@@ -43,6 +43,8 @@ La misma ejecución también mantiene la sección **Mega Blog**. El cron se ejec
 
 Para activar los destacados y las miniaturas en un entorno existente, aplicar primero la migración `20261112_220707_featured_departures_and_blog_images` con `npm run migrate` en PostgreSQL (en SQLite local: `npm run db:prepare:local`). Después ejecutar una vez `npm run sync:blog` desde el entorno privado correspondiente para poblar las seis cards y sus miniaturas sin esperar cinco días. Las dos selecciones destacadas empiezan vacías.
 
+Un administrador también puede entrar en **Configuración del catálogo → Mega Blog → Actualizar ahora**. El botón busca los seis artículos y prepara sus imágenes sin esperar cinco días; muestra el progreso y el resultado, y renueva las cards y la fecha en el formulario. Guarda primero los cambios pendientes de configuración. Una actualización manual correcta inicia de nuevo el periodo de cinco días; si falla, conserva el contenido anterior y permite reintentar. No cambia las salidas destacadas ni el resto de la configuración.
+
 No hace falta crear otro cron ni otra variable en Railway. Después del primer despliegue, para poblar las cards sin esperar a la siguiente ejecución diaria, lanzar una vez:
 
 ```sh

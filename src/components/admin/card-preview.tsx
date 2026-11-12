@@ -17,7 +17,7 @@ import {
 } from "../seat-availability";
 import { PromotionLabels } from "../promotion-labels";
 import { durationLabel } from "../new-badge";
-import { programBadgeSnapshot, publicNewBadge } from "@/lib/new-badge";
+import { newBadgeTextSize, programBadgeSnapshot, publicNewBadge } from "@/lib/new-badge";
 import type { Promotion } from "@/lib/types";
 const previewKeys = [
   "programRef",
@@ -207,7 +207,7 @@ export function CardPreview() {
             }}
           />
           {newBadge && (
-            <span className="mt-preview-new" title={newBadge.label}>
+            <span className="mt-preview-new" title={newBadge.label} data-text-size={newBadgeTextSize(newBadge.label)}>
               {newBadge.label}
             </span>
           )}

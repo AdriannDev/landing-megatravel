@@ -12,6 +12,14 @@ export interface NewBadgeSource {
 }
 export interface PublicNewBadge { label: string }
 
+// Conservative width estimate for uppercase lettering, including tracking.
+// Short labels get a larger font; long labels keep room for two lines.
+export function newBadgeTextSize(label: string): 'short' | 'medium' | 'long' {
+  const width = Array.from(label.trim().toUpperCase()).reduce((sum, letter) =>
+    sum + (/\s/u.test(letter) ? 4 : /[MW@%]|[^\x00-\x7F]/u.test(letter) ? 12 : 9), 0)
+  return width <= 100 ? 'short' : width <= 124 ? 'medium' : 'long'
+}
+
 const clean = (value: unknown) => String(value ?? '').trim().slice(0, NEW_BADGE_MAX_LENGTH)
 // «Mostrar hasta» is exclusive; an invalid date never hides the badge silently.
 const active = (enabled: unknown, until: unknown, now: number) => {

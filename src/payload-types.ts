@@ -449,7 +449,7 @@ export interface Banner {
   image?: (number | null) | Media;
   staticImage?: (number | null) | Media;
   /**
-   * Hero y banners finales: 800 × 800 px. Rompetráfico: 800 × 160 px, con texto adaptado a móvil. Se muestra la imagen completa. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.
+   * Hero y contador: 800 × 800 px. El banner final rectangular conserva su imagen de escritorio también en móvil. Rompetráfico: 800 × 160 px, con texto adaptado a móvil. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.
    */
   mobileImage?: (number | null) | Media;
   alt: string;
@@ -1024,7 +1024,7 @@ export interface Setting {
    */
   seatsValidityHours: number;
   /**
-   * El sistema prepara seis artículos y sus imágenes optimizadas desde Mega Blog. No requieren edición manual.
+   * El sistema prepara seis artículos y sus imágenes optimizadas desde Mega Blog. Puedes usar «Actualizar ahora» para buscar novedades sin esperar cinco días.
    */
   blogPosts?:
     | {
