@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { APIError, type CollectionBeforeDeleteHook, type PayloadRequest } from 'payload'
-import { inTransaction, lockCommercialRecords } from './transactions.ts'
+import { inTransaction, lockCommercialRecords, lockSeatWrites } from './transactions.ts'
 
 export type DeletionCollection = 'programs' | 'departures'
 function admin(req: PayloadRequest) {
@@ -29,6 +29,7 @@ export async function deletionPreview(req: PayloadRequest, collection: DeletionC
 export async function deleteSelection(req: PayloadRequest, collection: DeletionCollection, ids: unknown, confirmation: { token?: unknown; preparedAt?: unknown }) {
   admin(req)
   return inTransaction(req, async () => {
+    await lockSeatWrites(req)
     await lockCommercialRecords(req, collection, selectedIDs(ids))
     if (collection === 'programs') {
       const children = await req.payload.find({ collection: 'departures', req, overrideAccess: false, depth: 0, pagination: false, where: { programRef: { in: selectedIDs(ids) } } })
@@ -50,6 +51,7 @@ export async function deleteSelection(req: PayloadRequest, collection: DeletionC
 export const recordProgramDeletion: CollectionBeforeDeleteHook = async ({ id, req }) => {
   admin(req)
   if (!req.context.confirmedProgramDeletion) throw new APIError('Utiliza «Eliminar programa» para confirmar el número de salidas afectadas.', 400)
+  await lockSeatWrites(req)
   await lockCommercialRecords(req, 'programs', [id])
   const program = await req.payload.findByID({ collection: 'programs', id, req, overrideAccess: false, depth: 0 })
   const children = await req.payload.find({ collection: 'departures', req, overrideAccess: false, depth: 0, pagination: false, where: { programRef: { equals: id } } })

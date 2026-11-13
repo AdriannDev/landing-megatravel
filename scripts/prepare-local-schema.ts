@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { SQLiteAdapter } from '@payloadcms/db-sqlite'
+import { prepareSeatPreferences } from './prepare-seat-preferences.ts'
 import { applySqliteSchemaPlan, prepareLegacySqliteSchema } from './prepare-sqlite-schema.ts'
 
 // No Payload import/connection for PostgreSQL or production. Never run a dev push there.
@@ -22,7 +23,8 @@ export async function prepareLocalSchema() {
     const plan = await kit.pushSchema(adapter.schema, adapter.drizzle)
     if (plan.hasDataLoss || plan.warnings.length) throw new Error('El esquema presenta cambios potencialmente destructivos. Arranque detenido; revisa el respaldo y el esquema.')
     const backup = await applySqliteSchemaPlan(filename, plan.statementsToExecute)
-    return { status: 'ready', preparation, backup: backup || null }
+    const preferencesUpdated = await prepareSeatPreferences(filename)
+    return { status: 'ready', preparation, backup: backup || null, preferencesUpdated }
   } finally {
     await payload?.destroy()
     if (previous === undefined) delete process.env.PAYLOAD_MIGRATING

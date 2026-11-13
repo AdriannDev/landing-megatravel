@@ -1,12 +1,15 @@
 import { ManagementTabs as ManagementTabs_143cf35d08d11e96cad4e1658483ebbf } from '../../../components/admin/panel-navigation'
 import { ReferenceCell as ReferenceCell_8b0559cdc0a12efe519c68de16b96c03 } from '../../../components/admin/reference-cell'
 import { ProgramSummary as ProgramSummary_42b5294edb0728a8a9cd1d30118d9f6e } from '../../../components/admin/program-summary'
+import { SeatCountCell as SeatCountCell_02b0bf58e8d09a657db8ab2c63ddb0cc } from '../../../components/admin/seat-count-cell'
 import { AvailabilityCell as AvailabilityCell_7b7b0c938b5df3c83e938bb258d32c73 } from '../../../components/admin/availability-cell'
 import { CutoffPreview as CutoffPreview_fa78de4706fcabea2e26f6b0511ee94a } from '../../../components/admin/cutoff-preview'
 import { CardPreview as CardPreview_adb63170f4e37b1f448d8f795506a411 } from '../../../components/admin/card-preview'
 import { StatusCell as StatusCell_22956b2ffd088c8a15372659134b37da } from '../../../components/admin/status-cell'
 import { WorkspaceTools as WorkspaceTools_06e492f54820a6d867a84173b6d37ceb } from '../../../components/admin/workspace-tools'
 import { BulkDepartureDelete as BulkDepartureDelete_b67f14c16c7d4161f37d03109cf37c16 } from '../../../components/admin/delete-records'
+import { BulkSeatAssignment as BulkSeatAssignment_b67789323f2b9e0b2b5af2b2cf35d7b8 } from '../../../components/admin/assign-seats'
+import { ProgramSeatAssignment as ProgramSeatAssignment_b67789323f2b9e0b2b5af2b2cf35d7b8 } from '../../../components/admin/assign-seats'
 import { BulkProgramDelete as BulkProgramDelete_b67f14c16c7d4161f37d03109cf37c16 } from '../../../components/admin/delete-records'
 import { ProgramDocumentDelete as ProgramDocumentDelete_b67f14c16c7d4161f37d03109cf37c16 } from '../../../components/admin/delete-records'
 import { PopupPreview as PopupPreview_bdcaee27f9c0503162cee4876f3fd152 } from '../../../components/admin/popup-preview'
@@ -26,12 +29,15 @@ export const importMap = {
   "/components/admin/panel-navigation#ManagementTabs": ManagementTabs_143cf35d08d11e96cad4e1658483ebbf,
   "/components/admin/reference-cell#ReferenceCell": ReferenceCell_8b0559cdc0a12efe519c68de16b96c03,
   "/components/admin/program-summary#ProgramSummary": ProgramSummary_42b5294edb0728a8a9cd1d30118d9f6e,
+  "/components/admin/seat-count-cell#SeatCountCell": SeatCountCell_02b0bf58e8d09a657db8ab2c63ddb0cc,
   "/components/admin/availability-cell#AvailabilityCell": AvailabilityCell_7b7b0c938b5df3c83e938bb258d32c73,
   "/components/admin/cutoff-preview#CutoffPreview": CutoffPreview_fa78de4706fcabea2e26f6b0511ee94a,
   "/components/admin/card-preview#CardPreview": CardPreview_adb63170f4e37b1f448d8f795506a411,
   "/components/admin/status-cell#StatusCell": StatusCell_22956b2ffd088c8a15372659134b37da,
   "/components/admin/workspace-tools#WorkspaceTools": WorkspaceTools_06e492f54820a6d867a84173b6d37ceb,
   "/components/admin/delete-records#BulkDepartureDelete": BulkDepartureDelete_b67f14c16c7d4161f37d03109cf37c16,
+  "/components/admin/assign-seats#BulkSeatAssignment": BulkSeatAssignment_b67789323f2b9e0b2b5af2b2cf35d7b8,
+  "/components/admin/assign-seats#ProgramSeatAssignment": ProgramSeatAssignment_b67789323f2b9e0b2b5af2b2cf35d7b8,
   "/components/admin/delete-records#BulkProgramDelete": BulkProgramDelete_b67f14c16c7d4161f37d03109cf37c16,
   "/components/admin/delete-records#ProgramDocumentDelete": ProgramDocumentDelete_b67f14c16c7d4161f37d03109cf37c16,
   "/components/admin/popup-preview#PopupPreview": PopupPreview_bdcaee27f9c0503162cee4876f3fd152,

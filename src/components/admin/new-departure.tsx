@@ -18,7 +18,7 @@ export function NewDeparture() {
   const [programs, setPrograms] = useState<Program[]>([]),
     [programId, setProgramId] = useState("");
   const [rows, setRows] = useState([
-      { date: "", price: "", lastSeats: false, promotion: "" },
+      { date: "", price: "", availableSeats: "", origin: "", lastSeats: "", promotion: "" },
     ]),
     [busy, setBusy] = useState(false);
   const promotionOptions = usePromotionOptions();
@@ -105,7 +105,9 @@ export function NewDeparture() {
                 departures: rows.map((row) => ({
                   date: row.date,
                   price: Number(row.price),
-                  lastSeats: row.lastSeats,
+                  availableSeats: row.availableSeats === "" ? undefined : Number(row.availableSeats),
+                  origin: row.origin || undefined,
+                  lastSeats: row.lastSeats === "" ? undefined : row.lastSeats === "true",
                   promotions: row.promotion ? [row.promotion] : [],
                 })),
               }),
@@ -210,7 +212,7 @@ export function NewDeparture() {
                 antes de publicar.
               </p>
               <label>
-                Sillas Disponibles (Opcional)
+                Cantidad inicial de cupos (opcional)
                 <input
                   type="number"
                   min="0"
@@ -219,7 +221,7 @@ export function NewDeparture() {
                   onChange={(e) => setProgramSeats(e.target.value)}
                 />
                 <small>
-                  Se aplicara la cantidad de sillas a todas las fechas del programa. Dejar vacío si no aplica.
+                  Cada nueva salida usa este valor si no indicas otra cantidad en su fila.
                 </small>
               </label>
               <label className="mt-check">
@@ -228,7 +230,7 @@ export function NewDeparture() {
                   checked={programLastSeats}
                   onChange={(e) => setProgramLastSeats(e.target.checked)}
                 />
-                Últimos cupos en todas las fechas
+                Etiqueta inicial «Últimos cupos»
               </label>
               {(programSeats !== "" || programLastSeats) && (
                 <label className="mt-check">
@@ -237,20 +239,20 @@ export function NewDeparture() {
                     name="programSeatsConfirmed"
                     required
                   />
-                  Confirmo que he verificado los cupos del programa
+                  Confirmo los valores iniciales de cupos
                 </label>
               )}
             </div>
           )}
           {selectedProgram && (
             <p>
-              Cupos compartidos:{" "}
+              Cantidad inicial para nuevas salidas:{" "}
               {selectedProgram.seatsMigrationPending
                 ? "Pendientes de revisión"
                 : (selectedProgram.availableSeats ?? "Sin informar")}
               .{" "}
               <a href={`/admin/collections/programs/${selectedProgram.id}`}>
-                Editar saldo y etiqueta grupal en Programas
+                Editar valores iniciales en Programas
               </a>
             </p>
           )}
@@ -298,9 +300,7 @@ export function NewDeparture() {
         <fieldset disabled={busy || created.length > 0}>
           <legend>Fechas de salida</legend>
           <p>
-            Agrega hasta 30 fechas. Las promociones y la etiqueta «Últimos
-            cupos» son opcionales por fecha. La cantidad de cupos se comparte
-            con el programa.
+            Cada fila tiene sus propios cupos y origen. Deja la cantidad vacía para usar el valor inicial del programa.
           </p>
           {promotionOptions.error && (
             <p role="alert">{promotionOptions.error}</p>
@@ -357,21 +357,9 @@ export function NewDeparture() {
                   )
                 }
               />
-              <label className="mt-check">
-                <input
-                  type="checkbox"
-                  aria-label={`Últimos cupos de salida ${index + 1}`}
-                  checked={row.lastSeats}
-                  onChange={(e) =>
-                    setRows((values) =>
-                      values.map((r, i) =>
-                        i === index ? { ...r, lastSeats: e.target.checked } : r,
-                      ),
-                    )
-                  }
-                />
-                Últimos cupos solo en esta fecha
-              </label>
+              <label>Origen de salida {index + 1}<input value={row.origin} placeholder="Usar origen base" onChange={e => setRows(values => values.map((r, i) => i === index ? { ...r, origin: e.target.value } : r))} /></label>
+              <label>Cupos disponibles {index + 1}<input type="number" min="0" step="1" value={row.availableSeats} placeholder="Usar cantidad inicial" onChange={e => setRows(values => values.map((r, i) => i === index ? { ...r, availableSeats: e.target.value } : r))} /></label>
+              <label>Últimos cupos {index + 1}<select value={row.lastSeats} onChange={e => setRows(values => values.map((r, i) => i === index ? { ...r, lastSeats: e.target.value } : r))}><option value="">Usar etiqueta inicial</option><option value="true">Activar</option><option value="false">Desactivar</option></select></label>
               {rows.length > 1 && (
                 <button
                   type="button"
@@ -392,17 +380,17 @@ export function NewDeparture() {
             onClick={() =>
               setRows((values) => [
                 ...values,
-                { date: "", price: "", lastSeats: false, promotion: "" },
+                { date: "", price: "", availableSeats: "", origin: "", lastSeats: "", promotion: "" },
               ])
             }
           >
             + Añadir otra fecha
           </button>
 
-          {rows.some((row) => row.lastSeats) && (
+          {rows.some((row) => row.lastSeats === "true" || row.availableSeats !== "") && (
             <label className="mt-check">
               <input type="checkbox" name="seatsConfirmed" required />
-              Confirmo que «Últimos cupos» está vigente en las fechas marcadas
+              Confirmo la disponibilidad actual de las salidas
             </label>
           )}
           <div className="mt-action-row">

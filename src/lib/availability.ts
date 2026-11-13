@@ -29,8 +29,7 @@ export const seatsValidityHours = (value: unknown) =>
     : DEFAULT_SEATS_VALIDITY_HOURS;
 export const hasSeatReference = (item: SeatReference) =>
   item.availableSeats != null ||
-  item.lastSeats === true ||
-  item.programLastSeats === true;
+  item.lastSeats === true;
 
 export function seatReferenceExpiry(
   item: SeatReference,
@@ -47,24 +46,6 @@ export function seatReviewState(
   now = Date.now(),
 ): "missing" | "current" | "stale" {
   if (!hasSeatReference(item)) return "missing";
-  if ("programLastSeats" in item || "lastSeatsCheckedAt" in item) {
-    const stamps = [
-      ...(item.availableSeats != null || item.programLastSeats
-        ? [item.seatsCheckedAt]
-        : []),
-      ...(item.lastSeats ? [item.lastSeatsCheckedAt] : []),
-    ];
-    return stamps.some((stamp) => {
-      const time = Date.parse(stamp || "");
-      return (
-        !Number.isFinite(time) ||
-        time > now ||
-        time + seatsValidityHours(hours) * HOUR_MS <= now
-      );
-    })
-      ? "stale"
-      : "current";
-  }
   const checked = Date.parse(item.seatsCheckedAt || "");
   return checked <= now && seatReferenceExpiry(item, hours) > now
     ? "current"
@@ -75,34 +56,6 @@ export function publicAvailability(
   hours = DEFAULT_SEATS_VALIDITY_HOURS,
   now = Date.now(),
 ): PublicAvailability | null {
-  if ("programLastSeats" in item || "lastSeatsCheckedAt" in item) {
-    if (!validSeatCount(item.availableSeats) || item.availableSeats === 0)
-      return null;
-    const expiry = (stamp: string | null | undefined) => {
-      const checked = Date.parse(stamp || "");
-      return Number.isFinite(checked) &&
-        checked <= now &&
-        checked + seatsValidityHours(hours) * HOUR_MS > now
-        ? checked + seatsValidityHours(hours) * HOUR_MS
-        : 0;
-    };
-    const programExpiry = expiry(item.seatsCheckedAt);
-    const seatsExpiry = item.availableSeats != null ? programExpiry : 0;
-    const lastExpiry = Math.max(
-      item.programLastSeats ? programExpiry : 0,
-      item.lastSeats ? expiry(item.lastSeatsCheckedAt) : 0,
-    );
-    if (!seatsExpiry && !lastExpiry) return null;
-    return {
-      seats: seatsExpiry ? (item.availableSeats ?? null) : null,
-      lastSeats: !!lastExpiry,
-      expiresAt: new Date(Math.max(seatsExpiry, lastExpiry)).toISOString(),
-      seatsExpiresAt: seatsExpiry ? new Date(seatsExpiry).toISOString() : null,
-      lastSeatsExpiresAt: lastExpiry
-        ? new Date(lastExpiry).toISOString()
-        : null,
-    };
-  }
   if (
     !validSeatCount(item.availableSeats) ||
     item.availableSeats === 0 ||
@@ -132,29 +85,6 @@ export function visibleAvailability(
     return seats != null || lastSeats ? { ...value, seats, lastSeats } : null;
   }
   return value;
-}
-
-// A date owns only its urgency flag; the program owns the shared quantity.
-export function prepareDateLastSeats(
-  data: SeatEdit,
-  original?: SeatEdit & { lastSeatsCheckedAt?: string | null },
-  now = Date.now(),
-) {
-  const changedProgram =
-    original &&
-    "programRef" in data &&
-    relation(data.programRef) !== relation(original.programRef);
-  const lastSeats =
-    !changedProgram && (data.lastSeats ?? original?.lastSeats) === true;
-  const stamp =
-    lastSeats && (data.seatsConfirmed === true || !original?.lastSeats)
-      ? new Date(now).toISOString()
-      : (original?.lastSeatsCheckedAt ?? null);
-  return {
-    lastSeats,
-    lastSeatsCheckedAt: lastSeats ? stamp : null,
-    seatsConfirmed: false,
-  };
 }
 
 type SeatEdit = SeatReference & {

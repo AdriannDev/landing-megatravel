@@ -97,18 +97,18 @@ try {
   assert.equal(first.errors, 0, JSON.stringify(first)); assert.equal(second.errors, 0, JSON.stringify(second))
   const imported = await payload.find({ collection: 'departures', req, overrideAccess: false, where: { sourceKey: { equals: 'import-test' } } })
   assert.equal(imported.totalDocs, 1); assert.equal(imported.docs[0].price, 2099); checks++
-  // El programa posee el saldo; cada fecha conserva solo su etiqueta individual.
+  // El programa conserva valores iniciales; cada salida posee su saldo.
   const seatProgramID = typeof departure.programRef === 'object' ? departure.programRef!.id : departure.programRef!
   const seatStart = Date.now()
   let pool = await payload.update({ collection: 'programs', id: seatProgramID, req, overrideAccess: false, data: { availableSeats: 15 } })
   const seatStamp = pool.seatsCheckedAt
   assert.ok(Date.parse(seatStamp!) >= seatStart); checks++
   let withSeats = await payload.findByID({ collection: 'departures', id: departure.id, req, depth: 0 })
-  assert.equal(withSeats.availableSeats, 15)
+  assert.equal(withSeats.availableSeats, null)
   await payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: false, data: { availableSeats: 99 } })
   assert.equal((await payload.findByID({ collection: 'programs', id: seatProgramID, req })).availableSeats, 15); checks++
   withSeats = await payload.update({ collection: 'departures', id: departure.id, req, data: { lastSeats: true } })
-  assert.equal(cmsToDeparture(withSeats).availableSeats, 15)
+  assert.equal(cmsToDeparture(withSeats).availableSeats, 99)
   assert.ok(publishedPackages([cmsToDeparture(withSeats)])[0].availability?.lastSeats)
   assert.equal((await payload.findByID({ collection: 'programs', id: seatProgramID, req })).lastSeats, false); checks++
   await payload.update({ collection: 'departures', id: departure.id, req, data: { price: 4000, seatsConfirmed: true } })
@@ -120,20 +120,20 @@ try {
   pool = await payload.update({ collection: 'programs', id: seatProgramID, req, data: { availableSeats: 0, lastSeats: true } })
   assert.equal(pool.lastSeats, false)
   withSeats = await payload.findByID({ collection: 'departures', id: departure.id, req })
-  assert.equal(publishedPackages([cmsToDeparture(withSeats)])[0].availability, null); checks++
+  assert.equal(publishedPackages([cmsToDeparture(withSeats)])[0].availability?.seats, 99); checks++
   await payload.update({ collection: 'programs', id: seatProgramID, req, data: { availableSeats: null } })
   withSeats = await payload.findByID({ collection: 'departures', id: departure.id, req })
   assert.equal(publishedPackages([cmsToDeparture(withSeats)])[0].availability?.lastSeats, true); checks++
   const nextDate = new Date(Date.parse(date) + 86400000).toISOString().slice(0, 10)
   await payload.update({ collection: 'programs', id: seatProgramID, req, data: { availableSeats: 12 } })
   withSeats = await payload.update({ collection: 'departures', id: departure.id, req, data: { travelDate: nextDate } })
-  assert.equal(withSeats.availableSeats, 12); checks++
+  assert.equal(withSeats.availableSeats, null); checks++
   const importProgramID = typeof imported.docs[0].programRef === 'object' ? imported.docs[0].programRef!.id : imported.docs[0].programRef!
-  const importedPool = await payload.update({ collection: 'programs', id: importProgramID, req, data: { availableSeats: 4, lastSeats: true } })
+  const importedPool = await payload.update({ collection: 'departures', id: imported.docs[0].id, req, data: { availableSeats: 4, lastSeats: true } })
   await importCSV(payload, csv, req, { dryRun: false, downloadImages: false })
   const importAfter = await payload.findByID({ collection: 'departures', id: imported.docs[0].id, req })
-  assert.equal(importAfter.availableSeats, 4); assert.equal(importAfter.programLastSeats, true); assert.equal(importAfter.seatsCheckedAt, importedPool.seatsCheckedAt); checks++
-  await payload.db.updateOne({ collection: 'programs', id: importProgramID, req, data: { seatsCheckedAt: new Date(Date.now() - 25 * 3600000).toISOString() } })
+  assert.equal(importAfter.availableSeats, 4); assert.equal(importAfter.lastSeats, true); assert.equal(importAfter.seatsCheckedAt, importedPool.seatsCheckedAt); checks++
+  await payload.db.updateOne({ collection: 'departures', id: imported.docs[0].id, req, data: { seatsCheckedAt: new Date(Date.now() - 25 * 3600000).toISOString() } })
   await payload.update({ collection: 'programs', id: importProgramID, req, data: { program: 'Programa importado revisado' } })
   const seatNow = new Date()
   await payload.update({ collection: 'departures', id: imported.docs[0].id, req, data: { status: 'published' } })
@@ -197,7 +197,7 @@ try {
   assert.equal(dates.docs.find(doc => doc.id === batch.created[1].id)?.lastSeats, true); checks++
   await payload.update({ collection: 'programs', id: shared.id, req, data: { availableSeats: 12, lastSeats: true } })
   let sharedDates = await payload.find({ collection: 'departures', req, depth: 0, where: { programRef: { equals: shared.id } }, pagination: false })
-  assert.ok(sharedDates.docs.every(doc => doc.availableSeats === 12 && publishedPackages([cmsToDeparture(doc)])[0].availability?.lastSeats === true)); checks++
+  assert.ok(sharedDates.docs.every(doc => doc.availableSeats === 15)); assert.equal(sharedDates.docs.find(doc => doc.id === batch.created[0].id)?.lastSeats, false); checks++
   await payload.update({ collection: 'programs', id: shared.id, req, data: { availableSeats: 15, lastSeats: false } })
   sharedDates = await payload.find({ collection: 'departures', req, depth: 0, where: { programRef: { equals: shared.id } }, pagination: false })
   assert.equal(sharedDates.docs.find(doc => doc.id === batch.created[0].id)?.lastSeats, false)

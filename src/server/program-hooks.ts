@@ -1,11 +1,13 @@
 import { APIError, type CollectionAfterChangeHook, type CollectionBeforeChangeHook, type CollectionAfterReadHook } from 'payload'
-import { normalizeMTPE, relationID, sharedData, resolveProgram, programSeatSnapshot } from '../lib/programs.ts'
+import { normalizeMTPE, relationID, sharedData, resolveProgram } from '../lib/programs.ts'
 import { prepareSeatReference } from '../lib/availability.ts'
 import { isPublishable, validatePublication } from '../lib/lifecycle.ts'
 import { cmsToDeparture } from './normalize.ts'
 import { importRemoteMedia } from './media-import.ts'
+import { lockSeatWrites } from './transactions.ts'
 
 export const prepareProgram: CollectionBeforeChangeHook = async ({ data, originalDoc, req, context }) => {
+  await lockSeatWrites(req)
   const reviewed = data.seatsConfirmed === true
   try { Object.assign(data, prepareSeatReference(data, originalDoc)) }
   catch (error) { throw new APIError((error as Error).message, 400) }
@@ -43,7 +45,7 @@ export const syncProgramSnapshots: CollectionAfterChangeHook = async ({ doc, req
   try {
   const departures = await req.payload.find({ collection: 'departures', req, overrideAccess: true, depth: 0, pagination: false, where: { programRef: { equals: doc.id } }, context: { skipProgramResolution: true } })
   for (const departure of departures.docs) {
-    await req.payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: true, data: { ...sharedData(doc), ...programSeatSnapshot(doc) } as any, context: { sharedProjection: true, skipMediaDownload: true, skipProgramResolution: true } })
+    await req.payload.update({ collection: 'departures', id: departure.id, req, overrideAccess: true, data: sharedData(doc) as any, context: { sharedProjection: true, skipMediaDownload: true, skipProgramResolution: true } })
   }
   return doc
   } finally { req.context = previousContext }

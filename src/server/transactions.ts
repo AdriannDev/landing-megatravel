@@ -42,3 +42,9 @@ async function executeTransaction<T>(req: PayloadRequest, run: () => Promise<T>)
     throw error
   }
 }
+
+// Common serialization boundary for mail, manual assignments, CSV and CMS edits.
+export async function lockSeatWrites(req: PayloadRequest) {
+  if (await req.transactionID == null) throw new Error('Los cupos requieren una transacción.')
+  if (req.payload.db.name === 'postgres') await (await postgresTransaction(req)).execute(sql`SELECT pg_advisory_xact_lock(721905204)`)
+}

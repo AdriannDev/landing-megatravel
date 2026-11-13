@@ -1,12 +1,12 @@
 # Gmail dedicado y piloto automático en Railway
 
-El servicio lee los avisos de Gmail y trabaja en simulación por defecto. El modo real actualiza el saldo de cupos del programa, que comparten sus fechas y orígenes. Microsoft Graph sigue disponible para simulación con `SEAT_MAIL_PROVIDER=microsoft-graph`. [Guía de Microsoft Graph](microsoft-cupos-piloto.md).
+El servicio lee los avisos de Gmail y trabaja en simulación por defecto. El modo real actualiza únicamente la salida resuelta por programa, fecha y origen. [Reglas y carga nueva](cupos-por-salida.md). Microsoft Graph sigue disponible para simulación con `SEAT_MAIL_PROVIDER=microsoft-graph`. [Guía de Microsoft Graph](microsoft-cupos-piloto.md).
 
 ## Preparar el buzón y los reenvíos
 
 1. Crear un Gmail exclusivo para avisos de Meganet. Activar la verificación en dos pasos y generar una contraseña de aplicación si la cuenta lo permite. Introducirla directamente en las variables privadas de Railway. No usar la contraseña habitual ni compartirla por mensajes o Git. Google describe los requisitos y las posibles restricciones de cuenta en [Contraseñas de aplicación](https://support.google.com/accounts/answer/185833?hl=es).
 2. Configurar en el buzón de origen el reenvío automático al Gmail dedicado. Completar la confirmación de reenvío y comprobar que llegan **reservas, modificaciones, confirmaciones, cancelaciones y vencimientos** completos. Revisar filtros y spam en ambos extremos. El lector solo ve la carpeta configurada.
-3. Conservar MTPE, cantidad explícita y estado; preferir un localizador de reserva. Se admite texto, tablas HTML, asunto, reenvío en línea y un único `.eml` adjunto (hasta tres niveles). Salida, tipo, fecha comercial y versión son opcionales. Los adjuntos múltiples o ambiguos quedan observados.
+3. Conservar MTPE, cantidad explícita y estado; preferir un localizador de reserva. Se admite texto, tablas HTML, asunto, reenvío en línea y un único `.eml` adjunto (hasta tres niveles). La fecha de salida es obligatoria salvo fecha única registrada; identifica origen si hay varios para ese día. Tipo, fecha comercial y versión son opcionales. Los adjuntos múltiples o ambiguos quedan observados.
 4. Configurar `SEAT_MAIL_ALLOWED_SENDERS` con las direcciones reales del encabezado externo `From` observado tras el reenvío. Algunos reenvíos conservan el remitente original y otros utilizan el reenviador. Una línea `De:` dentro del cuerpo no autoriza el mensaje. Evitar remitentes compartidos de uso general y comprobar su procedencia antes de habilitar el piloto.
 5. Validar las plantillas con correos completos anonimizados. Los campos ausentes, las contradicciones y las partes texto/HTML que no identifican el mismo evento pasan a revisión. No se deducen sillas de listas de pasajeros.
 
@@ -16,7 +16,7 @@ El servicio lee los avisos de Gmail y trabaja en simulación por defecto. El mod
 | --- | --- |
 | `SEAT_MAIL_PILOT_ENABLED` | `false` pausa la lectura. `true` la habilita en el modo configurado |
 | `SEAT_MAIL_PROVIDER` | `gmail-imap` |
-| `SEAT_MAIL_MODE` | `simulation` por defecto o `live` para actualizar los cupos del programa |
+| `SEAT_MAIL_MODE` | `simulation` por defecto o `live` para actualizar cupos por salida |
 | `SEAT_MAIL_LIVE_FROM` | Fecha y hora de inicio con zona horaria. Requerida en modo real |
 | `SEAT_MAIL_LIVE_MTPES` | Códigos MTPE separados por comas. Vacío habilita todos los programas elegibles |
 | `GMAIL_USER` | Dirección del Gmail dedicado |
@@ -62,19 +62,19 @@ La primera recepción de **A petición**, **Reserva** o **Pendiente de confirmar
 
 **Sin localizador**, los estados activos se aplican por mensaje y aparecen con **Advertencia: movimiento aplicado**. No se vinculan automáticamente con otros avisos. Un reenvío con otro Message-ID sin localizador se considera otro mensaje; conserva el identificador original para evitar descuentos independientes. Con localizador, un estado activo posterior a una cancelación vuelve a ocupar únicamente la cantidad indicada, siempre que supere las comprobaciones de orden.
 
-La salida es opcional; si se indica, debe existir para ese MTPE. No se cuentan pasajeros. Campos principales ausentes o contradictorios, discrepancias entre texto y HTML, MTPE inexistente y saldo insuficiente producen **Movimiento bloqueado**. Los campos reconocidos se conservan para identificar el aviso. Versión y fecha comercial detectan eventos antiguos cuando existen; si faltan, se usan UID y fecha persistente del mensaje. Una fecha escrita dentro de un reenvío no reemplaza esos metadatos.
+La fecha es obligatoria salvo si el MTPE tiene una única fecha registrada. Si hay varios orígenes ese día, el aviso debe identificar uno inequívocamente. No se cuentan pasajeros. Campos principales ausentes o contradictorios, discrepancias entre texto y HTML, MTPE inexistente y saldo insuficiente producen **Movimiento bloqueado**. Los campos reconocidos se conservan para identificar el aviso. Versión y fecha comercial detectan eventos antiguos cuando existen; si faltan, se usan UID y fecha persistente del mensaje. Una fecha escrita dentro de un reenvío no reemplaza esos metadatos.
 
 Ejecutar `npm test`, `npm run test:integration`, `npm run test:panel-pilot`, `npm run test:gmail-pilot`, `npm run test:local-schema`, `npm run typecheck` y `npm run build`. Las pruebas Gmail usan MIME y transporte IMAP simulados con transacciones reales de Payload; no acreditan la autenticación de una cuenta real ni las plantillas de Meganet.
 
-## Probar con los cupos del programa
+## Probar con los cupos de una salida
 
-En **Programas**, verifica la cantidad de sillas del MTPE. El lector toma ese saldo como base y registra los movimientos en el historial. Un primer estado activo se procesa incluso sin un aviso previo de reserva; una cancelación necesita un descuento previo conocido.
+En **Salidas**, verifica la disponibilidad actual y confirma la conciliación de la fecha y origen. El lector toma ese saldo como base y registra los movimientos en su historial. Un primer estado activo se procesa incluso sin un aviso previo de reserva; una cancelación necesita un descuento previo conocido.
 
-En el servicio `correo-piloto`, configura `SEAT_MAIL_MODE=live` y `SEAT_MAIL_LIVE_FROM` con el instante a partir del cual quieres aplicar movimientos, por ejemplo `2026-11-10T19:00:00-05:00`. Para limitar la prueba a MAGIA TURCA usa `SEAT_MAIL_LIVE_MTPES=20141`. Activa `SEAT_MAIL_PILOT_ENABLED=true` tras aplicar el despliegue que incluye el modo real. Envía el aviso con una fecha de evento posterior al inicio configurado.
+En el servicio `correo-piloto`, configura `SEAT_MAIL_MODE=live` y `SEAT_MAIL_LIVE_FROM` con el instante a partir del cual quieres aplicar movimientos, por ejemplo `2026-11-10T19:00:00-05:00`. Para limitar la prueba a MAGIA TURCA usa `SEAT_MAIL_LIVE_MTPES=20141`. Activa `SEAT_MAIL_PILOT_ENABLED=true` tras aplicar el despliegue que incluye el modo real. Envía el aviso con fecha de salida y origen inequívocos, y fecha comercial/recepción posterior al inicio global y a la conciliación de la salida.
 
 El modo real requiere un remitente permitido y un resultado DMARC válido de Gmail para su dominio. Consulta el detalle de los avisos para detectar reenvíos que requieran revisión. El historial de mensajes y reservas reales usa identificadores propios para que los registros de simulación no interfieran con los descuentos.
 
-Tras una reserva de tres sillas desde un saldo registrado de nueve, comprueba **6** en Programas y el historial con el responsable «Automatización de cupos por Gmail». Repetir el mismo mensaje conserva el saldo. Una cancelación válida devuelve sus tres sillas. **Correos observados** lista únicamente bloqueos y advertencias, distinguiendo claramente si el movimiento se aplicó. `SEAT_MAIL_PILOT_ENABLED=false` pausa las próximas lecturas.
+Tras una reserva de tres sillas desde un saldo registrado de nueve, comprueba **6** en esa salida, conserva los saldos de otras fechas/orígenes y revisa el historial con el responsable «Automatización de cupos por correo». Repetir el mismo mensaje conserva el saldo. Una cancelación válida devuelve sus tres sillas. **Correos observados** lista únicamente bloqueos y advertencias, distinguiendo claramente si el movimiento se aplicó. `SEAT_MAIL_PILOT_ENABLED=false` pausa las próximas lecturas.
 
 ## Reparación de SQLite local
 

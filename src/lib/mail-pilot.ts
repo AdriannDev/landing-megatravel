@@ -6,7 +6,8 @@ export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled' | 'expired
 export type MailOrder = { scope: string; sequence: number }
 export type MailEvent = {
   mtpe: string; seats: number; status: ReservationStatus
-  reservation?: string; travelDate?: string
+  reservation?: string; travelDate?: string; origin?: string
+  departureStableId?: string; originId?: string; programId?: string; programCreatedAt?: string
   kind?: 'reservation' | 'modification' | 'confirmation' | 'cancellation' | 'expiration'
   occurredAt?: string; version?: number
   receivedAt?: string; order?: MailOrder
@@ -19,9 +20,25 @@ const plain = (value: string) => fold(value).toLowerCase().trim()
 export const pilotMTPE = (value: string) => value.trim().toUpperCase().replace(/^MTPE[\s-]*/, '')
 // Transport fingerprints are separate. A later return to the same quantity is
 // legitimate when there is no business version or date to identify a duplicate.
-export const eventKey = (event: MailEvent) => digest(JSON.stringify([event.mtpe, event.reservation ?? null, event.travelDate ?? null, event.seats, event.status, event.kind ?? null, event.occurredAt ?? null, event.version ?? null]))
+export const eventKey = (event: MailEvent) => digest(JSON.stringify([event.mtpe, event.reservation ?? null, event.travelDate ?? null, event.origin ?? null, event.seats, event.status, event.kind ?? null, event.occurredAt ?? null, event.version ?? null]))
 export const reservationKey = (event: Pick<MailEvent, 'mtpe' | 'reservation'>) => digest(`${event.mtpe}:${event.reservation}`)
 export const isActiveReservation = (status: ReservationStatus) => status === 'pending' || status === 'confirmed'
+
+export function normalizeReservation(value: string) {
+  const code = value.trim().toUpperCase()
+  const numeric = code.match(/^(?:M\s*T\s*P\s*[-\u2013\u2014]?\s*)?(\d{1,80})$/)
+  if (numeric) return `MTP-${numeric[1]}`
+  return /^[A-Z0-9][A-Z0-9/-]{0,79}$/.test(code) && !/^MTPE(?:-|$)/.test(code) ? code : undefined
+}
+export function resolveMailDeparture<T extends { stableId?: string | null; travelDate: string; origin: unknown }>(departures: T[], event: Pick<MailEvent, 'travelDate' | 'origin'>): { departure?: T; reason?: string } {
+  const dates = [...new Set(departures.map(d => d.travelDate))]
+  const travelDate = event.travelDate || (dates.length === 1 ? dates[0] : undefined)
+  if (!travelDate) return { reason: 'Falta la fecha de salida; el programa tiene varias fechas registradas.' }
+  let matches = departures.filter(d => d.travelDate === travelDate)
+  if (event.origin) matches = matches.filter(d => plain(typeof d.origin === 'object' && d.origin && 'name' in d.origin ? String(d.origin.name) : String(d.origin)) === plain(event.origin!))
+  if (matches.length !== 1) return { reason: matches.length ? 'El origen es ambiguo para esta fecha. Identifica un único origen.' : 'No existe una salida del programa para esta fecha y origen.' }
+  return { departure: matches[0] }
+}
 
 function date(value: string) {
   if (isDateOnly(value.slice(0))) return value
@@ -41,13 +58,14 @@ const labels = {
   mtpe: ['codigo mtpe', 'mtpe', 'programa'],
   reservation: ['codigo de la reserva', 'numero de la reserva', 'referencia de la reserva', 'codigo de reserva', 'codigo reserva', 'numero de reserva', 'numero reserva', 'referencia de reserva', 'referencia reserva', 'identificador de reserva', 'id de reserva', 'localizador de reserva', 'localizador', 'reserva', 'codigo', 'numero', 'referencia'],
   travelDate: ['fecha de salida', 'salida'],
+  origin: ['ciudad de origen', 'origen de salida', 'origen'],
   seats: ['cantidad de sillas', 'cantidad de cupos', 'cantidad de plazas', 'cantidad', 'sillas', 'cupos', 'plazas'],
   status: ['estado de reserva', 'estado'],
   kind: ['tipo de evento', 'evento', 'tipo'],
   occurredAt: ['fecha del evento', 'fecha de evento', 'fecha comercial'],
   version: ['version del evento', 'version'],
 } as const
-const fieldNames: Record<keyof typeof labels, string> = { mtpe: 'MTPE', reservation: 'localizador', travelDate: 'fecha de salida', seats: 'cantidad de sillas', status: 'estado', kind: 'tipo de evento', occurredAt: 'fecha comercial', version: 'versión' }
+const fieldNames: Record<keyof typeof labels, string> = { mtpe: 'MTPE', reservation: 'localizador', travelDate: 'fecha de salida', origin: 'origen', seats: 'cantidad de sillas', status: 'estado', kind: 'tipo de evento', occurredAt: 'fecha comercial', version: 'versión' }
 const statuses: Record<string, ReservationStatus> = { 'a peticion': 'pending', 'reserva': 'confirmed', 'pendiente de confirmar': 'pending', 'confirmada': 'confirmed', 'confirmado': 'confirmed', 'cancelada': 'cancelled', 'cancelado': 'cancelled', 'anulada': 'cancelled', 'anulado': 'cancelled', 'vencida': 'expired', 'vencido': 'expired' }
 const kinds: Record<string, MailEvent['kind']> = { reserva: 'reservation', modificacion: 'modification', confirmacion: 'confirmation', cancelacion: 'cancellation', anulacion: 'cancellation', vencimiento: 'expiration' }
 
@@ -80,6 +98,8 @@ export function extractMailEvent(input: { subject?: string; body: string; html?:
     if (match?.[2]) values.set(plain(match[1]), [...(values.get(plain(match[1])) || []), match[2].trim()])
   }
   for (const match of text.matchAll(/\bMTPE[ -]+([0-9][A-Z0-9-]{0,39})\b/gi)) values.set('mtpe', [...(values.get('mtpe') || []), match[1]])
+  // MTP is a reservation; MTPE is a program. Bare digits are never scanned.
+  for (const match of text.matchAll(/\bM\s*T\s*P[\s\-\u2013\u2014]+(\d{1,80})\b/gi)) values.set('reserva', [...(values.get('reserva') || []), `MTP-${match[1]}`])
   // "Programa" often contains the commercial name alongside an explicit MTPE.
   if (values.has('mtpe') || values.has('codigo mtpe')) values.delete('programa')
   function read<K extends keyof typeof labels>(key: K, convert: (value: string) => MailEvent[K] | undefined, required = false) {
@@ -91,8 +111,9 @@ export function extractMailEvent(input: { subject?: string; body: string; html?:
     else if (required && !distinct.length) reasons.push(`Falta ${key === 'seats' ? 'la cantidad explícita de sillas; no se cuentan pasajeros' : key === 'mtpe' ? 'el MTPE' : 'el estado'}.`)
   }
   read('mtpe', value => /^(?:MTPE[\s-]*)?[A-Z0-9][A-Z0-9-]{1,39}$/i.test(value) ? pilotMTPE(value) : undefined, true)
-  read('reservation', value => /^[A-Z0-9][A-Z0-9/-]{0,79}$/i.test(value) ? value.toUpperCase() : undefined)
+  read('reservation', normalizeReservation)
   read('travelDate', date)
+  read('origin', value => value.trim() ? value.trim().replace(/\s+/g, ' ').toUpperCase() : undefined)
   read('seats', value => /^\d{1,5}$/.test(value) ? Number(value) : undefined, true)
   read('status', value => statuses[plain(value)], true)
   read('kind', value => kinds[plain(value)])
@@ -115,22 +136,17 @@ export function compareMailParts(a: MailExtraction, b: MailExtraction): MailExtr
 }
 
 export function proposeMovement(pool: { initialSeats?: number; remainingSeats: number; cutoffAt: string }, previous: ReservationState | undefined, event: MailEvent): { reason?: string; delta?: number; remainingSeats?: number } {
-  const timestamp = event.occurredAt || event.receivedAt
-  if (timestamp && Date.parse(timestamp) <= Date.parse(pool.cutoffAt)) return { reason: 'Evento anterior o igual a la fecha de corte del saldo inicial.' }
+  if ([event.occurredAt, event.receivedAt].some(timestamp => timestamp && Date.parse(timestamp) <= Date.parse(pool.cutoffAt))) return { reason: 'Evento anterior o igual a la fecha de corte del saldo inicial.' }
   if (previous) {
     if (event.version != null && previous.version != null && event.version <= previous.version) return { reason: 'Evento antiguo o con orden ambiguo.' }
     if (event.occurredAt && previous.occurredAt && (Date.parse(event.occurredAt) < Date.parse(previous.occurredAt) || event.version == null && previous.version == null && event.occurredAt === previous.occurredAt)) return { reason: 'Evento antiguo o la versión contradice la fecha del evento.' }
-    const hasBusinessOrder = event.version != null && previous.version != null || Boolean(event.occurredAt && previous.occurredAt)
-    if (!hasBusinessOrder) {
-      if (event.order && previous.order && event.order.scope === previous.order.scope) {
-        if (event.order.sequence <= previous.order.sequence) return { reason: 'Evento antiguo según el orden persistente del buzón.' }
-      } else if (event.receivedAt && previous.receivedAt && Date.parse(event.receivedAt) < Date.parse(previous.receivedAt)) return { reason: 'Evento antiguo según la fecha persistente del mensaje.' }
-    }
+    if (event.order && previous.order && event.order.scope === previous.order.scope && event.order.sequence <= previous.order.sequence) return { reason: 'Evento antiguo según el orden persistente del buzón.' }
+    if (event.receivedAt && previous.receivedAt && Date.parse(event.receivedAt) < Date.parse(previous.receivedAt)) return { reason: 'Evento antiguo según la fecha persistente del mensaje.' }
   } else if (!isActiveReservation(event.status)) return { reason: 'Cancelación o anulación de una reserva desconocida.' }
   const occupied = previous ? previous.occupiedSeats ?? (isActiveReservation(previous.status) ? previous.seats : 0) : 0
   if (!isActiveReservation(event.status) && event.seats !== 0 && event.seats !== (occupied || previous?.lastActiveSeats || previous?.seats)) return { reason: 'La cantidad de la cancelación no coincide con los cupos conocidos de la reserva.' }
   const delta = occupied - (isActiveReservation(event.status) ? event.seats : 0)
   const remainingSeats = pool.remainingSeats + delta
-  if (!Number.isSafeInteger(remainingSeats) || remainingSeats < 0 || (pool.initialSeats != null && remainingSeats > pool.initialSeats)) return { reason: 'El movimiento produciría un saldo incoherente o insuficiente.' }
+  if (!Number.isSafeInteger(remainingSeats) || remainingSeats < 0) return { reason: 'El movimiento produciría un saldo incoherente o insuficiente.' }
   return { delta, remainingSeats }
 }

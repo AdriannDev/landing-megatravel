@@ -18,7 +18,13 @@ export function rowToDeparture(row: Record<string, string>, options: { now?: Dat
   if (row.flyer_url && !safeExternalUrl(row.flyer_url) && !row.flyer_url.startsWith('/flyers/')) throw new Error('Enlace de la imagen no válido.')
   const reason = row.withdrawal_reason || null
   if (reason && !['request', 'sold-out', 'price-change', 'other', 'automatic'].includes(reason)) throw new Error('Motivo de retiro no reconocido.')
+  const seatText = row.available_seats?.trim()
+  const flagText = row.last_seats?.trim().toLowerCase()
+  if (seatText && (!/^\d+$/.test(seatText) || !Number.isSafeInteger(Number(seatText)))) throw new Error('available_seats debe ser un entero mayor o igual que cero.')
+  if (flagText && !['true', 'false', '1', '0', 'si', 'sí', 'no'].includes(flagText)) throw new Error('last_seats debe ser true o false.')
   const item: Departure = {
+    ...(seatText ? { availableSeats: Number(seatText) } : {}),
+    ...(flagText ? { lastSeats: ['true', '1', 'si', 'sí'].includes(flagText) } : {}),
     id: sourceKey, sourceKey, sourceSheet: row.source_sheet || '', sourceRef: row.source_ref || '',
     program: row.program.trim(), mtpe: normalizeMTPE(row.mtpe), destination: row.destination || '', zone: row.zone || '', origin: row.origin || '', cruiseLine: row.cruise_line || null,
     days: Number(row.days), nights: row.nights ? Number(row.nights) : null, travelDate,

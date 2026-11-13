@@ -43,6 +43,16 @@ test('importación histórica conserva retiros sin inventar motivo', () => {
   const plan = planImport([{ ...row, status: 'withdrawn', withdrawal_reason: '', travel_date: '2026-07-01' }], { historical: true })
   assert.equal(plan.accepted.length, 1); assert.equal(plan.accepted[0].item.withdrawalReason, null)
 })
+test('CSV acepta cupos distintos por fecha, cero y etiquetas; vacío conserva y cantidades inválidas se rechazan', () => {
+  const options = { now: new Date('2026-10-23') }
+  const plan = planImport([{ ...row, available_seats: '0', last_seats: 'false' }, { ...row, source_key: 'id-2', travel_date: '2027-06-10', available_seats: '15', last_seats: 'sí' }], options)
+  assert.equal(plan.errors.length, 0)
+  assert.deepEqual(plan.accepted.map(r => [r.item.availableSeats, r.item.lastSeats]), [[0, false], [15, true]])
+  const blank = planImport([{ ...row, available_seats: ' ', last_seats: '' }], options).accepted[0].item
+  assert.equal(Object.hasOwn(blank, 'availableSeats'), false); assert.equal(Object.hasOwn(blank, 'lastSeats'), false)
+  for (const value of ['-1', '2.5', 'NaN', '9007199254740992']) assert.equal(planImport([{ ...row, available_seats: value }], options).errors.length, 1)
+  assert.equal(planImport([{ ...row, last_seats: 'quizá' }], options).errors.length, 1)
+})
 test('el Excel original y el mapeo conservan hojas, fechas y enlaces', async t => {
   try { await readFile('Bloqueos aereos (1).xlsx') } catch { t.skip('Archivo de origen no incluido en esta copia del proyecto.'); return }
   const sheets = await readWorkbook('Bloqueos aereos (1).xlsx')

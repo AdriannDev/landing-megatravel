@@ -75,3 +75,7 @@ La restauración rechaza la URL de origen y exige que el destino termine en `_re
 ## Seguimiento
 
 GA4 mide búsquedas sin resultados y derivaciones a reserva/descriptivo; validar los eventos en el depurador después de configurar la propiedad. Una reserva confirmada requiere una integración adicional con Meganet. Revisar semanalmente borradores incompletos, retiros próximos y fallos de descarga. Tras la migración, mantener el CMS como única fuente y utilizar CSV para intercambios masivos.
+
+## Corte a cupos por salida
+
+Aplicar la [guía de carga y corte](cupos-por-salida.md): respaldar, comprobar la migración en PostgreSQL de staging y validar una carga nueva por fecha y origen. La implementación no traslada ni borra saldos actuales y conserva buzón/cron/cursores. No usar el antiguo consolidador por programa.

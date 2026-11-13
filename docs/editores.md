@@ -21,7 +21,7 @@ La tarjeta se retira automáticamente 30 días antes de la salida. Puedes cambia
 
 ## Cupos referenciales y últimos cupos
 
-En **Programas → Cupos compartidos**, introduce las sillas disponibles para todas las fechas del programa y, si corresponde, activa la etiqueta grupal. En cada salida puedes activar «Últimos cupos» solo para esa fecha. Ambas etiquetas son opcionales; la cantidad se comparte entre fechas y orígenes.
+En **Salidas → Cupos de esta salida**, introduce la disponibilidad actual de esa fecha y origen y activa «Últimos cupos» si corresponde. El programa guarda valores iniciales para nuevas salidas. Cada fecha conserva cantidad, etiqueta y revisión propias. Consulta [la guía de carga y asignación masiva](cupos-por-salida.md).
 
 La card muestra «Cupos referenciales: 10 sillas» y «Disponibilidad sujeta a cambios. Confirma en Meganet o con un asesor». Ambas opciones tienen enlace: Meganet utiliza el enlace del programa y el asesor utiliza el contacto comercial de Configuración. «Últimos cupos» aparece como una franja naranja bajo el flyer, con icono de llama y la cantidad referencial si está informada; esa cantidad no se repite en el cuerpo de la card. La etiqueta es manual y no cambia el orden de las cards. La promoción «Año Nuevo» utiliza una etiqueta dorada con forma de boleto; debe asociarse a la salida como cualquier otra promoción.
 
@@ -29,7 +29,7 @@ Cambiar la cantidad o la etiqueta registra la revisión automáticamente al guar
 
 La vigencia predeterminada es de **72 horas**. Un administrador puede ajustarla entre 1 y 720 horas en **Configuración del catálogo**. Al vencer se ocultan la cifra y «Últimos cupos», y la card invita a consultar en Meganet o con un asesor. La salida y los valores guardados permanecen disponibles. La vista **Cupos por revisar** reúne referencias vencidas de salidas publicadas y vigentes; la columna «Última revisión de cupos» indica Vigente, Por revisar o Sin informar.
 
-Vacío significa sin cantidad informada; cero desactiva la urgencia y muestra la invitación a consultar. Si confirmas que está agotada, retírala con el motivo **Sin stock**. Una nueva fecha reutiliza el saldo compartido del programa y permite escoger su propia etiqueta. Los CSV conservan su formato actual y no editan cupos.
+Vacío significa sin cantidad informada; cero desactiva la urgencia y muestra la invitación a consultar. Si confirmas que está agotada, retírala con el motivo **Sin stock**. Una nueva fecha usa los valores iniciales del programa y permite alternativas por fila; no copia saldos reducidos. CSV admite `available_seats` y `last_seats`, con validación, confirmación y revalidación si cambia un saldo. Columnas ausentes o vacías conservan valores y revisión.
 
 ## Retirar y reactivar
 
@@ -85,4 +85,4 @@ En Programas, «Eliminar programa» muestra cuántos programas y salidas se elim
 
 El retiro conserva el motivo obligatorio; «Otro» requiere explicación. El diálogo se puede cerrar con Escape y devuelve el foco al botón de opciones.
 
-**Administración → Correos observados**, solo para administradores, muestra asunto, remitente, fecha, MTPE, localizador, cantidad, estado y motivo. **Movimiento bloqueado** significa que no se modificaron cupos. **Advertencia: movimiento aplicado** identifica un descuento activo sin localizador, procesado por mensaje. El cuerpo completo se consulta en el buzón. Las herramientas manuales del piloto fueron retiradas y las colecciones técnicas están ocultas. Los movimientos reales aparecen en el historial de Programas. [Reglas y operación de Gmail](gmail-cupos-piloto.md).
+**Administración → Correos observados**, solo para administradores, muestra asunto, remitente, fecha, MTPE, localizador, cantidad, estado y motivo. **Movimiento bloqueado** significa que no se modificaron cupos. **Advertencia: movimiento aplicado** identifica un descuento activo sin localizador, procesado por mensaje. El cuerpo completo se consulta en el buzón. Las herramientas manuales del piloto fueron retiradas y las colecciones técnicas están ocultas. Los movimientos reales aparecen en el historial de cada salida. Fecha de viaje y origen también se muestran en los observados. [Reglas y operación de Gmail](gmail-cupos-piloto.md).

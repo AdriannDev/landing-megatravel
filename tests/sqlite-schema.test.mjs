@@ -5,6 +5,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { prepareLegacySqliteSchema, applySqliteSchemaPlan } from '../scripts/prepare-sqlite-schema.ts'
+import { prepareSeatPreferences } from '../scripts/prepare-seat-preferences.ts'
 
 const fixture = async run => {
   const directory = await mkdtemp(path.join(tmpdir(), 'sqlite-schema-')), file = path.join(directory, 'test.db')
@@ -96,4 +97,32 @@ test('prepara image_id del blog antes de reconstruir su fecha opcional', () => f
   db.exec("CREATE TABLE __new_settings_blog_posts(id TEXT PRIMARY KEY); INSERT INTO __new_settings_blog_posts VALUES('pendiente')")
   await assert.rejects(prepareLegacySqliteSchema(file), /temporal.*contiene datos/)
   assert.equal(db.prepare('SELECT id FROM __new_settings_blog_posts').get().id, 'pendiente')
+}))
+
+test('añade conciliaciones sin asociar historial ni trasladar saldos y actualiza preferencias una sola vez', () => fixture(async (db, file) => {
+  db.exec(`CREATE TABLE departures(id INTEGER PRIMARY KEY,available_seats NUMERIC,last_seats INTEGER,seats_checked_at TEXT);
+    INSERT INTO departures VALUES(8,12,1,'2026-11-13T00:00:00Z');
+    CREATE TABLE seat_pilot_pools(id INTEGER PRIMARY KEY,mtpe TEXT,remaining_seats NUMERIC);
+    CREATE UNIQUE INDEX seat_pilot_pools_mtpe_idx ON seat_pilot_pools(mtpe);
+    INSERT INTO seat_pilot_pools VALUES(5,'50026',12);
+    CREATE TABLE seat_mail_events(id INTEGER PRIMARY KEY,message_key TEXT,event TEXT);
+    INSERT INTO seat_mail_events VALUES(9,'known-message','{"seats":3}');
+    CREATE TABLE payload_preferences(id INTEGER PRIMARY KEY,key TEXT,value TEXT);
+    INSERT INTO payload_preferences VALUES(1,'collection-departures','{"sort":"-price","columns":[{"accessor":"origin","active":true},{"accessor":"price","active":false}]}');`)
+  await prepareLegacySqliteSchema(file)
+  assert.equal(db.prepare('SELECT available_seats FROM departures').get().available_seats, 12)
+  assert.equal(db.prepare('SELECT seats_reconciled_at FROM departures').get().seats_reconciled_at, null)
+  assert.equal(db.prepare('SELECT departure_stable_id FROM seat_pilot_pools').get().departure_stable_id, null)
+  assert.equal(db.prepare('SELECT message_key FROM seat_mail_events').get().message_key, 'known-message')
+  await applySqliteSchemaPlan(file, ['DROP INDEX seat_pilot_pools_mtpe_idx', 'CREATE INDEX seat_pilot_pools_mtpe_idx ON seat_pilot_pools(mtpe)'])
+  assert.equal(db.prepare('SELECT remaining_seats FROM seat_pilot_pools').get().remaining_seats, 12)
+  assert.equal(await prepareSeatPreferences(file), 1)
+  let prefs = JSON.parse(db.prepare('SELECT value FROM payload_preferences').get().value)
+  assert.equal(prefs.sort, '-price')
+  assert.deepEqual(prefs.columns, [{ accessor: 'origin', active: true }, { accessor: 'availableSeats', active: true }, { accessor: 'price', active: false }])
+  // The editor can hide the new column later; a second startup preserves that choice.
+  prefs.columns[1].active = false
+  db.prepare('UPDATE payload_preferences SET value=?').run(JSON.stringify(prefs))
+  assert.equal(await prepareSeatPreferences(file), 0)
+  assert.equal(JSON.parse(db.prepare('SELECT value FROM payload_preferences').get().value).columns[1].active, false)
 }))

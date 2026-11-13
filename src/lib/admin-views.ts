@@ -13,13 +13,8 @@ export function departureViewWhere(view: DepartureView, now = new Date(), validi
   if (view === 'published') return { and: current }
   if (view === 'expiring') return { and: [...current, { withdrawalAt: { less_than_equal: new Date(now.getTime() + 7 * 86400000).toISOString() } }] }
   if (view === 'seats-review') return { and: [...current,
-    { or: [
-      { and: [
-        { or: [{ availableSeats: { exists: true } }, { programLastSeats: { equals: true } }] },
-        { or: [{ seatsCheckedAt: { exists: false } }, { seatsCheckedAt: { less_than_equal: new Date(now.getTime() - seatsValidityHours(validityHours) * 3600000).toISOString() } }, { seatsCheckedAt: { greater_than: now.toISOString() } }] },
-      ] },
-      { and: [{ lastSeats: { equals: true } }, { or: [{ lastSeatsCheckedAt: { exists: false } }, { lastSeatsCheckedAt: { less_than_equal: new Date(now.getTime() - seatsValidityHours(validityHours) * 3600000).toISOString() } }, { lastSeatsCheckedAt: { greater_than: now.toISOString() } }] }] },
-    ] },
+    { or: [{ availableSeats: { exists: true } }, { lastSeats: { equals: true } }] },
+    { or: [{ seatsCheckedAt: { exists: false } }, { seatsCheckedAt: { less_than_equal: new Date(now.getTime() - seatsValidityHours(validityHours) * 3600000).toISOString() } }, { seatsCheckedAt: { greater_than: now.toISOString() } }] },
   ] }
   if (view === 'draft') return { status: { equals: 'draft' } }
   return { or: [{ status: { equals: 'withdrawn' } }, { and: [{ status: { equals: 'published' } }, { withdrawalAt: { less_than_equal: now.toISOString() } }] }] }

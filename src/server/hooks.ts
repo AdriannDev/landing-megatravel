@@ -3,9 +3,9 @@ import type { CollectionAfterChangeHook, CollectionBeforeChangeHook, CollectionB
 import { APIError } from 'payload'
 import { retirementAt, validateTransition, isPublishable } from '../lib/lifecycle'
 import { cmsToDeparture } from './normalize'
-import { departureKey, normalizeMTPE, relationID, sharedData, programSeatSnapshot } from '../lib/programs.ts'
-import { prepareDateLastSeats } from '../lib/availability.ts'
-import { lockCommercialRecords } from './transactions.ts'
+import { departureKey, normalizeMTPE, relationID, sharedData } from '../lib/programs.ts'
+import { prepareSeatReference } from '../lib/availability.ts'
+import { lockCommercialRecords, lockSeatWrites } from './transactions.ts'
 
 export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, originalDoc, operation, req, context }) => {
   if (operation === 'create') {
@@ -13,8 +13,7 @@ export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, origi
     data.sourceKey ||= 'cms:' + data.stableId
   }
   if (!context.sharedProjection) {
-    try { Object.assign(data, prepareDateLastSeats(data, operation === 'update' ? originalDoc : undefined)) }
-    catch (error) { throw new APIError((error as Error).message, 400) }
+    await lockSeatWrites(req)
     const combined = { ...originalDoc, ...data }
     let programID = relationID(combined.programRef)
     if (!programID) {
@@ -23,7 +22,29 @@ export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, origi
       programID = program.id
     }
     const program = await req.payload.findByID({ collection: 'programs', id: programID, req, overrideAccess: true, depth: 0 })
-    Object.assign(data, sharedData(program), programSeatSnapshot(program), { programRef: program.id })
+    if (operation === 'create') {
+      if (data.availableSeats === undefined) data.availableSeats = program.availableSeats ?? null
+      if (data.lastSeats === undefined) data.lastSeats = program.lastSeats === true
+    }
+    Object.assign(data, sharedData(program), { programRef: program.id })
+    // All seat writers share the mail lock; a form loaded before another write must reload.
+    if (operation === 'update' && originalDoc?.id) {
+      const previousContext = req.context
+      try {
+        const current = await req.payload.findByID({ collection: 'departures', id: originalDoc.id, req, overrideAccess: true, depth: 0, context: { skipProgramResolution: true } })
+        for (const key of ['availableSeats', 'lastSeats', 'seatsCheckedAt', 'seatsReconciledAt'] as const) {
+          if (JSON.stringify(current[key] ?? null) !== JSON.stringify(originalDoc[key] ?? null)) throw new APIError('Los cupos cambiaron. Recarga la salida antes de guardar.', 409)
+        }
+      } finally { req.context = previousContext }
+    }
+    const manualQuantity = !context.seatMailMovement && !context.seatReviewOnly && (operation === 'create' || context.reconcileSeats || data.availableSeats !== undefined && data.availableSeats !== originalDoc?.availableSeats || data.seatsConfirmed === true)
+    try { Object.assign(data, prepareSeatReference(data, operation === 'update' ? originalDoc : undefined)) }
+    catch (error) { throw new APIError((error as Error).message, 400) }
+    // Reconciliation records the current availability, including all earlier sales.
+    data.seatsReconciledAt = manualQuantity && data.availableSeats != null ? new Date().toISOString() : originalDoc?.seatsReconciledAt ?? null
+    data.seatsReconciledQuantity = manualQuantity ? data.availableSeats : originalDoc?.seatsReconciledQuantity ?? null
+    if (data.availableSeats == null) { data.seatsReconciledAt = null; data.seatsReconciledQuantity = null }
+
     const key = departureKey(program.mtpe, combined.origin, combined.travelDate)
     const duplicates = await req.payload.find({ collection: 'departures', req, overrideAccess: true, depth: 0, limit: 1, where: { and: [{ mtpe: { equals: program.mtpe } }, { origin: { equals: relationID(combined.origin) } }, { travelDate: { equals: combined.travelDate } }, ...(originalDoc?.id ? [{ id: { not_equals: originalDoc.id } }] : [])] } })
     if (duplicates.docs.length && (operation === 'create' || key !== departureKey(originalDoc?.mtpe, originalDoc?.origin, originalDoc?.travelDate))) throw new APIError('Ya existe una salida para este MTPE, origen y fecha.', 409)
@@ -47,7 +68,7 @@ export const prepareDeparture: CollectionBeforeChangeHook = async ({ data, origi
   return data
 }
 
-const tracked = ['program', 'mtpe', 'destination', 'destinationOverride', 'zone', 'origin', 'cruiseLine', 'days', 'nights', 'travelDate', 'price', 'currency', 'priceCondition', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'bookingUrlOverride', 'descriptionUrl', 'promotions', 'priority', 'advanceDays', 'status', 'withdrawalReason', 'withdrawalNote', 'availableSeats', 'lastSeats', 'programLastSeats', 'seatsCheckedAt', 'lastSeatsCheckedAt', 'newBadge', 'newBadgeLabel', 'newBadgeUntil']
+const tracked = ['program', 'mtpe', 'destination', 'destinationOverride', 'zone', 'origin', 'cruiseLine', 'days', 'nights', 'travelDate', 'price', 'currency', 'priceCondition', 'flyer', 'flyerSourceUrl', 'bookingUrl', 'bookingUrlOverride', 'descriptionUrl', 'promotions', 'priority', 'advanceDays', 'status', 'withdrawalReason', 'withdrawalNote', 'availableSeats', 'lastSeats', 'programLastSeats', 'seatsCheckedAt', 'seatsReconciledAt', 'seatsReconciledQuantity', 'lastSeatsCheckedAt', 'newBadge', 'newBadgeLabel', 'newBadgeUntil']
 const compact = (value: unknown): unknown => Array.isArray(value) ? value.map(compact) : value && typeof value === 'object' && 'id' in value ? value.id : value ?? null
 export const recordDepartureAudit: CollectionAfterChangeHook = async ({ doc, previousDoc, req, operation, context }) => {
   const changes = Object.fromEntries(tracked.filter(key => JSON.stringify(compact(doc[key])) !== JSON.stringify(compact(previousDoc?.[key]))).map(key => [key, { before: compact(previousDoc?.[key]), after: compact(doc[key]) }]))
@@ -57,13 +78,14 @@ export const recordDepartureAudit: CollectionAfterChangeHook = async ({ doc, pre
   await req.payload.create({ collection: 'audit-log', overrideAccess: true, req, data: {
     departureId: String(doc.stableId), program: doc.program, event, changes,
     actor: req.user?.id || null,
-    actorLabel: req.user?.email || (context.automaticRetirement ? 'Sistema: retiro automático' : context.historicalImport ? 'Importación histórica (responsable original no disponible)' : 'Importación autorizada'),
+    actorLabel: (context.seatMailMovement ? 'Automatización de cupos por correo' : req.user?.email) || (context.automaticRetirement ? 'Sistema: retiro automático' : context.historicalImport ? 'Importación histórica (responsable original no disponible)' : 'Importación autorizada'),
   } })
   return doc
 }
 
 export const recordDepartureDeletion: CollectionBeforeDeleteHook = async ({ id, req }) => {
   if (req.user?.role !== 'admin') throw new APIError('Solo un administrador puede eliminar salidas.', 403)
+  await lockSeatWrites(req)
   await lockCommercialRecords(req, 'departures', [id])
   const doc = await req.payload.findByID({ collection: 'departures', id, req, overrideAccess: false, depth: 0 })
   await req.payload.create({ collection: 'audit-log', req, overrideAccess: true, data: {

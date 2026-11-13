@@ -21,7 +21,6 @@ export function cmsToDeparture(doc: Document): Departure {
     videoUrl: doc.programRef && typeof doc.programRef === 'object' ? doc.programRef.videoUrl || null : null,
     bookingUrl: doc.bookingUrl || '', descriptionUrl: doc.descriptionUrl || '', priority: doc.priority || 0,
     availableSeats: doc.availableSeats ?? null, lastSeats: doc.lastSeats === true, seatsCheckedAt: doc.seatsCheckedAt || null,
-    ...(doc.programRef || 'programLastSeats' in doc ? { programLastSeats: doc.programLastSeats === true, lastSeatsCheckedAt: doc.lastSeatsCheckedAt || null } : {}),
     newBadge: doc.newBadge === true, newBadgeLabel: doc.newBadgeLabel || null, newBadgeUntil: doc.newBadgeUntil || null,
     programNewBadge: doc.programNewBadge === true, programNewBadgeLabel: doc.programNewBadgeLabel || null, programNewBadgeUntil: doc.programNewBadgeUntil || null,
     promotions: (doc.promotions || []).filter((p: unknown) => p && typeof p === 'object').map((p: Document): Promotion => ({ id: String(p.slug || p.id), name: p.name, label: p.label, startsAt: p.startsAt, endsAt: p.endsAt })),

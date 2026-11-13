@@ -59,6 +59,5 @@ export async function migrateProgramSeatsSqlite(filename: string, apply = false)
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve('scripts/migrate-program-seats-sqlite.ts')) {
-  if (process.env.USE_SQLITE !== 'true' || !process.env.SQLITE_URL?.startsWith('file:')) throw new Error('Este comando requiere USE_SQLITE=true y SQLITE_URL=file:... de desarrollo local.')
-  console.log(JSON.stringify(await migrateProgramSeatsSqlite(path.resolve(process.env.SQLITE_URL.slice(5)), process.argv.includes('--apply'))))
+  throw new Error('Comando histórico retirado: los cupos se administran por salida. Usa db:prepare:local para el esquema, sin consolidar saldos.')
 }

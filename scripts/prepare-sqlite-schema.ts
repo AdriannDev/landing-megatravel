@@ -22,7 +22,7 @@ function verify(db: DatabaseSync, originals: ReturnType<typeof snapshot>) {
     const indexes = db.prepare(`PRAGMA index_list(${quote(original.table)})`).all()
     for (const index of original.indexes) {
       const current = indexes.find(i => i.name === index.name)
-      if (!current || current.unique !== index.unique || hash(db.prepare(`PRAGMA index_info(${quote(index.name)})`).all().map(c => c.name)) !== hash(index.columns))
+      if (!current || (current.unique !== index.unique && !(original.table === 'seat_pilot_pools' && index.name === 'seat_pilot_pools_mtpe_idx' && current.unique === 0)) || hash(db.prepare(`PRAGMA index_info(${quote(index.name)})`).all().map(c => c.name)) !== hash(index.columns))
         throw new Error(`La actualización alteró el índice ${index.name}; se revirtió.`)
     }
   }
@@ -36,13 +36,15 @@ export async function prepareLegacySqliteSchema(filename: string) {
   const db = new DatabaseSync(filename)
   try {
     const additions: Record<string, Record<string, string>> = {
-      departures: { program_ref_id: 'integer', departure_key: 'text', available_seats: 'numeric', last_seats: 'integer DEFAULT 0', seats_checked_at: 'text', seats_confirmed: 'integer DEFAULT 0' },
-      _departures_v: { version_program_ref_id: 'integer', version_departure_key: 'text', version_available_seats: 'numeric', version_last_seats: 'integer DEFAULT 0', version_seats_checked_at: 'text', version_seats_confirmed: 'integer DEFAULT 0' },
+      departures: { program_ref_id: 'integer', departure_key: 'text', seats_reconciled_at: 'text', seats_reconciled_quantity: 'numeric', available_seats: 'numeric', last_seats: 'integer DEFAULT 0', seats_checked_at: 'text', seats_confirmed: 'integer DEFAULT 0' },
+      _departures_v: { version_program_ref_id: 'integer', version_departure_key: 'text', version_seats_reconciled_at: 'text', version_seats_reconciled_quantity: 'numeric', version_available_seats: 'numeric', version_last_seats: 'integer DEFAULT 0', version_seats_checked_at: 'text', version_seats_confirmed: 'integer DEFAULT 0' },
       banners: { placement: "text DEFAULT 'hero'", title: 'text', message: 'text', button_label: 'text', popup_kind: "text DEFAULT 'promotion'", popup_frequency: "text DEFAULT 'session'", popup_delay: 'numeric DEFAULT 2' },
       payload_locked_documents_rels: { programs_id: 'integer', seat_pilot_pools_id: 'integer', seat_pilot_reservations_id: 'integer', seat_mail_events_id: 'integer', mail_sync_cursors_id: 'integer' },
       audit_log: { entity_type: "text DEFAULT 'departure'", program_id: 'text' },
       settings: { seats_validity_hours: 'numeric DEFAULT 72 NOT NULL', featured_departure1_id: 'integer', featured_departure2_id: 'integer' },
       settings_blog_posts: { image_id: 'integer' },
+      seat_pilot_pools: { departure_stable_id: 'text', travel_date: 'text', origin: 'text' },
+      seat_mail_events: { origin: 'text', resolved_departure: 'text', movements: 'text' },
     }
     const statements: string[] = []
     for (const [table, fields] of Object.entries(additions)) {

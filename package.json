@@ -26,7 +26,6 @@
     "sync:blog": "tsx --env-file-if-exists=.env.local scripts/sync-blog.ts",
     "seed:banner-placeholders": "tsx --env-file-if-exists=.env.local scripts/seed-banner-placeholders.ts",
     "migrate:programs": "tsx --env-file-if-exists=.env.local scripts/migrate-programs.ts",
-    "migrate:seats:sqlite": "tsx --env-file-if-exists=.env.local scripts/migrate-program-seats-sqlite.ts",
     "import:workbook": "node scripts/prepare-workbook.mjs",
     "import:cms": "tsx --env-file-if-exists=.env.local scripts/import-cms.ts",
     "retire": "tsx scripts/retire.ts",
@@ -36,7 +35,9 @@
     "backup": "node --env-file=.env.local scripts/backup.mjs",
     "restore:test": "node --env-file=.env.local scripts/backup.mjs --restore",
     "check:repository": "node scripts/check-repository.mjs",
-    "prepare:commits": "node scripts/prepare-commits.mjs"
+    "prepare:commits": "node scripts/prepare-commits.mjs",
+    "test:departure-seats": "tsx scripts/verify-departure-seats.ts",
+    "test:seats-migration": "tsx scripts/verify-departure-seats-migration.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.90.2",
@@ -63,6 +64,7 @@
     "tsx": "^4.23.15"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.15",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/mailparser": "^3.9.0",
     "@types/node": "^24.0.0",

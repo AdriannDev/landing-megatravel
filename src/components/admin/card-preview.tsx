@@ -7,7 +7,7 @@ import { DEFAULT_FLYER } from "@/lib/flyer";
 import { DEFAULT_CONTACT_URL } from "@/lib/brand-config";
 import {
   DEFAULT_SEATS_VALIDITY_HOURS,
-  prepareDateLastSeats,
+  prepareSeatReference,
   publicAvailability,
 } from "@/lib/availability";
 import {
@@ -118,26 +118,25 @@ export function CardPreview() {
     return () => controller.abort();
   }, [id]);
   const reference = useMemo(() => {
-    if (!shared) return null;
-    return publicAvailability(
-      {
-        ...prepareDateLastSeats(
-          formValues,
-          initialValues.travelDate ? initialValues : undefined,
-        ),
-        availableSeats: shared.availableSeats,
-        seatsCheckedAt: shared.seatsCheckedAt,
-        programLastSeats: shared.lastSeats === true,
-      },
-      settings.validityHours,
-    );
+    try {
+      return publicAvailability(prepareSeatReference(
+        { ...formValues, availableSeats: formValues.availableSeats === '' || formValues.availableSeats == null ? null : Number(formValues.availableSeats), lastSeats: formValues.lastSeats === true, seatsConfirmed: formValues.seatsConfirmed === true },
+        initialValues.travelDate ? initialValues as Parameters<typeof prepareSeatReference>[0] : undefined,
+      ), settings.validityHours);
+    } catch { return null; }
   }, [
     shared,
+    formValues.availableSeats,
+    formValues.travelDate,
+    formValues.origin,
     formValues.lastSeats,
     formValues.seatsConfirmed,
     formValues.programRef,
     initialValues.lastSeats,
-    initialValues.lastSeatsCheckedAt,
+    initialValues.availableSeats,
+    initialValues.seatsCheckedAt,
+    initialValues.travelDate,
+    initialValues.origin,
     initialValues.programRef,
     settings.validityHours,
   ]);
@@ -191,8 +190,7 @@ export function CardPreview() {
     >
       <h3>Vista previa antes de publicar</h3>
       <p>
-        El saldo de cupos se comparte con el programa. Aquí puedes revisar la
-        etiqueta individual de esta fecha antes de guardar.
+        Revisa los cupos y la etiqueta de esta fecha y origen antes de guardar.
       </p>
       <div className="mt-preview-card">
         <figure className="mt-preview-media">

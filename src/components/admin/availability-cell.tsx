@@ -7,9 +7,7 @@ export async function AvailabilityCell({
   payload,
 }: DefaultServerCellComponentProps) {
   const doc =
-    "availableSeats" in rowData &&
-    "programLastSeats" in rowData &&
-    "lastSeatsCheckedAt" in rowData
+    "availableSeats" in rowData && "lastSeats" in rowData && "seatsCheckedAt" in rowData
       ? rowData
       : await payload.findByID({
           collection: "departures",

@@ -111,7 +111,7 @@ export const Departures: CollectionConfig = {
   disableBulkDelete: true,
   defaultSort: 'travelDate',
   admin: {
-    group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'travelDate', 'price', 'origin', 'status', 'seatsCheckedAt', 'withdrawalAt'],
+    group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'travelDate', 'origin', 'availableSeats', 'price', 'status', 'seatsCheckedAt', 'withdrawalAt'],
     listSearchableFields: ['program', 'mtpe'],
     baseFilter: async ({ req }) => {
       const view = parseDepartureView(req.query?.mtView)
@@ -119,14 +119,14 @@ export const Departures: CollectionConfig = {
       return departureViewWhere(view, new Date(), hours)
     },
     preview: data => `/preview/${data.id}`,
-    components: { beforeListTable: ['/components/admin/workspace-tools#WorkspaceTools', '/components/admin/delete-records#BulkDepartureDelete'] },
+    components: { beforeListTable: ['/components/admin/workspace-tools#WorkspaceTools', '/components/admin/delete-records#BulkDepartureDelete', '/components/admin/assign-seats#BulkSeatAssignment'] },
     description: 'Una tarjeta por fecha. El contenido compartido se edita en Programas.',
   },
   disableDuplicate: true,
   versions: { maxPerDoc: 50 },
   hooks: { beforeChange: [prepareDeparture], afterChange: [recordDepartureAudit], beforeDelete: [recordDepartureDeletion], afterRead: [resolveDepartureProgram] },
   fields: [
-    { name: 'programRef', label: 'Programa compartido (MTPE)', type: 'relationship', relationTo: 'programs', admin: { description: 'Selecciona el programa. El nombre, la imagen, los enlaces y el saldo de cupos se comparten entre todas sus fechas.' } },
+    { name: 'programRef', label: 'Programa compartido (MTPE)', type: 'relationship', relationTo: 'programs', admin: { description: 'Selecciona el programa. El nombre, la imagen y los enlaces se comparten. Cada salida tiene sus propios cupos.' } },
     { name: 'programSummary', type: 'ui', admin: { components: { Field: '/components/admin/program-summary#ProgramSummary' } } },
     { name: 'departureKey', type: 'text', unique: true, index: true, admin: { hidden: true }, access: { create: () => false, update: () => false } },
     { name: 'stableId', label: 'Identificador estable', type: 'text', unique: true, index: true, admin: { hidden: true, readOnly: true }, access: { create: () => false, update: () => false } },
@@ -148,13 +148,15 @@ export const Departures: CollectionConfig = {
         { name: 'priceCondition', label: 'Condición del precio', type: 'text', required: true, defaultValue: 'Por persona en habitación doble' },
         { name: 'promotions', label: 'Promociones', type: 'relationship', relationTo: 'campaigns', hasMany: true },
         { name: 'priority', label: 'Prioridad en destacados', type: 'number', defaultValue: 0, admin: { description: 'Un valor mayor aparece primero.' } },
-        { type: 'collapsible', label: 'Cupos referenciales', fields: [
-          { name: 'availableSeats', label: 'Cupos compartidos del programa', type: 'number', min: 0, access: { create: () => false, update: () => false }, admin: { readOnly: true, description: 'Se edita en Programas y se aplica a todas sus fechas. Vacío significa sin cantidad informada.' } },
-          { name: 'programLastSeats', label: '«Últimos cupos» del programa', type: 'checkbox', defaultValue: false, access: { create: () => false, update: () => false }, admin: { readOnly: true, description: 'Cuando está activo en el programa, se aplica a todas sus fechas.' } },
-          { name: 'lastSeats', label: 'Destacar «Últimos cupos» solo en esta fecha', type: 'checkbox', defaultValue: false, admin: { description: 'Opcional. Se suma a la opción del programa; desmarcar esta fecha no anula la opción grupal. No cambia la cantidad de cupos.' } },
-          { name: 'seatsCheckedAt', label: 'Última revisión de cupos del programa', type: 'date', index: true, access: { create: () => false, update: () => false }, admin: { readOnly: true, description: 'La vigencia del saldo se confirma en Programas (72 horas por defecto).', components: { Cell: '/components/admin/availability-cell#AvailabilityCell' } } },
-          { name: 'lastSeatsCheckedAt', label: 'Última revisión de la etiqueta individual', type: 'date', access: { create: () => false, update: () => false }, admin: { readOnly: true } },
-          { name: 'seatsConfirmed', label: 'Confirmo que «Últimos cupos» sigue vigente para esta fecha', type: 'checkbox', defaultValue: false, admin: { description: 'Renueva solo la etiqueta individual, sin modificar la revisión del saldo del programa.' } },
+        { type: 'collapsible', label: 'Cupos de esta salida', fields: [
+          { name: 'availableSeats', label: 'Cupos disponibles', type: 'number', min: 0, validate: (value: unknown) => validSeatCount(value) || 'Indica un número entero, mayor o igual que cero.', admin: { step: 1, description: 'Disponibilidad actual de esta fecha y origen. Cero: sin cupos. Vacío: sin informar.', components: { Cell: '/components/admin/seat-count-cell#SeatCountCell' } } },
+          { name: 'programLastSeats', type: 'checkbox', admin: { hidden: true }, access: { create: () => false, update: () => false } },
+          { name: 'lastSeats', label: 'Destacar «Últimos cupos»', type: 'checkbox', admin: { description: 'Etiqueta manual de esta salida. Se oculta con cero cupos o al vencer la revisión.' } },
+          { name: 'seatsCheckedAt', label: 'Última revisión de cupos', type: 'date', index: true, access: { create: () => false, update: () => false }, admin: { readOnly: true, components: { Cell: '/components/admin/availability-cell#AvailabilityCell' } } },
+          { name: 'lastSeatsCheckedAt', type: 'date', access: { create: () => false, update: () => false }, admin: { hidden: true } },
+          { name: 'seatsConfirmed', label: 'Confirmo la disponibilidad actual de esta salida', type: 'checkbox', defaultValue: false, admin: { description: 'Renueva su revisión y concilia el saldo con las ventas ya incluidas.' } },
+          { name: 'seatsReconciledAt', label: 'Última conciliación del saldo', type: 'date', access: { create: () => false, update: () => false }, admin: { readOnly: true } },
+          { name: 'seatsReconciledQuantity', label: 'Disponibilidad al conciliar', type: 'number', access: { create: () => false, update: () => false }, admin: { readOnly: true } },
         ] },
         newBadgeFields('departure'),
       ] },
@@ -220,7 +222,7 @@ export const Programs: CollectionConfig = {
   slug: 'programs', labels: { singular: 'Programa', plural: 'Programas' },
   access: { ...contentAccess, delete: ({ req }) => req.user?.role === 'admin' && req.context.confirmedProgramDeletion === true, readVersions: isEditor },
   disableBulkDelete: true,
-  admin: { group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'destination', 'availableSeats', 'lastSeats', 'flyer'], listSearchableFields: ['program', 'mtpe'], description: 'Un programa por MTPE. El saldo de cupos, la imagen y la información compartida se aplican a todas sus fechas.', components: { beforeListTable: ['/components/admin/delete-records#BulkProgramDelete'], edit: { beforeDocumentControls: ['/components/admin/delete-records#ProgramDocumentDelete'] } } },
+  admin: { group: 'Contenido', useAsTitle: 'program', defaultColumns: ['program', 'mtpe', 'destination', 'availableSeats', 'lastSeats', 'flyer'], listSearchableFields: ['program', 'mtpe'], description: 'Un programa por MTPE. Los cupos son valores iniciales para nuevas salidas; cada fecha conserva su saldo.', components: { beforeListTable: ['/components/admin/delete-records#BulkProgramDelete'], edit: { beforeDocumentControls: ['/components/admin/delete-records#ProgramDocumentDelete'] } } },
   versions: { maxPerDoc: 50 },
   hooks: { beforeChange: [prepareProgram], afterChange: [syncProgramSnapshots], beforeDelete: [recordProgramDeletion] },
   fields: [
@@ -237,13 +239,14 @@ export const Programs: CollectionConfig = {
       { name: 'nights', label: 'Noches', type: 'number', min: 0, admin: { width: '50%' }, validate: (value: unknown) => value == null || Number.isInteger(value) && Number(value) >= 0 || 'Indica noches enteras.' },
     ] },
     { name: 'cruiseLine', label: 'Naviera (solo cruceros)', type: 'relationship', relationTo: 'cruise-lines' },
-    { type: 'collapsible', label: 'Cupos compartidos del programa', admin: { initCollapsed: false }, fields: [
-      { name: 'availableSeats', label: 'Cupos disponibles del programa (opcional)', type: 'number', min: 0, validate: (value: unknown) => validSeatCount(value) || 'Indica un número entero, mayor o igual que cero.', admin: { step: 1, description: 'Un único saldo para todas las fechas y orígenes del programa. Si se toman 3 de 15 cupos, cambia este saldo a 12. Vacío: sin cantidad informada; cero: sin cupos.' } },
-      { name: 'lastSeats', label: 'Destacar «Últimos cupos» en todas las fechas', type: 'checkbox', defaultValue: false, admin: { description: 'Opcional. Actívalo cuando quieras destacar todas las fechas. También puedes destacar una fecha por separado desde Salidas. Con cero cupos no se muestra la etiqueta.' } },
+    { type: 'collapsible', label: 'Valores iniciales de cupos para nuevas salidas', admin: { initCollapsed: false }, fields: [
+      { name: 'availableSeats', label: 'Cantidad inicial (opcional)', type: 'number', min: 0, validate: (value: unknown) => validSeatCount(value) || 'Indica un número entero, mayor o igual que cero.', admin: { step: 1, description: 'Se utiliza al crear una salida sin cantidad alternativa. Cambiarlo no modifica salidas existentes. Vacío: sin informar; cero: sin cupos.' } },
+      { name: 'lastSeats', label: 'Etiqueta inicial «Últimos cupos»', type: 'checkbox', defaultValue: false, admin: { description: 'Valor inicial para nuevas salidas. Las etiquetas existentes se editan por salida o mediante asignación masiva.' } },
       { name: 'seatsCheckedAt', label: 'Última revisión del saldo', type: 'date', index: true, access: { create: () => false, update: () => false }, admin: { readOnly: true } },
-      { name: 'seatsConfirmed', label: 'Confirmo que el saldo y la etiqueta grupal siguen vigentes', type: 'checkbox', defaultValue: false, admin: { description: 'Confirma la disponibilidad en Meganet o con un asesor. Cambiar el saldo o marcar esta casilla renueva la revisión; se desmarca al guardar.' } },
-      { name: 'seatsMigrationPending', label: 'Revisión pendiente de cupos anteriores', type: 'checkbox', defaultValue: false, access: { create: () => false, update: () => false }, admin: { readOnly: true, condition: data => data.seatsMigrationPending === true, description: 'Las fechas anteriores tenían cantidades distintas. Revisa el saldo del programa antes de informarlo; los datos anteriores se conservan en el respaldo de migración.' } },
+      { name: 'seatsConfirmed', label: 'Confirmo los valores iniciales para nuevas salidas', type: 'checkbox', defaultValue: false, admin: { description: 'Confirma la disponibilidad en Meganet o con un asesor. Cambiar el saldo o marcar esta casilla renueva la revisión; se desmarca al guardar.' } },
+      { name: 'seatsMigrationPending', type: 'checkbox', defaultValue: false, access: { create: () => false, update: () => false }, admin: { hidden: true } },
       { name: 'legacySeatReferences', type: 'json', access: { create: () => false, update: () => false }, admin: { hidden: true } },
+      { name: 'seatAssignment', type: 'ui', admin: { components: { Field: '/components/admin/assign-seats#ProgramSeatAssignment' } } },
     ] },
     newBadgeFields('program'),
     { name: 'flyer', label: 'Imagen del programa (opcional)', type: 'upload', relationTo: 'media', admin: { description: 'Ideal: 800 × 800 px. Admite otros tamaños y proporciones; se muestra completa dentro de una tarjeta cuadrada, sin recortar. Máximo 12 MB. Sin imagen se usa un fondo gris con el tamaño recomendado en todas las fechas.' } },

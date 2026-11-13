@@ -175,6 +175,7 @@ Todas las herramientas requieren sesión de editor o administrador. En POST tamb
 | `POST /api/admin-tools/create-departures` | JSON con programa nuevo o `programId`, condiciones y fechas | Programa y 1–30 borradores en una transacción; enlaces de edición y preview |
 | `GET /api/admin-tools/export` | Sin cuerpo | CSV de gestión completo y privado |
 | `POST /api/admin-tools/duplicate` | JSON de plantilla y fechas/precios | Borradores independientes con enlaces para editarlos |
+| `POST /api/admin-tools/assign-seats` | JSON: vista previa/aplicación | Disponibilidad actual por salida, con control de concurrencia |
 | `POST /api/admin-tools/import` | Formulario multipart con CSV y opciones | Reporte por fila, en validación o escritura |
 | `POST /api/admin-tools/images` | JSON opcional con `id` | Copia/reintento de hasta 50 flyers por operación |
 
@@ -206,6 +207,8 @@ También acepta multipart con `data` (el mismo JSON) y `flyer` (archivo opcional
 | `dryRun` | Solo la cadena `false` activa escritura; de otro modo se valida |
 | `downloadImages` | La cadena `true` intenta copiar los flyers |
 | `historical` | La cadena `true` permite la importación histórica, limitada a administrador |
+| `seatsConfirmed` | La cadena `true` confirma disponibilidad actual de las filas con cupos |
+| `validationTokens` | JSON con los comprobantes devueltos al validar cupos; revalidar ante cambios |
 
 El reporte contiene `dryRun`, `total`, `accepted`, `errors` y resultados por fila. Las filas inválidas se reportan individualmente. Un fallo de descarga puede conservar el enlace y producir una advertencia sin rechazar la fila completa. La validación sin importar no garantiza la disponibilidad posterior del servidor de imágenes.
 
@@ -282,3 +285,15 @@ El reporte inicial registra 411 filas preparadas, con 233 publicables, 10 borrad
 - Gmail guarda `provider`, `uidValidity` y `lastUid` en `mail-sync-cursors`. Saldo, reserva, historial, evento y progreso se confirman juntos. `seat-mail-events` agrega `sourceKey`, `subject`, `sender`, `receivedAt`, `seats`, `status`, `travelDate`, `occurredAt`, `version` y `observation` (blocked/warning), todos opcionales para registros heredados. `reservation` sigue siendo el localizador. No se guardan cuerpos ni se extraen pasajeros. Ver [Gmail y Railway](gmail-cupos-piloto.md).
 
 El historial admite `entityType: departure | program`, `programId` y `departureId` opcional. Las eliminaciones contienen `changes.deleted.before` con el documento comercial y `after: null`. Los registros anteriores mantienen sus identificadores y reciben el tipo salida por defecto.
+
+## Cupos por fecha y origen
+
+La cantidad operativa es `departures.availableSeats`, con `lastSeats` y `seatsCheckedAt`. `seatsReconciledQuantity` y `seatsReconciledAt` son referencias privadas de disponibilidad actual e instante de conciliación. `programs.availableSeats/lastSeats` son valores iniciales y no se proyectan ni se propagan. Los campos históricos grupales permanecen sin uso operativo.
+
+`POST /api/admin-tools/assign-seats` admite administradores/editores. Cuerpo: `{ action: "preview" | "apply", programId?: ID, ids?: ID[], availableSeats?: number | null, lastSeats?: boolean, confirmation?: { token, preparedAt } }`. Seleccionar programa o hasta 200 salidas. La vista previa devuelve `rows` (fecha, origen, saldo anterior/nuevo, etiquetas), `token` y `preparedAt`. Aplicación exige la misma selección/cambios y confirmación vigente (15 minutos), ligada al usuario/estado leído. Un cambio devuelve 409. Cantidad y etiqueta se aplican por separado; no se reinician reservas.
+
+Cada fila de `create-departures` y `duplicate` admite `{ date, price, origin?, availableSeats?, lastSeats?, promotions? }`. Los campos omitidos usan valores iniciales; duplicar no copia saldo consumido. Cantidades explícitas o etiquetas activas requieren `seatsConfirmed=true`.
+
+Importación multipart añade `seatsConfirmed` y `validationTokens` (JSON de número de fila a token devuelto por validación). CSV admite `available_seats` y `last_seats`: ausencia/vacío conserva en actualizaciones y usa iniciales en altas; cero es explícito. El reporte muestra `availableSeats`, `lastSeats` efectivos y `validationToken`. Cambios concurrentes exigen revalidar. CSV sin cupos no renueva revisión.
+
+Correo añade `origin` y salida resuelta (`departureStableId`, `originId`, `programId`, `programCreatedAt`) al contrato privado. Reservas: programa original + MTP normalizado. `seat-mail-events` conserva `origin`, `resolvedDeparture` y `movements` por salida. Saldos simulados incorporan `departureStableId`, `travelDate` y `origin`; MTPE ya no es único en esa colección. No se reasocia historial antiguo automáticamente. [Reglas y puesta en marcha](cupos-por-salida.md).

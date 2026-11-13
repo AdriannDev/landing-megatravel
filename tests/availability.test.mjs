@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { prepareSeatReference, prepareDateLastSeats, publicAvailability, visibleAvailability, seatReviewState, seatsValidityHours, validSeatCount } from '../src/lib/availability.ts'
+import { prepareSeatReference, publicAvailability, visibleAvailability, seatReviewState, seatsValidityHours, validSeatCount } from '../src/lib/availability.ts'
 import { resolveProgram } from '../src/lib/programs.ts'
 import { toPublicPackage } from '../src/lib/catalog.ts'
 
@@ -63,36 +63,19 @@ test('la proyección pública elimina cupos vencidos y conserva privada la revis
   assert.equal(toPublicPackage(item, new Date(now + 72 * 3600000)).availability, null)
 })
 
-test('el saldo del programa se comparte y las etiquetas individuales se suman a la grupal', () => {
-  const program = { id: 2, availableSeats: 15, seatsCheckedAt: checked, lastSeats: false }
-  const first = { programRef: program, lastSeats: true, lastSeatsCheckedAt: checked }
-  const second = { programRef: program, lastSeats: false }
-  assert.equal(publicAvailability(resolveProgram(first), 72, now).seats, 15)
-  assert.equal(publicAvailability(resolveProgram(second), 72, now).lastSeats, false)
-  for (const date of [first, second]) {
-    const resolved = resolveProgram({ ...date, programRef: { ...program, availableSeats: 12, lastSeats: true } })
-    assert.equal(publicAvailability(resolved, 72, now).seats, 12)
-    assert.equal(publicAvailability(resolved, 72, now).lastSeats, true)
-    assert.equal(publicAvailability(resolveProgram({ ...date, programRef: { ...program, availableSeats: 0 } }), 72, now), null)
+test('cada salida conserva cantidad y etiqueta aunque cambien los valores iniciales del programa', () => {
+  const program = { id: 2, availableSeats: 15, seatsCheckedAt: checked, lastSeats: true }
+  const first = { ...base, programRef: program, availableSeats: 12, lastSeats: true }
+  const second = { ...base, programRef: program, availableSeats: 15, lastSeats: false }
+  for (const defaults of [program, { ...program, availableSeats: 0, lastSeats: false }]) {
+    assert.equal(publicAvailability(resolveProgram({ ...first, programRef: defaults }), 72, now).seats, 12)
+    assert.equal(publicAvailability(resolveProgram({ ...second, programRef: defaults }), 72, now).seats, 15)
+    assert.equal(publicAvailability(resolveProgram({ ...second, programRef: defaults }), 72, now).lastSeats, false)
   }
 })
-
-test('confirmar una etiqueta individual no confirma ni modifica el saldo compartido', () => {
-  const original = { lastSeats: true, lastSeatsCheckedAt: checked, programRef: 2 }
-  const result = prepareDateLastSeats({ seatsConfirmed: true, availableSeats: 99 }, original, now)
-  assert.equal(result.lastSeatsCheckedAt, new Date(now).toISOString())
-  assert.equal('availableSeats' in result, false)
-  assert.equal('seatsCheckedAt' in result, false)
-  assert.equal(prepareDateLastSeats({ travelDate: '2030-01-02' }, original, now).lastSeatsCheckedAt, checked)
-  assert.equal(prepareDateLastSeats({ programRef: 3 }, original, now).lastSeats, false)
-  assert.equal(prepareDateLastSeats({ lastSeatsCheckedAt: '2099-01-01' }, original, now).lastSeatsCheckedAt, checked)
-})
-
-test('la caducidad de la etiqueta individual conserva la cantidad vigente del programa', () => {
-  const reference = publicAvailability({ availableSeats: 12, programLastSeats: false, seatsCheckedAt: new Date(now).toISOString(), lastSeats: true, lastSeatsCheckedAt: checked }, 2, now)
-  assert.equal(reference.lastSeats, true)
-  assert.equal(visibleAvailability(reference, now + 3600000).lastSeats, false)
-  assert.equal(visibleAvailability(reference, now + 3600000).seats, 12)
-  assert.equal(visibleAvailability(reference, now + 7200000), null)
-  assert.equal(seatReviewState({ availableSeats: 12, programLastSeats: false, seatsCheckedAt: new Date(now).toISOString(), lastSeats: true, lastSeatsCheckedAt: checked }, 1, now), 'stale')
+test('campos históricos grupales no renuevan ni muestran la disponibilidad individual', () => {
+  assert.equal(publicAvailability({ availableSeats: null, lastSeats: false, programLastSeats: true, seatsCheckedAt: checked }, 72, now), null)
+  const ref = publicAvailability({ ...base, lastSeats: true, lastSeatsCheckedAt: '2099-01-01', programLastSeats: true }, 2, now)
+  assert.equal(ref.lastSeats, true)
+  assert.equal(visibleAvailability(ref, now + 3600000), null)
 })

@@ -11,18 +11,21 @@ type Source = {
   origin: string;
   programId?: string | number;
   availableSeats?: number | null;
-  programLastSeats?: boolean;
+  initialSeats?: number | null;
+  initialLastSeats?: boolean;
 };
 type Row = {
   date: string;
   price: string;
-  lastSeats: boolean;
+  availableSeats: string;
+  origin: string;
+  lastSeats: string;
   promotion: string;
 };
 const emptyRow = (price = ""): Row => ({
   date: "",
   price,
-  lastSeats: false,
+  availableSeats: "", origin: "", lastSeats: "",
   promotion: "",
 });
 
@@ -82,7 +85,9 @@ export function NewDate() {
                 departures: rows.map((row) => ({
                   date: row.date,
                   price: Number(row.price),
-                  lastSeats: row.lastSeats,
+                  availableSeats: row.availableSeats === "" ? undefined : Number(row.availableSeats),
+                  origin: row.origin || undefined,
+                  lastSeats: row.lastSeats === "" ? undefined : row.lastSeats === "true",
                   promotions: row.promotion ? [row.promotion] : [],
                 })),
               }),
@@ -131,13 +136,13 @@ export function NewDate() {
           </label>
           {source && (
             <p>
-              Cupos compartidos: {source.availableSeats ?? "Sin informar"}.{" "}
-              {source.programLastSeats
-                ? "Últimos cupos está activado para todo el programa. "
+              Cantidad inicial para nuevas salidas: {source.initialSeats ?? "Sin informar"}.{" "}
+              {source.initialLastSeats
+                ? "La etiqueta inicial «Últimos cupos» está activada. "
                 : ""}
               {source.programId && (
                 <a href={`/admin/collections/programs/${source.programId}`}>
-                  Editar saldo del programa
+                  Editar valores iniciales del programa
                 </a>
               )}
             </p>
@@ -147,8 +152,7 @@ export function NewDate() {
           <legend>Fechas de salida</legend>
           <p>
             Agrega hasta 30 fechas. Las promociones y la etiqueta «Últimos
-            cupos» son opcionales por fecha. La cantidad de cupos se comparte
-            con el programa.
+            cupos» son opcionales por fecha. Cada fecha conserva su propia disponibilidad.
           </p>
           {promotionOptions.error && (
             <p role="alert">{promotionOptions.error}</p>
@@ -185,16 +189,9 @@ export function NewDate() {
                 index={index}
                 onChange={(value) => update(index, { promotion: value })}
               />
-              <label className="mt-check">
-                <input
-                  type="checkbox"
-                  checked={row.lastSeats}
-                  onChange={(e) =>
-                    update(index, { lastSeats: e.target.checked })
-                  }
-                />
-                Últimos cupos solo en esta fecha
-              </label>
+              <label>Origen de salida {index + 1}<input value={row.origin} placeholder="Usar origen base" onChange={e => setRows(values => values.map((r, i) => i === index ? { ...r, origin: e.target.value } : r))} /></label>
+              <label>Cupos disponibles {index + 1}<input type="number" min="0" step="1" value={row.availableSeats} placeholder="Usar cantidad inicial" onChange={e => setRows(values => values.map((r, i) => i === index ? { ...r, availableSeats: e.target.value } : r))} /></label>
+              <label>Últimos cupos {index + 1}<select value={row.lastSeats} onChange={e => setRows(values => values.map((r, i) => i === index ? { ...r, lastSeats: e.target.value } : r))}><option value="">Usar etiqueta inicial</option><option value="true">Activar</option><option value="false">Desactivar</option></select></label>
               {rows.length > 1 && (
                 <button
                   type="button"
@@ -222,10 +219,10 @@ export function NewDate() {
             + Añadir otra fecha
           </button>
           
-          {rows.some((row) => row.lastSeats) && (
+          {rows.some((row) => row.lastSeats === "true" || row.availableSeats !== "") && (
             <label className="mt-check">
               <input type="checkbox" name="seatsConfirmed" required />
-              Confirmo que «Últimos cupos» está vigente en las fechas marcadas
+              Confirmo la disponibilidad actual de las salidas
             </label>
           )}
           <div className="mt-action-row">

@@ -56,10 +56,10 @@ try {
   const program = await make('MTPE-50026', ['2035-11-21', '2035-12-21'])
   const body = (overrides: Record<string, string> = {}) => Object.entries({ MTPE: 'MTPE-50026', Reserva: 'R-001', Salida: '21 nov 2035', Sillas: '3', Estado: 'A petición', Tipo: 'reserva', 'Fecha del evento': '2026-11-03T12:00:00-05:00', Versión: '1', ...overrides }).map(([k, v]) => `${k}: ${v}`).join('\n')
   const mail = (id: string, text = body(), trusted = true) => processPilotMail(req, { id, mailbox: 'qa', body: text, trusted })
-  const pool = await createPilotPool(req, { mtpe: '50026', initialSeats: 15, cutoffAt: '2026-11-01T00:00:00Z' })
+  const pool = await createPilotPool(req, { mtpe: '50026', travelDate: '2035-11-21', initialSeats: 15, cutoffAt: '2026-11-01T00:00:00Z' })
   const balance = async () => (await payload.findByID({ collection: 'seat-pilot-pools', id: pool.id, req })).remainingSeats
-  await assert.rejects(createPilotPool(req, { mtpe: '50026', initialSeats: 15, cutoffAt: '2026-11-01T00:00:00Z' }), /Ya existe/)
-  await assert.rejects(createPilotPool(editorReq, { mtpe: '50026', initialSeats: 15, cutoffAt: '2026-11-01T00:00:00Z' }), /administrador/); checks++
+  await assert.rejects(createPilotPool(req, { mtpe: '50026', travelDate: '2035-11-21', initialSeats: 15, cutoffAt: '2026-11-01T00:00:00Z' }), /Ya existe/)
+  await assert.rejects(createPilotPool(editorReq, { mtpe: '50026', travelDate: '2035-11-21', initialSeats: 15, cutoffAt: '2026-11-01T00:00:00Z' }), /administrador/); checks++
   const first = await mail('message-1'); assert.equal(first.delta, -3); assert.equal(await balance(), 12)
   assert.equal((await mail('message-1')).id, first.id)
   assert.equal((await mail('forward-1')).outcome, 'duplicate'); assert.equal(await balance(), 12); checks++

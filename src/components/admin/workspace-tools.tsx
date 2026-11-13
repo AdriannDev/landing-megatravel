@@ -12,7 +12,7 @@ type Report = {
   accepted?: number;
   errors?: number;
   dryRun?: boolean;
-  results?: { row?: number; status: string; message?: string }[];
+  results?: { row?: number; status: string; message?: string; availableSeats?: number | null; lastSeats?: boolean; validationToken?: string }[];
 };
 type Stats = {
   published: number;
@@ -26,6 +26,8 @@ export function WorkspaceTools() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [busy, setBusy] = useState(false),
     [report, setReport] = useState<Report | null>(null);
+  const [seatsConfirmed, setSeatsConfirmed] = useState(false);
+  const [validationTokens, setValidationTokens] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null),
     [downloadImages, setDownloadImages] = useState(true),
     [validatedFile, setValidatedFile] = useState<File | null>(null);
@@ -52,6 +54,8 @@ export function WorkspaceTools() {
     body.set("file", file);
     body.set("dryRun", String(dryRun));
     body.set("downloadImages", String(downloadImages));
+    body.set("seatsConfirmed", String(seatsConfirmed));
+    body.set("validationTokens", JSON.stringify(validationTokens));
     setBusy(true);
     setReport(null);
     try {
@@ -63,7 +67,7 @@ export function WorkspaceTools() {
       if (!response.ok)
         throw new Error(data.error || "No se pudo completar la operación.");
       setReport(data);
-      if (dryRun && data.accepted > 0) setValidatedFile(file);
+      if (dryRun && data.accepted > 0) { setValidatedFile(file); setValidationTokens(Object.fromEntries(data.results.filter((r: { validationToken?: string }) => r.validationToken).map((r: { row: number; validationToken: string }) => [String(r.row), r.validationToken]))); }
       if (!dryRun) {
         setValidatedFile(null);
         window.dispatchEvent(new Event("mt-departures-changed"));
@@ -153,7 +157,7 @@ export function WorkspaceTools() {
               aria-label="Archivo CSV de salidas"
               onChange={(e) => {
                 setFile(e.target.files?.[0] || null);
-                setValidatedFile(null);
+                setValidatedFile(null); setSeatsConfirmed(false); setValidationTokens({});
               }}
             />
             <label className="mt-check">
@@ -164,6 +168,7 @@ export function WorkspaceTools() {
               />
               Descargar imágenes al almacenamiento
             </label>
+            <label className="mt-check"><input type="checkbox" checked={seatsConfirmed} onChange={e => setSeatsConfirmed(e.target.checked)} />Confirmo que los cupos del CSV son la disponibilidad actual, con las ventas anteriores consideradas</label>
             <div className="mt-action-row">
               <button
                 className="mt-tool-button secondary"
@@ -174,7 +179,7 @@ export function WorkspaceTools() {
               </button>
               <button
                 className="mt-tool-button"
-                disabled={!file || validatedFile !== file || busy}
+                disabled={!file || validatedFile !== file || busy || (Object.keys(validationTokens).length > 0 && !seatsConfirmed)}
                 onClick={() => csv(false)}
               >
                 Importar filas válidas

@@ -46,14 +46,14 @@ export function ProgramSummary() {
           MTPE {program.mtpe} · {program.days} días
         </p>
         <p>
-          Cupos compartidos:{" "}
+          Cupos iniciales para nuevas salidas:{" "}
           {program.seatsMigrationPending
             ? "Pendientes de revisión"
             : (program.availableSeats ?? "Sin informar")}
           {program.lastSeats ? " · Últimos cupos en todas las fechas" : ""}
         </p>
         <a href={`/admin/collections/programs/${id}`}>
-          Editar programa, cupos e imagen compartidos →
+          Editar programa, valores iniciales e imagen →
         </a>
       </div>
     </div>

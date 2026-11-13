@@ -135,7 +135,7 @@ export interface User {
 export interface Departure {
   id: number;
   /**
-   * Selecciona el programa. El nombre, la imagen, los enlaces y el saldo de cupos se comparten entre todas sus fechas.
+   * Selecciona el programa. El nombre, la imagen y los enlaces se comparten. Cada salida tiene sus propios cupos.
    */
   programRef?: (number | null) | Program;
   departureKey?: string | null;
@@ -174,26 +174,22 @@ export interface Departure {
    */
   priority?: number | null;
   /**
-   * Se edita en Programas y se aplica a todas sus fechas. Vacío significa sin cantidad informada.
+   * Disponibilidad actual de esta fecha y origen. Cero: sin cupos. Vacío: sin informar.
    */
   availableSeats?: number | null;
-  /**
-   * Cuando está activo en el programa, se aplica a todas sus fechas.
-   */
   programLastSeats?: boolean | null;
   /**
-   * Opcional. Se suma a la opción del programa; desmarcar esta fecha no anula la opción grupal. No cambia la cantidad de cupos.
+   * Etiqueta manual de esta salida. Se oculta con cero cupos o al vencer la revisión.
    */
   lastSeats?: boolean | null;
-  /**
-   * La vigencia del saldo se confirma en Programas (72 horas por defecto).
-   */
   seatsCheckedAt?: string | null;
   lastSeatsCheckedAt?: string | null;
   /**
-   * Renueva solo la etiqueta individual, sin modificar la revisión del saldo del programa.
+   * Renueva su revisión y concilia el saldo con las ventas ya incluidas.
    */
   seatsConfirmed?: boolean | null;
+  seatsReconciledAt?: string | null;
+  seatsReconciledQuantity?: number | null;
   /**
    * Se suma a la opción del programa; desmarcarla aquí no anula la etiqueta grupal. Útil para destacar una nueva fecha.
    */
@@ -264,7 +260,7 @@ export interface Departure {
   createdAt: string;
 }
 /**
- * Un programa por MTPE. El saldo de cupos, la imagen y la información compartida se aplican a todas sus fechas.
+ * Un programa por MTPE. Los cupos son valores iniciales para nuevas salidas; cada fecha conserva su saldo.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "programs".
@@ -279,11 +275,11 @@ export interface Program {
   nights?: number | null;
   cruiseLine?: (number | null) | CruiseLine;
   /**
-   * Un único saldo para todas las fechas y orígenes del programa. Si se toman 3 de 15 cupos, cambia este saldo a 12. Vacío: sin cantidad informada; cero: sin cupos.
+   * Se utiliza al crear una salida sin cantidad alternativa. Cambiarlo no modifica salidas existentes. Vacío: sin informar; cero: sin cupos.
    */
   availableSeats?: number | null;
   /**
-   * Opcional. Actívalo cuando quieras destacar todas las fechas. También puedes destacar una fecha por separado desde Salidas. Con cero cupos no se muestra la etiqueta.
+   * Valor inicial para nuevas salidas. Las etiquetas existentes se editan por salida o mediante asignación masiva.
    */
   lastSeats?: boolean | null;
   seatsCheckedAt?: string | null;
@@ -291,9 +287,6 @@ export interface Program {
    * Confirma la disponibilidad en Meganet o con un asesor. Cambiar el saldo o marcar esta casilla renueva la revisión; se desmarca al guardar.
    */
   seatsConfirmed?: boolean | null;
-  /**
-   * Las fechas anteriores tenían cantidades distintas. Revisa el saldo del programa antes de informarlo; los datos anteriores se conservan en el respaldo de migración.
-   */
   seatsMigrationPending?: boolean | null;
   legacySeatReferences?:
     | {
@@ -498,6 +491,9 @@ export interface AuditLog {
 export interface SeatPilotPool {
   id: number;
   mtpe: string;
+  departureStableId?: string | null;
+  travelDate?: string | null;
+  origin?: string | null;
   programId: string;
   programCreatedAt: string;
   programName: string;
@@ -542,6 +538,17 @@ export interface SeatMailEvent {
   eventKey?: string | null;
   duplicateOf?: string | null;
   mtpe?: string | null;
+  origin?: string | null;
+  resolvedDeparture?: string | null;
+  movements?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   reservation?: string | null;
   subject?: string | null;
   sender?: string | null;
@@ -759,6 +766,8 @@ export interface DeparturesSelect<T extends boolean = true> {
   seatsCheckedAt?: T;
   lastSeatsCheckedAt?: T;
   seatsConfirmed?: T;
+  seatsReconciledAt?: T;
+  seatsReconciledQuantity?: T;
   newBadge?: T;
   newBadgeLabel?: T;
   newBadgeUntil?: T;
@@ -924,6 +933,9 @@ export interface AuditLogSelect<T extends boolean = true> {
  */
 export interface SeatPilotPoolsSelect<T extends boolean = true> {
   mtpe?: T;
+  departureStableId?: T;
+  travelDate?: T;
+  origin?: T;
   programId?: T;
   programCreatedAt?: T;
   programName?: T;
@@ -956,6 +968,9 @@ export interface SeatMailEventsSelect<T extends boolean = true> {
   eventKey?: T;
   duplicateOf?: T;
   mtpe?: T;
+  origin?: T;
+  resolvedDeparture?: T;
+  movements?: T;
   reservation?: T;
   subject?: T;
   sender?: T;

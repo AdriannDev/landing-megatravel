@@ -6,7 +6,10 @@ function readonly(slug: string, singular: string, plural: string, fields: Field[
     admin: { hidden: true, useAsTitle: columns[0], defaultColumns: columns }, fields }
 }
 export const SeatPilotPools = readonly('seat-pilot-pools', 'Saldo simulado', 'Saldos simulados', [
-  { name: 'mtpe', type: 'text', required: true, unique: true, index: true },
+  { name: 'mtpe', type: 'text', required: true, index: true },
+  { name: 'departureStableId', label: 'Salida original', type: 'text', unique: true, index: true },
+  { name: 'travelDate', label: 'Fecha de viaje', type: 'text' },
+  { name: 'origin', label: 'Origen', type: 'text' },
   { name: 'programId', label: 'ID de programa original', type: 'text', required: true },
   { name: 'programCreatedAt', label: 'Creación del programa original', type: 'date', required: true },
   { name: 'programName', label: 'Programa', type: 'text', required: true },
@@ -27,7 +30,10 @@ export const SeatMailEvents: CollectionConfig = { ...readonly('seat-mail-events'
   { name: 'eventKey', label: 'Huella del evento', type: 'text', unique: true },
   { name: 'duplicateOf', label: 'Evento repetido', type: 'text' },
   { name: 'mtpe', label: 'MTPE', type: 'text', index: true },
-  { name: 'reservation', label: 'Localizador', type: 'text' },
+  { name: 'origin', label: 'Origen', type: 'text' },
+  { name: 'resolvedDeparture', label: 'Salida original resuelta', type: 'text' },
+  { name: 'movements', label: 'Movimientos por salida', type: 'json' },
+  { name: 'reservation', label: 'Reserva MTP', type: 'text' },
   { name: 'subject', label: 'Asunto', type: 'text' },
   { name: 'sender', label: 'Remitente', type: 'text' },
   { name: 'receivedAt', label: 'Fecha del mensaje', type: 'date' },
@@ -46,7 +52,7 @@ export const SeatMailEvents: CollectionConfig = { ...readonly('seat-mail-events'
 ], []), admin: {
   group: 'Administración', useAsTitle: 'subject',
   description: 'Avisos que bloquearon un movimiento y advertencias de movimientos aplicados. Revisa el cuerpo completo en el buzón; no se guarda aquí.',
-  defaultColumns: ['observation', 'subject', 'sender', 'receivedAt', 'mtpe', 'reservation', 'seats', 'status', 'reason'],
+  defaultColumns: ['observation', 'subject', 'sender', 'receivedAt', 'mtpe', 'reservation', 'travelDate', 'origin', 'seats', 'status', 'reason'],
   baseFilter: (): Where => ({ or: [{ outcome: { equals: 'review' } }, { observation: { equals: 'warning' } }] }),
 } }
 export const MailSyncCursors = readonly('mail-sync-cursors', 'Lector de correo', 'Lectores de correo', [

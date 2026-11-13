@@ -6,16 +6,18 @@ import { validateTransition } from '../lib/lifecycle.ts'
 import { cmsToDeparture } from './normalize.ts'
 import { importRemoteMedia } from './media-import.ts'
 import { normalizeMTPE, relationID, sharedData } from '../lib/programs.ts'
-import { inTransaction } from './transactions.ts'
+import { inTransaction, lockSeatWrites } from './transactions.ts'
 import { normalize } from '../lib/catalog.ts'
+import { equalProof, seatProof, seatVersion } from './seat-assignment.ts'
+import { createHash } from 'node:crypto'
 
-export async function importCSV(payload: Payload, csv: string, req: PayloadRequest, options: { dryRun: boolean; downloadImages: boolean; historical?: boolean }) {
+export async function importCSV(payload: Payload, csv: string, req: PayloadRequest, options: { dryRun: boolean; downloadImages: boolean; historical?: boolean; seatsConfirmed?: boolean; validationTokens?: Record<string, string> }) {
   const previousContext = req.context
   try {
   const rows = parseCSV(csv)
   if (rows.length > 5000) throw new Error('El límite por archivo es de 5000 filas.')
   const plan = planImport(rows, { historical: options.historical })
-  const results: { row: number; status: string; id?: string | number; message?: string }[] = plan.errors.map(e => ({ row: e.row, status: 'error', message: e.error }))
+  const results: { row: number; status: string; id?: string | number; message?: string; availableSeats?: number | null; lastSeats?: boolean; validationToken?: string }[] = plan.errors.map(e => ({ row: e.row, status: 'error', message: e.error }))
   const references = new Map<string, Destination['id']>(), media = new Map<string, Media['id']>(), failedMedia = new Map<string, string>()
   async function reference(collection: 'destinations' | 'origins' | 'cruise-lines', name: string) {
     const key = collection + ':' + name
@@ -31,21 +33,34 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
     const groupResults: typeof results = []
     try {
       const run = async () => {
+      if (!options.dryRun) await lockSeatWrites(req)
       let programRef: number | string | undefined
       let sharedDestination: number | string | null = null
       let sharedBookingUrl = ''
+      const defaults = await payload.find({ collection: 'programs', req, overrideAccess: false, depth: 0, limit: 1, where: { mtpe: { equals: normalizeMTPE(entries[0].item.mtpe) } } })
+      const initial = defaults.docs[0]
+      // Snapshot all rows before this group's own shared-content projections change updatedAt.
+      const originals = new Map<string, any>()
+      for (const { item } of entries) {
+        const found = await payload.find({ collection: 'departures', overrideAccess: false, req, depth: 0, limit: 1, where: { sourceKey: { equals: item.sourceKey } } })
+        originals.set(item.sourceKey!, found.docs[0])
+      }
       for (const { row, item } of entries) {
-      const existing = await payload.find({ collection: 'departures', overrideAccess: false, req, depth: 0, limit: 1, where: { sourceKey: { equals: item.sourceKey } } })
-      const original = existing.docs[0]
+      const original = originals.get(item.sourceKey!)
       if (original?.status === 'withdrawn' && item.status === 'published') throw new Error('Esta salida está retirada en el CMS. Reactívala después de revisar precio, enlaces y vigencia.')
       if (original) {
         const transitionErrors = validateTransition(cmsToDeparture(original), item, { historicalImport: options.historical })
         if (transitionErrors.length) throw new Error(transitionErrors.join(' '))
       }
+      const hasSeats = item.availableSeats !== undefined || item.lastSeats !== undefined
+      const effectiveSeats = item.availableSeats !== undefined ? item.availableSeats : original ? original.availableSeats ?? null : initial?.availableSeats ?? null
+      const effectiveFlag = effectiveSeats !== 0 && (item.lastSeats ?? (original ? original.lastSeats : initial?.lastSeats)) === true
+      const proof = hasSeats ? seatProof(req, ['import-seats', req.user?.id, createHash('sha256').update(csv).digest('hex'), row, seatVersion(original), initial ? [initial.id, initial.availableSeats ?? null, initial.lastSeats === true] : null, effectiveSeats, effectiveFlag]) : undefined
+      if (!options.dryRun && hasSeats && (!options.seatsConfirmed || !equalProof(options.validationTokens?.[String(row)], proof!))) throw new Error('Confirma los cupos y vuelve a validar el CSV: el saldo o los valores iniciales pudieron cambiar.')
       if (options.dryRun) {
         const candidates = await payload.find({ collection: 'departures', req, overrideAccess: false, depth: 1, pagination: false, where: { mtpe: { equals: item.mtpe } } })
         if (candidates.docs.some(doc => doc.id !== original?.id && normalize(cmsToDeparture(doc).origin) === normalize(item.origin) && doc.travelDate === item.travelDate)) throw new Error('Ya existe una salida para este MTPE, origen y fecha.')
-        groupResults.push({ row, status: original ? 'would-update' : 'would-create' }); continue
+        groupResults.push({ row, status: original ? 'would-update' : 'would-create', availableSeats: effectiveSeats, lastSeats: effectiveFlag, ...(proof ? { validationToken: proof } : {}) }); continue
       }
       const destination = await reference('destinations', item.destination)
       const origin = await reference('origins', item.origin)
@@ -65,6 +80,9 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
         } catch (error) { warning = (error as Error).message; failedMedia.set(item.flyerUrl, warning) }
       }
       const data: RequiredDataFromCollectionSlug<'departures'> = {
+        ...(hasSeats ? { seatsConfirmed: options.seatsConfirmed === true } : {}),
+        ...(item.availableSeats !== undefined ? { availableSeats: item.availableSeats } : {}),
+        ...(item.lastSeats !== undefined ? { lastSeats: item.lastSeats === true } : {}),
         program: item.program, mtpe: item.mtpe, destination, origin, zone: item.zone, cruiseLine, days: item.days, nights: item.nights,
         travelDate: item.travelDate, price: item.price, currency: item.currency, priceCondition: item.priceCondition,
         flyer, flyerSourceUrl: item.flyerUrl.startsWith('https://') ? item.flyerUrl : '', bookingUrl: item.bookingUrl, descriptionUrl: item.descriptionUrl,
@@ -75,7 +93,7 @@ export async function importCSV(payload: Payload, csv: string, req: PayloadReque
         sourceRetirementDate: item.sourceRetirementDate, sourceRetirementRaw: item.sourceRetirementRaw,
         ...(options.historical && !original ? { retiredAt: item.retiredAt || null } : {}),
       }
-      const context = { historicalImport: options.historical === true, skipMediaDownload: true }
+      const context = { historicalImport: options.historical === true, skipMediaDownload: true, reconcileSeats: item.availableSeats !== undefined, seatReviewOnly: hasSeats && item.availableSeats === undefined }
       if (!programRef) {
         const found = await payload.find({ collection: 'programs', req, overrideAccess: false, depth: 0, limit: 1, where: { mtpe: { equals: normalizeMTPE(item.mtpe) } } })
         const common = sharedData(data) as RequiredDataFromCollectionSlug<'programs'>

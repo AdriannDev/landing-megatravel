@@ -79,7 +79,7 @@ El primer paso genera el CSV para Payload, registros normalizados, reporte por h
 
 Los históricos conservan estado, motivo y observaciones disponibles. Los retiros sin responsable u hora fiable conservan la fecha y el valor original de Excel en Procedencia. No se atribuyen a un editor ni se inventan horas. La creación del registro en el CMS tiene su propia fecha y responsable de importación.
 
-El importador actualiza por `source_key`, detecta claves repetidas y reporta errores por fila. No reactiva automáticamente registros que el equipo ya retiró en el CMS. Para nuevos CSV, exporta desde el panel y conserva las claves. Los campos son `source_key`, `source_sheet`, `source_ref`, `program`, `mtpe`, `destination`, `zone`, `origin`, `days`, `nights`, `travel_date`, `price`, `currency`, `price_condition`, `flyer_url`, `booking_url`, `description_url`, `promotions`, `cruise_line`, `advance_days`, `status`, `withdrawal_reason`, `withdrawal_note`, `retired_at`, `source_retirement_date`, `source_retirement_raw`. Varias promociones se separan con `|`. Estados: `draft`, `published`, `withdrawn`.
+El importador actualiza por `source_key`, detecta claves repetidas y reporta errores por fila. No reactiva automáticamente registros que el equipo ya retiró en el CMS. Para nuevos CSV, exporta desde el panel y conserva las claves. Los campos son `source_key`, `source_sheet`, `source_ref`, `program`, `mtpe`, `destination`, `zone`, `origin`, `days`, `nights`, `travel_date`, `price`, `currency`, `price_condition`, `available_seats`, `last_seats`, `flyer_url`, `booking_url`, `description_url`, `promotions`, `cruise_line`, `advance_days`, `status`, `withdrawal_reason`, `withdrawal_note`, `retired_at`, `source_retirement_date`, `source_retirement_raw`. Varias promociones se separan con `|`. Estados: `draft`, `published`, `withdrawn`.
 
 ## Reglas de publicación y privacidad
 
@@ -126,3 +126,5 @@ npm.cmd run prepare:commits
 El script separa base del proyecto y documentación. No hace push ni configura `origin`. Las claves reales, bases locales, cachés, Excel original y respaldos están excluidos. Los datos normalizados de migración sí forman parte de esta entrega para el repositorio privado. Consulta [el flujo completo para vincular y clonar](docs/github.md).
 
 Referencias técnicas: [Payload en Next.js](https://payloadcms.com/docs/getting-started/installation), [PostgreSQL](https://payloadcms.com/docs/database/postgres), [R2 a través del adaptador S3](https://payloadcms.com/docs/upload/storage-adapters).
+
+Los cupos y «Últimos cupos» son independientes por fecha y origen. Consulta [carga, CSV, asignación masiva y migración](docs/cupos-por-salida.md). Los valores del programa se usan solo al crear nuevas salidas.

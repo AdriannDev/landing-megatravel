@@ -75,3 +75,14 @@
     flex-direction: column;
   }
 }
+
+.mt-seat-assignment { margin: 12px 0; padding: 12px 16px; border: 1px solid #dbe2eb; border-radius: 8px; background: #fff; max-width: 100%; overflow-x: auto; }
+.mt-seat-assignment summary { cursor: pointer; font-weight: 600; }
+.mt-seat-assignment fieldset { display: grid; gap: 12px; border: 0; margin: 0; padding: 8px 0; }
+.mt-seat-assignment label { display: grid; gap: 6px; }
+.mt-seat-assignment .mt-check { display: flex; gap: 8px; }
+.mt-seat-assignment input:not([type=checkbox]), .mt-seat-assignment select { padding: 8px; max-width: 360px; border: 1px solid #ccd5e0; border-radius: 4px; }
+.mt-seat-assignment th, .mt-seat-assignment td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e8edf3; }
+.mt-seat-assignment table { margin-bottom: 16px; }
+.mt-create .mt-new-departure-seats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 700px) { .mt-create .mt-new-departure-seats { grid-template-columns: 1fr; } }

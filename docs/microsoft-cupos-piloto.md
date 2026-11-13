@@ -48,9 +48,9 @@ Fecha del evento: 2026-11-10T12:00:00-05:00
 Versión: 1
 ```
 
-Son obligatorios MTPE, cantidad explícita y estado. Salida, tipo, fecha comercial y versión son opcionales. A petición, Reserva y Pendiente de confirmar son activos; un cambio de cantidad aplica solo la diferencia. Cancelado y Anulado liberan únicamente cupos de una reserva conocida, con cantidad cero o igual a la conocida. Se mantienen compatibles Confirmada y Vencida. No se cuentan pasajeros.
+Son obligatorios MTPE, cantidad explícita y estado. La fecha de salida es obligatoria salvo fecha única registrada; identifica origen si hay varios para ese día. Tipo, fecha comercial y versión son opcionales. A petición, Reserva y Pendiente de confirmar son activos; un cambio de cantidad aplica solo la diferencia. Cancelado y Anulado liberan únicamente cupos de una reserva conocida, con cantidad cero o igual a la conocida. Se mantienen compatibles Confirmada y Vencida. No se cuentan pasajeros.
 
-Si existe fecha comercial, exige zona horaria. Versión y fecha comercial permiten detectar avisos antiguos; cuando faltan, se utiliza la recepción persistente de Graph. El MTPE identifica el saldo compartido por fechas y orígenes; la salida solo se comprueba si viene indicada. El localizador usa el campo `reservation` y admite etiquetas equivalentes. Sin localizador, un estado activo se aplica por mensaje con advertencia; una cancelación queda bloqueada. Se conserva la identidad original del programa para detectar borrados y reemplazos.
+Si existe fecha comercial, exige zona horaria. Versión y fecha comercial permiten detectar avisos antiguos; cuando faltan, se utiliza la recepción persistente de Graph. MTPE identifica el programa; el saldo simulado se concilia y actualiza por salida original (fecha y origen). El localizador usa el campo `reservation` y admite etiquetas equivalentes. Sin localizador, un estado activo se aplica por mensaje con advertencia; una cancelación queda bloqueada. Se conserva la identidad original del programa para detectar borrados y reemplazos.
 
 | Evento | Saldo partiendo de 15 |
 | --- | --- |

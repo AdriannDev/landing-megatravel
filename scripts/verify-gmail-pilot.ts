@@ -112,8 +112,9 @@ try {
     origin: 'Lima', departures: [{ date: '2035-11-21', price: 2000 }],
   })
   const live = { ...gmail, live: { cutoffAt: '2026-11-01T00:00:00Z', mtpes: ['20141'] } }
-  const realBalance = async () => (await payload.findByID({ collection: 'programs', id: realProgram.programId, req })).availableSeats
-  const realAudit = async () => (await payload.find({ collection: 'audit-log', req, pagination: false, where: { programId: { equals: String(realProgram.programId) } } })).docs
+  await payload.db.updateOne({ collection: 'departures', id: realProgram.created[0].id, req, data: { seatsReconciledAt: '2026-11-01T00:00:00Z' } })
+  const realBalance = async () => (await payload.findByID({ collection: 'departures', id: realProgram.created[0].id, req })).availableSeats
+  const realAudit = async () => (await payload.find({ collection: 'audit-log', req, pagination: false, where: { and: [{ departureId: { equals: (await payload.findByID({ collection: 'departures', id: realProgram.created[0].id, req })).stableId } }, { actorLabel: { equals: 'Automatización de cupos por correo' } }] } })).docs
   const realBody = (overrides: Record<string, string> = {}) => body({ MTPE: 'MTPE-20141', Reserva: 'REAL-001', ...overrides })
   const signed = (text: string) => Buffer.concat([Buffer.from('Authentication-Results: mx.google.com; dmarc=pass header.from=example.test\r\n'), mime(text)])
   messages.clear()
@@ -159,10 +160,7 @@ try {
   await readReal(withSignature)
   assert.equal(await realBalance(), 6)
   assert.equal((await payload.findByID({ collection: 'departures', id: realProgram.created[0].id, req, context: { skipProgramResolution: true } })).availableSeats, 6)
-  assert.deepEqual((await realAudit()).map(log => log.changes), [{
-    availableSeats: { before: 9, after: 6 }, reservation: 'REAL-001',
-    mailEventKey: (await payload.find({ collection: 'seat-mail-events', req, where: { reservation: { equals: 'REAL-001' } } })).docs[0].eventKey,
-  }]); checks++
+  assert.deepEqual((await realAudit()).map(log => (log.changes as any).availableSeats), [{ before: 9, after: 6 }]); checks++
   await readReal(signed(realBody()))
   await readReal(signed(realBody({ Estado: 'Confirmada', Tipo: 'confirmación', Versión: '2' })))
   assert.equal(await realBalance(), 6)
@@ -193,7 +191,8 @@ try {
     origin: 'Lima', departures: [{ date: '2035-11-21', price: 2000 }],
   })
   const minimalConfig = { ...gmail, user: 'minimos@example.test', live: { ...live.live, mtpes: ['20142'] } }
-  const minimalBalance = async () => (await payload.findByID({ collection: 'programs', id: minimalProgram.programId, req })).availableSeats
+  await payload.db.updateOne({ collection: 'departures', id: minimalProgram.created[0].id, req, data: { seatsReconciledAt: '2026-11-01T00:00:00Z' } })
+  const minimalBalance = async () => (await payload.findByID({ collection: 'departures', id: minimalProgram.created[0].id, req })).availableSeats
   const minimal = (reference = '', quantity = '3', status = 'A petición', extra = '') => `MTPE: 20142\n${reference ? `Localizador: ${reference}\n` : ''}Cantidad: ${quantity}\nEstado: ${status}\n${extra}`
   messages.clear(); let minimalUid = 0
   const readMinimal = async (text: string, messageId = `minimal-${minimalUid + 1}`) => {
