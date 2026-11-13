@@ -6,14 +6,15 @@ export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled' | 'expired
 export type MailOrder = { scope: string; sequence: number }
 export type MailEvent = {
   mtpe: string; seats: number; status: ReservationStatus
-  reservation?: string; travelDate?: string; origin?: string
+  reservation?: string; tripId?: string; travelDate?: string; origin?: string
   departureStableId?: string; originId?: string; programId?: string; programCreatedAt?: string
   kind?: 'reservation' | 'modification' | 'confirmation' | 'cancellation' | 'expiration'
   occurredAt?: string; version?: number
   receivedAt?: string; order?: MailOrder
 }
 export type ReservationState = MailEvent & { eventKey?: string; occupiedSeats?: number; lastActiveSeats?: number }
-export type MailExtraction = { event?: MailEvent; fields: Partial<MailEvent>; reason?: string }
+export type MailIssue = { code: 'missing' | 'invalid' | 'conflict' | 'body'; field?: keyof MailEvent; message: string }
+export type MailExtraction = { event?: MailEvent; fields: Partial<MailEvent>; issues: MailIssue[]; reason?: string; templateCheckDates?: (string | null)[] }
 export const digest = (value: string) => createHash('sha256').update(value).digest('hex')
 const fold = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 const plain = (value: string) => fold(value).toLowerCase().trim()
@@ -57,16 +58,17 @@ export function mailTimestamp(value?: string) {
 const labels = {
   mtpe: ['codigo mtpe', 'mtpe', 'programa'],
   reservation: ['codigo de la reserva', 'numero de la reserva', 'referencia de la reserva', 'codigo de reserva', 'codigo reserva', 'numero de reserva', 'numero reserva', 'referencia de reserva', 'referencia reserva', 'identificador de reserva', 'id de reserva', 'localizador de reserva', 'localizador', 'reserva', 'codigo', 'numero', 'referencia'],
+  tripId: ['id del viaje'],
   travelDate: ['fecha de salida', 'salida'],
   origin: ['ciudad de origen', 'origen de salida', 'origen'],
-  seats: ['cantidad de sillas', 'cantidad de cupos', 'cantidad de plazas', 'cantidad', 'sillas', 'cupos', 'plazas'],
-  status: ['estado de reserva', 'estado'],
+  seats: ['cantidad de sillas', 'cantidad de cupos', 'cantidad de plazas', 'cantidad', 'sillas', 'cupos', 'plazas', 'reservas', 'pasajeros'],
+  status: ['estado de la reserva', 'estado de reserva', 'estado'],
   kind: ['tipo de evento', 'evento', 'tipo'],
   occurredAt: ['fecha del evento', 'fecha de evento', 'fecha comercial'],
   version: ['version del evento', 'version'],
 } as const
-const fieldNames: Record<keyof typeof labels, string> = { mtpe: 'MTPE', reservation: 'localizador', travelDate: 'fecha de salida', origin: 'origen', seats: 'cantidad de sillas', status: 'estado', kind: 'tipo de evento', occurredAt: 'fecha comercial', version: 'versión' }
-const statuses: Record<string, ReservationStatus> = { 'a peticion': 'pending', 'reserva': 'confirmed', 'pendiente de confirmar': 'pending', 'confirmada': 'confirmed', 'confirmado': 'confirmed', 'cancelada': 'cancelled', 'cancelado': 'cancelled', 'anulada': 'cancelled', 'anulado': 'cancelled', 'vencida': 'expired', 'vencido': 'expired' }
+const fieldNames: Record<keyof typeof labels, string> = { mtpe: 'MTPE', reservation: 'localizador', tripId: 'ID del viaje', travelDate: 'fecha de salida', origin: 'origen', seats: 'cantidad de sillas', status: 'estado', kind: 'tipo de evento', occurredAt: 'fecha comercial', version: 'versión' }
+const statuses: Record<string, ReservationStatus> = { rq: 'pending', 'a peticion': 'pending', 'reserva': 'confirmed', 'pendiente de confirmar': 'pending', 'confirmada': 'confirmed', 'confirmado': 'confirmed', 'cancelada': 'cancelled', 'cancelado': 'cancelled', 'anulada': 'cancelled', 'anulado': 'cancelled', 'vencida': 'expired', 'vencido': 'expired' }
 const kinds: Record<string, MailEvent['kind']> = { reserva: 'reservation', modificacion: 'modification', confirmacion: 'confirmation', cancelacion: 'cancellation', anulacion: 'cancellation', vencimiento: 'expiration' }
 
 function eventConflict(fields: Partial<MailEvent>) {
@@ -74,10 +76,32 @@ function eventConflict(fields: Partial<MailEvent>) {
   if (fields.kind && fields.status && ((fields.kind === 'cancellation') !== (fields.status === 'cancelled') || (fields.kind === 'expiration') !== (fields.status === 'expired') || fields.kind === 'confirmation' && fields.status !== 'confirmed')) return 'El tipo y el estado del evento se contradicen.'
 }
 
+function finishExtraction(fields: Partial<MailEvent>, problems: MailIssue[], templateCheckDates: (string | null)[] = []): MailExtraction {
+  const issues = problems.filter(issue => issue.code !== 'missing')
+  // Text and HTML can supply different portions of the same template. Resolve
+  // this candidate only once the combined reservation identifies Meganet.
+  if (fields.reservation && /^MTP-CLOSEDTOUR-\d+$/.test(fields.reservation) && !issues.some(issue => issue.field === 'reservation') && templateCheckDates.length) {
+    const dates = [...new Set([...templateCheckDates.filter((value): value is string => value !== null), ...(fields.travelDate ? [fields.travelDate] : [])])]
+    if (templateCheckDates.includes(null) || dates.length > 1) issues.push({ code: dates.length > 1 ? 'conflict' : 'invalid', field: 'travelDate', message: 'La fecha de salida de Comprobación es inválida o contradictoria.' })
+    else if (dates.length === 1) fields.travelDate = dates[0]
+  }
+  for (const [field, message] of [
+    ['mtpe', 'Falta el MTPE.'],
+    ['seats', 'Falta la cantidad explícita de sillas; no se cuentan listas de pasajeros.'],
+    ['status', 'Falta el estado.'],
+  ] as const) {
+    if (fields[field] == null && !issues.some(issue => issue.field === field)) issues.push({ code: 'missing', field, message })
+  }
+  const conflict = eventConflict(fields)
+  if (conflict && !issues.some(issue => issue.message === conflict)) issues.push({ code: 'conflict', message: conflict })
+  const result = { fields, issues, ...(templateCheckDates.length ? { templateCheckDates } : {}) }
+  return issues.length ? { ...result, reason: [...new Set(issues.map(issue => issue.message))].join(' ') } : { ...result, event: fields as MailEvent }
+}
+
 // Only explicitly labelled quantities are accepted. Passenger lists are never counted.
 export function extractMailEvent(input: { subject?: string; body: string; html?: boolean }): MailExtraction {
-  const fields: Partial<MailEvent> = {}, reasons: string[] = []
-  if (typeof input.body !== 'string' || input.body.length > 1_000_000) return { fields, reason: 'Cuerpo ausente o demasiado grande.' }
+  const fields: Partial<MailEvent> = {}, issues: MailIssue[] = []
+  if (typeof input.body !== 'string' || input.body.length > 1_000_000) return { fields, issues: [{ code: 'body', message: 'Cuerpo ausente o demasiado grande.' }], reason: 'Cuerpo ausente o demasiado grande.' }
   let text = input.body
   if (input.html) {
     const $ = load(text)
@@ -88,7 +112,7 @@ export function extractMailEvent(input: { subject?: string; body: string; html?:
     })
     $('br').replaceWith('\n'); $('td,th').append(' '); $('tr,p,div,li').append('\n'); text = $.text()
   }
-  const allLabels = Object.values(labels).flat().sort((a, b) => b.length - a.length).join('|')
+  const allLabels = [...Object.values(labels).flat(), 'comprobacion'].sort((a, b) => b.length - a.length).join('|')
   text = fold(`${input.subject?.replace(/^(?:(?:fwd?|re|rv)\s*:\s*)+/i, '') || ''}\n${text}`)
     .replace(/\r|\u00a0/g, ' ').replace(/^(\s*>\s*)+/gm, '')
     .replace(new RegExp(`\\b(${allLabels})[ \\t]*[:=#][ \\t]*`, 'gi'), '\n$1: ')
@@ -98,41 +122,38 @@ export function extractMailEvent(input: { subject?: string; body: string; html?:
     if (match?.[2]) values.set(plain(match[1]), [...(values.get(plain(match[1])) || []), match[2].trim()])
   }
   for (const match of text.matchAll(/\bMTPE[ -]+([0-9][A-Z0-9-]{0,39})\b/gi)) values.set('mtpe', [...(values.get('mtpe') || []), match[1]])
-  // MTP is a reservation; MTPE is a program. Bare digits are never scanned.
-  for (const match of text.matchAll(/\bM\s*T\s*P[\s\-\u2013\u2014]+(\d{1,80})\b/gi)) values.set('reserva', [...(values.get('reserva') || []), `MTP-${match[1]}`])
+  // Exclude only labelled trip-ID lines. The same code elsewhere still conflicts.
+  // Scan the complete CLOSEDTOUR reference too; MTPE and bare digits are not reservations.
+  const reservationText = text.split('\n').filter(line => !/^\s*id del viaje\s*:/i.test(line)).join('\n')
+  for (const match of reservationText.matchAll(/\bM\s*T\s*P[\s\-\u2013\u2014]+((?:CLOSEDTOUR-)?\d{1,80})\b/gi)) values.set('reserva', [...(values.get('reserva') || []), `MTP-${match[1].toUpperCase()}`])
   // "Programa" often contains the commercial name alongside an explicit MTPE.
   if (values.has('mtpe') || values.has('codigo mtpe')) values.delete('programa')
-  function read<K extends keyof typeof labels>(key: K, convert: (value: string) => MailEvent[K] | undefined, required = false) {
+  function read<K extends keyof typeof labels>(key: K, convert: (value: string) => MailEvent[K] | undefined) {
     const raw = labels[key].flatMap(label => values.get(label) || [])
     const converted = raw.map(convert)
     const distinct = [...new Set(converted.filter(value => value !== undefined))]
     if (distinct.length === 1) Object.assign(fields, { [key]: distinct[0] })
-    if (distinct.length > 1 || converted.some(value => value === undefined)) reasons.push(`El campo ${fieldNames[key]} es inválido o contradictorio.`)
-    else if (required && !distinct.length) reasons.push(`Falta ${key === 'seats' ? 'la cantidad explícita de sillas; no se cuentan pasajeros' : key === 'mtpe' ? 'el MTPE' : 'el estado'}.`)
+    if (distinct.length > 1 || converted.some(value => value === undefined)) issues.push({ code: distinct.length > 1 ? 'conflict' : 'invalid', field: key, message: `El campo ${fieldNames[key]} es inválido o contradictorio.` })
   }
-  read('mtpe', value => /^(?:MTPE[\s-]*)?[A-Z0-9][A-Z0-9-]{1,39}$/i.test(value) ? pilotMTPE(value) : undefined, true)
+  read('mtpe', value => /^(?:MTPE[\s-]*)?[A-Z0-9][A-Z0-9-]{1,39}$/i.test(value) ? pilotMTPE(value) : undefined)
   read('reservation', normalizeReservation)
+  read('tripId', normalizeReservation)
   read('travelDate', date)
   read('origin', value => value.trim() ? value.trim().replace(/\s+/g, ' ').toUpperCase() : undefined)
-  read('seats', value => /^\d{1,5}$/.test(value) ? Number(value) : undefined, true)
-  read('status', value => statuses[plain(value)], true)
+  read('seats', value => /^(\d{1,5})(?:\s+personas?)?$/i.test(value) ? Number(value.match(/^\d+/)![0]) : undefined)
+  read('status', value => statuses[plain(value)])
   read('kind', value => kinds[plain(value)])
   read('occurredAt', mailTimestamp)
   read('version', value => /^\d{1,9}$/.test(value) ? Number(value) : undefined)
-  const conflict = eventConflict(fields)
-  if (conflict) reasons.push(conflict)
-  return reasons.length ? { fields, reason: reasons.join(' ') } : { fields, event: fields as MailEvent }
+  return finishExtraction(fields, issues, (values.get('comprobacion') || []).map(value => date(value) ?? null))
 }
 
 export function compareMailParts(a: MailExtraction, b: MailExtraction): MailExtraction {
   const fields = { ...b.fields, ...a.fields }
   const conflicts = (Object.keys(fields) as (keyof MailEvent)[]).filter(key => a.fields[key] !== undefined && b.fields[key] !== undefined && a.fields[key] !== b.fields[key])
-  const invalid = [a.reason, b.reason].filter(reason => reason && !reason.split('. ').every(part => part.startsWith('Falta ')))
-  if (conflicts.length || invalid.length) return { fields, reason: conflicts.length ? `Las partes de texto y HTML no identifican datos coincidentes: ${conflicts.map(key => (fieldNames as Record<string, string>)[key] || key).join(', ')}.` : invalid.join(' ') }
-  if (!fields.mtpe || fields.seats == null || !fields.status) return { fields, reason: 'Las partes de texto y HTML no identifican los datos principales completos.' }
-  const conflict = eventConflict(fields)
-  if (conflict) return { fields, reason: conflict }
-  return { fields, event: fields as MailEvent }
+  const issues = [...a.issues, ...b.issues].filter(issue => issue.code !== 'missing')
+  for (const key of conflicts) issues.push({ code: 'conflict', field: key, message: `Las partes de texto y HTML no identifican datos coincidentes: ${(fieldNames as Record<string, string>)[key] || key}.` })
+  return finishExtraction(fields, issues, [...(a.templateCheckDates || []), ...(b.templateCheckDates || [])])
 }
 
 export function proposeMovement(pool: { initialSeats?: number; remainingSeats: number; cutoffAt: string }, previous: ReservationState | undefined, event: MailEvent): { reason?: string; delta?: number; remainingSeats?: number } {

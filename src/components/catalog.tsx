@@ -229,18 +229,16 @@ export function Catalog({
   );
   // Server always enforces actual per-departure cutoff; no private rule fields are sent to the browser.
   const result = useMemo(
-    () => filterCatalog(packages, filters, liveData.featuredPackageIds),
-    [packages, filters, liveData.featuredPackageIds],
+    () => filterCatalog(packages, filters),
+    [packages, filters],
   );
-  const hasFeaturedRow = view === "grid" && result.page === 1 && filters.sort === "featured" &&
-    !!result.items[0] && (liveData.featuredPackageIds || []).includes(result.items[0].id);
   const heroBanners = bannersAt(liveData.banners, "hero", new Date(clock));
   const betweenBanners = bannersAt(
     liveData.banners,
     "between-results",
     new Date(clock),
   );
-  const finalBanners = bannersAt(
+  const gridBanners = bannersAt(
     liveData.banners,
     "catalog-end",
     new Date(clock),
@@ -477,6 +475,9 @@ export function Catalog({
                 />
               </aside>
               <div className="catalog-results">
+                {result.items.length > 0 && (
+                  <CampaignBanner banners={gridBanners} placement="catalog-end" />
+                )}
                 <div className="results-toolbar">
                   <div>
                     <p role="status" aria-live="polite">
@@ -617,7 +618,7 @@ export function Catalog({
                 )}
                 {result.items.length ? (
                   <>
-                    <div className={`package-grid${view === "list" ? " package-grid--list" : ""}${hasFeaturedRow ? " package-grid--featured" : ""}`}>
+                    <div className={`package-grid${view === "list" ? " package-grid--list" : ""}`}>
                       {result.items.map((item, index) => (
                         <Fragment key={item.id}>
                           <PackageCard item={item} contactUrl={liveData.contactUrl} view={view} />
@@ -627,10 +628,6 @@ export function Catalog({
                         </Fragment>
                       ))}
                     </div>
-                    <CampaignBanner
-                      banners={finalBanners}
-                      placement="catalog-end"
-                    />
                   </>
                 ) : (
                   <div className="empty-state">

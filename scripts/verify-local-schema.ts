@@ -46,7 +46,9 @@ try {
       CREATE TABLE __new_audit_log(id INTEGER PRIMARY KEY);
       DROP TABLE settings_blog_posts;
       DROP TABLE settings;
-      CREATE TABLE settings(id INTEGER PRIMARY KEY NOT NULL,contact_url TEXT DEFAULT 'https://api.whatsapp.com/send?phone=51973473808' NOT NULL,contact_label TEXT DEFAULT 'Equipo comercial' NOT NULL,seats_validity_hours NUMERIC DEFAULT 72 NOT NULL,blog_last_synced_at TEXT,updated_at TEXT,created_at TEXT);
+      CREATE TABLE settings(id INTEGER PRIMARY KEY NOT NULL,contact_url TEXT DEFAULT 'https://api.whatsapp.com/send?phone=51973473808' NOT NULL,contact_label TEXT DEFAULT 'Equipo comercial' NOT NULL,seats_validity_hours NUMERIC DEFAULT 72 NOT NULL,blog_last_synced_at TEXT,updated_at TEXT,created_at TEXT,featured_departure1_id INTEGER REFERENCES departures(id) ON DELETE SET NULL,featured_departure2_id INTEGER REFERENCES departures(id) ON DELETE SET NULL);
+      CREATE INDEX settings_featured_departure1_idx ON settings(featured_departure1_id);
+      CREATE INDEX settings_featured_departure2_idx ON settings(featured_departure2_id);
       INSERT INTO settings(id,contact_url,contact_label) VALUES(1,'https://example.test/contacto','Contacto');
       CREATE TABLE settings_blog_posts(_order INTEGER NOT NULL,_parent_id INTEGER NOT NULL REFERENCES settings(id) ON DELETE CASCADE,id TEXT PRIMARY KEY NOT NULL,source_id TEXT NOT NULL,title TEXT NOT NULL,category TEXT NOT NULL,date_label TEXT NOT NULL,href TEXT NOT NULL,image_url TEXT NOT NULL);
       CREATE INDEX settings_blog_posts_order_idx ON settings_blog_posts(_order);
@@ -78,8 +80,9 @@ try {
     assert.equal(blog.image_url, 'https://example.test/1896.png'); assert.equal(blog.image_id, null)
     assert.equal(db.prepare('PRAGMA table_info(settings_blog_posts)').all().find(c => c.name === 'date_label')!.notnull, 0)
     assert.ok(db.prepare('PRAGMA foreign_key_list(settings_blog_posts)').all().some(r => r.from === 'image_id' && r.table === 'media'))
-    const featured = db.prepare('PRAGMA foreign_key_list(settings)').all()
-    for (const column of ['featured_departure1_id','featured_departure2_id']) assert.ok(featured.some(r => r.from === column && r.table === 'departures'))
+    const columns = db.prepare('PRAGMA table_info(settings)').all()
+    for (const column of ['featured_departure1_id','featured_departure2_id']) assert.equal(columns.some(r => r.name === column), false)
+    assert.equal(db.prepare('SELECT contact_label FROM settings WHERE id=1').get()!.contact_label, 'Contacto')
     const observed = db.prepare('SELECT * FROM seat_mail_events WHERE id=7').get()!
     assert.equal(observed.message_key, 'mensaje-heredado'); assert.equal(observed.event_key, 'evento-heredado')
     assert.equal(observed.reservation, 'ANTERIOR'); assert.equal(observed.reason, 'Revisar')

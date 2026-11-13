@@ -21,6 +21,7 @@ Esta documentación describe el código y su operación. Distingue la configurac
 | Activar R2 y optimizar imágenes | [R2 e imágenes](r2-imagenes.md) |
 | Usar el CMS como editor comercial | [Guía de editores](editores.md) |
 | Configurar y verificar la automatización de cupos por correo | [Gmail y Railway](gmail-cupos-piloto.md) |
+| Verificar las plantillas de Meganet y la retirada de fijaciones | [Correos y fijaciones](verificacion-correos-y-fijaciones.md) |
 | Consultar opciones comerciales con Convertalk | [Viabilidad de Convertalk](convertalk-viabilidad.md) |
 
 Lectura sugerida: arquitectura → mantenimiento → configuración. Para una tarea concreta, empieza por la tabla «Dónde hacer cada cambio» de la guía de mantenimiento.

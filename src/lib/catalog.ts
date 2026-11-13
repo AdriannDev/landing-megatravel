@@ -118,8 +118,7 @@ export const publishedPackages = (
     .filter((p) => isPublishable(p, now))
     .map((p) => toPublicPackage(p, now, validityHours));
 
-export function filterCatalog(items: PublicPackage[], filters: CatalogFilters, featuredPackageIds: string[] = []) {
-  const featuredOrder = new Map([...new Set(featuredPackageIds)].slice(0, 2).map((id, index) => [id, index]));
+export function filterCatalog(items: PublicPackage[], filters: CatalogFilters) {
   const matches = (selected: string[], value: string) =>
     !selected.length || selected.some((s) => normalize(s) === normalize(value));
   const words = normalize(filters.q).split(/\s+/).filter(Boolean);
@@ -150,8 +149,7 @@ export function filterCatalog(items: PublicPackage[], filters: CatalogFilters, f
   });
   filtered.sort((a, b) => {
     let result = 0;
-    if (filters.sort === "featured") result =
-      (featuredOrder.get(a.id) ?? 2) - (featuredOrder.get(b.id) ?? 2) || b.priority - a.priority;
+    if (filters.sort === "featured") result = b.priority - a.priority;
     if (filters.sort === "price-asc" || filters.sort === "price-desc") {
       // Do not compare unlike currencies as if they had the same value.
       result =

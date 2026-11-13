@@ -16,7 +16,8 @@ const transaction = async (run: () => Promise<void>) => {
   catch (error) { await pg.exec('ROLLBACK'); throw error }
 }
 try {
-  for (const migration of migrations.slice(0, -1)) await transaction(() => migration.up(args))
+  const migrationIndex = migrations.findIndex(migration => /independent_departure_seats/.test(migration.name))
+  for (const migration of migrations.slice(0, migrationIndex)) await transaction(() => migration.up(args))
   await pg.exec(`INSERT INTO origins(name) VALUES('Lima');
     INSERT INTO destinations(name) VALUES('Madrid');
     INSERT INTO programs(program,mtpe,destination_id,zone,days,available_seats,last_seats) VALUES('Original','MTPE-50026',1,'Europa',8,15,true);
@@ -30,7 +31,7 @@ try {
   const tables = ['programs', 'departures', '_departures_v', 'seat_pilot_pools', 'seat_pilot_reservations', 'seat_mail_events', 'mail_sync_cursors']
   const originals = new Map<string, Record<string, unknown>[]>()
   for (const table of tables) originals.set(table, (await pg.query<Record<string, unknown>>(`SELECT * FROM ${table}`)).rows)
-  const migration = migrations.at(-1)!
+  const migration = migrations[migrationIndex]
   assert.match(migration.name, /independent_departure_seats/)
   await transaction(() => migration.up(args))
   for (const [table, before] of originals) {

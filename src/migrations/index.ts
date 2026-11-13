@@ -15,6 +15,7 @@ import * as migration_20261110_210000_gmail_mail_cursor from './20261110_210000_
 import * as migration_20261112_220707_featured_departures_and_blog_images from './20261112_220707_featured_departures_and_blog_images';
 import * as migration_20261113_161026_correos_observados from './20261113_161026_correos_observados';
 import * as migration_20261113_180329_independent_departure_seats from './20261113_180329_independent_departure_seats';
+import * as migration_20261113_220000_remove_featured_departures from './20261113_220000_remove_featured_departures';
 
 export const migrations = [
   {
@@ -101,5 +102,10 @@ export const migrations = [
     up: migration_20261113_180329_independent_departure_seats.up,
     down: migration_20261113_180329_independent_departure_seats.down,
     name: '20261113_180329_independent_departure_seats'
+  },
+  {
+    up: migration_20261113_220000_remove_featured_departures.up,
+    down: migration_20261113_220000_remove_featured_departures.down,
+    name: '20261113_220000_remove_featured_departures',
   },
 ];

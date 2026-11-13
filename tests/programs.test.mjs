@@ -4,21 +4,11 @@ import { migrationGroups, departureKey, resolveProgram } from '../src/lib/progra
 import { planImport } from '../src/lib/import-records.ts'
 import { toPublicPackage } from '../src/lib/catalog.ts'
 import { DEFAULT_FLYER } from '../src/lib/flyer.ts'
-import { departureSelectionLabel, departureViewWhere, departureViewURL, parseDepartureView } from '../src/lib/admin-views.ts'
+import { departureViewWhere, departureViewURL, parseDepartureView } from '../src/lib/admin-views.ts'
 import { bannersAt } from '../src/lib/banners.ts'
 
 const row = { source_key: '1', program: 'Europa', mtpe: ' mt01 ', destination: 'Madrid', zone: 'Europa', origin: 'Lima', days: '10', nights: '8', travel_date: '2029-05-10', price: '1000', booking_url: 'https://www.megatravel.pe/', description_url: 'https://cafe.megatravel.pe/', status: 'draft' }
 
-test('el selector de destacados distingue fechas y orígenes del mismo programa', () => {
-  const program = { program: 'China Milenaria', mtpe: '30062', origin: 'Lima' }
-  const first = departureSelectionLabel({ ...program, date: '2027-01-04' })
-  const second = departureSelectionLabel({ ...program, date: '2027-02-02' })
-  const otherOrigin = departureSelectionLabel({ ...program, date: '2027-01-04', origin: 'Arequipa' })
-  assert.match(first, /China Milenaria.*2027-01-04.*Lima.*30062/)
-  assert.match(second, /2027-02-02/)
-  assert.notEqual(first, second)
-  assert.notEqual(first, otherOrigin)
-})
 test('CSV comparte un programa por MTPE y permite precios y fechas distintos', () => {
   const result = planImport([row, { ...row, source_key: '2', travel_date: '2029-06-10', price: '1500' }])
   assert.equal(result.errors.length, 0); assert.equal(result.accepted.length, 2)

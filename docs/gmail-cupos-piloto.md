@@ -10,6 +10,14 @@ El servicio lee los avisos de Gmail y trabaja en simulación por defecto. El mod
 4. Configurar `SEAT_MAIL_ALLOWED_SENDERS` con las direcciones reales del encabezado externo `From` observado tras el reenvío. Algunos reenvíos conservan el remitente original y otros utilizan el reenviador. Una línea `De:` dentro del cuerpo no autoriza el mensaje. Evitar remitentes compartidos de uso general y comprobar su procedencia antes de habilitar el piloto.
 5. Validar las plantillas con correos completos anonimizados. Los campos ausentes, las contradicciones y las partes texto/HTML que no identifican el mismo evento pasan a revisión. No se deducen sillas de listas de pasajeros.
 
+## Plantillas de Meganet
+
+Se aceptan los totales explícitos `Reservas: 2 personas` y `Pasajeros: 1`, además de cantidad, sillas, cupos y plazas. No se cuentan nombres, documentos, edades ni filas de pasajeros. `Estado de la reserva: RQ` equivale a **A petición**. Un aviso sin estado informa **Falta el estado** y conserva la cantidad reconocida sin descontar.
+
+La referencia explícita `MTP-CLOSEDTOUR-…` identifica la plantilla Meganet en la que **Comprobación** contiene la fecha de salida. En otros formatos no se toma una fecha de comprobante como salida. **ID del viaje** se conserva como `tripId` auxiliar en el JSON comercial; no identifica la reserva ni modifica su deduplicación. Cualquier otra referencia incompatible bloquea el movimiento. Las partes texto/HTML compatibles se combinan; los faltantes se recalculan y las contradicciones se conservan mediante incidencias estructuradas.
+
+Las pruebas operativas utilizarán mensajes nuevos. Los avisos ya observados conservan su historial y no se reprocesan automáticamente. Mantener el buzón, el cron y los cursores. Después del despliegue, comprobar con un correo nuevo recibido por el lector real; las pruebas MIME/IMAP simuladas y las capturas no verifican la recepción operativa.
+
 ## Configuración privada
 
 | Variable | Valor |

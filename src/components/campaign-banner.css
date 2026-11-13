@@ -25,12 +25,12 @@
   object-position: center;
 }
 
-/* Banners al final de la grilla de productos (1 ancho completo o 2: rectangular + cuadrado con contador) */
+/* Promociones al inicio de la grilla, antes del ordenamiento y selector de vista. */
 .catalog-end-banners {
   display: grid;
   gap: 18px;
   width: 100%;
-  margin-top: 24px;
+  margin: 0 0 28px;
 }
 
 .catalog-end-banners.is-single {
@@ -258,6 +258,9 @@
 }
 
 @media (max-width: 760px) {
+  .catalog-end-banners {
+    margin-bottom: 24px;
+  }
   .banners-await-viewport {
     display: none;
   }

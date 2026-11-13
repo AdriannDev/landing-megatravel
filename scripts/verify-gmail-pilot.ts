@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import type { GmailClient, GmailClientFactory } from '../src/server/gmail-mail'
+import { bookingMime } from '../tests/fixtures/real-booking-emails.mjs'
 process.env.USE_SQLITE = 'true'
 Object.assign(process.env, { NODE_ENV: 'test' })
 process.env.PAYLOAD_SECRET = randomUUID() + randomUUID()
@@ -245,6 +246,53 @@ try {
   assert.equal(concurrentMinimal.filter(event => event.outcome === 'proposed').length, 1)
   assert.equal(concurrentMinimal.filter(event => event.outcome === 'review').length, 1)
   assert.equal(await minimalBalance(), 8); checks++
+
+  // Anonymized real templates through MIME, IMAP cursors and Payload transactions.
+  const templates = await createDepartures(payload, req, {
+    program: { program: 'QA plantillas reales', mtpe: '20143', destination: 'Madrid', zone: 'Europa', days: 8, availableSeats: 10, seatsConfirmed: true, bookingUrl: 'https://www.megatravel.pe/', descriptionUrl: 'https://cafe.megatravel.pe/' },
+    origin: 'Lima', departures: [{ date: '2026-11-21', price: 2000 }, { date: '2026-11-22', price: 2100 }],
+  })
+  for (const departure of templates.created) await payload.db.updateOne({ collection: 'departures', id: departure.id, req, data: { seatsReconciledAt: '2026-11-01T00:00:00Z' } })
+  const templateConfig = { ...gmail, user: 'plantillas@example.test', live: { ...live.live, mtpes: ['20143'] } }
+  const templateBalances = () => Promise.all(templates.created.map(async departure => (await payload.findByID({ collection: 'departures', id: departure.id, req })).availableSeats))
+  messages.clear(); let templateUid = 0
+  const readTemplate = async (example: number, overrides: Record<string, string | undefined> = {}, messageId = `template-${templateUid + 1}`) => {
+    messages.set(++templateUid, Buffer.concat([Buffer.from(`Message-ID: <${messageId}@example.test>\r\n`), bookingMime(example, { Programa: 'Programa de prueba MTPE-20143', ...overrides })]))
+    assert.equal((await syncGmailMailbox(payload, templateConfig, factory)).processed, 1)
+    return (await payload.find({ collection: 'seat-mail-events', req, sort: '-id', limit: 1 })).docs[0]
+  }
+  const observedTemplate = await readTemplate(1)
+  assert.equal(observedTemplate.reason, 'Falta el estado.'); assert.equal(observedTemplate.seats, 2)
+  assert.deepEqual(await templateBalances(), [10, 10])
+  assert.equal((await readTemplate(1, { Estado: 'Reserva' })).delta, -2)
+  assert.deepEqual(await templateBalances(), [8, 10])
+  await readTemplate(1, { Estado: 'Reserva' })
+  assert.deepEqual(await templateBalances(), [8, 10])
+  const secondTemplate = await readTemplate(2)
+  assert.equal(secondTemplate.delta, -1); assert.equal((secondTemplate.event as any).tripId, 'MTP-6478')
+  assert.deepEqual(await templateBalances(), [7, 10])
+  await readTemplate(2, { 'ID del viaje': 'MTP-9999' })
+  assert.deepEqual(await templateBalances(), [7, 10])
+  await readTemplate(2, { Pasajeros: '3' })
+  assert.deepEqual(await templateBalances(), [5, 10])
+  const transferTemplate = await readTemplate(2, { Comprobación: '22/11/2026', Pasajeros: '3' })
+  assert.equal((transferTemplate.movements as any[]).length, 2)
+  assert.deepEqual(await templateBalances(), [8, 7])
+  await readTemplate(2, { Comprobación: '22/11/2026', Pasajeros: '3', 'Estado de la reserva': 'Cancelado' })
+  await readTemplate(2, { Comprobación: '22/11/2026', Pasajeros: '3', 'Estado de la reserva': 'Cancelado' })
+  assert.deepEqual(await templateBalances(), [8, 10])
+  for (const overrides of [{ Referencia: 'MTP-99999' }, { Pasajeros: 'Persona A, Persona B' }, { Comprobación: undefined }]) {
+    assert.equal((await readTemplate(2, overrides)).outcome, 'review')
+    assert.deepEqual(await templateBalances(), [8, 10])
+  }
+  assert.equal((await payload.findByID({ collection: 'seat-mail-events', id: observedTemplate.id, req })).reason, 'Falta el estado.')
+  assert.equal((await syncGmailMailbox(payload, templateConfig, factory)).processed, 0); checks++
+  const extraOrigin = await createDepartures(payload, req, { programId: templates.programId, origin: 'Arequipa', departures: [{ date: '2026-11-21', price: 2200 }] })
+  await payload.db.updateOne({ collection: 'departures', id: extraOrigin.created[0].id, req, data: { seatsReconciledAt: null, seatsReconciledQuantity: null } })
+  assert.match((await readTemplate(2)).reason, /origen.*ambiguo/)
+  assert.match((await readTemplate(2, { Origen: 'Arequipa' })).reason, /concili/)
+  assert.deepEqual(await templateBalances(), [8, 10])
+  assert.equal((await payload.findByID({ collection: 'departures', id: extraOrigin.created[0].id, req })).seatsReconciledAt, null); checks++
 
   process.env.SEAT_MAIL_PILOT_ENABLED = 'false'; process.env.SEAT_MAIL_PROVIDER = 'unsupported'
   process.env.SEAT_MAIL_MODE = 'simulation'

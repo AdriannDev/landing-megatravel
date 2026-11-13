@@ -37,7 +37,8 @@
     "check:repository": "node scripts/check-repository.mjs",
     "prepare:commits": "node scripts/prepare-commits.mjs",
     "test:departure-seats": "tsx scripts/verify-departure-seats.ts",
-    "test:seats-migration": "tsx scripts/verify-departure-seats-migration.ts"
+    "test:seats-migration": "tsx scripts/verify-departure-seats-migration.ts",
+    "test:featured-migration": "tsx scripts/verify-featured-retirement-migration.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.90.2",

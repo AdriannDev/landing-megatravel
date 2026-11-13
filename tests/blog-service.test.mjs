@@ -153,12 +153,12 @@ test('rechaza imágenes externas, credenciales, puertos y descargas demasiado gr
 test('la actualización manual ignora los cinco días y devuelve los datos guardados para renovar el panel', async () => {
   const { payload, state, fetcher } = fakeCMS()
   state.settings.blogLastSyncedAt = new Date().toISOString()
-  state.settings.featuredDeparture1 = 42
+  state.settings.contactLabel = 'Ventas'
   assert.equal((await syncMegaTravelBlog(payload, { fetcher })).status, 'skipped')
   const result = await refreshMegaTravelBlogNow(payload, { user: { role: 'admin' } }, { fetcher })
   assert.equal(result.posts, 6)
   assert.equal(result.settings.blogPosts.length, 6)
-  assert.equal(result.settings.featuredDeparture1, 42)
+  assert.equal(result.settings.contactLabel, 'Ventas')
   assert.equal(state.updates, 1)
 })
 

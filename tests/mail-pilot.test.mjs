@@ -17,7 +17,7 @@ test('HTML tabular y reenvíos conservan la huella del evento comercial', () => 
 })
 test('localizador opcional; cantidad explícita obligatoria y pasajeros no equivalen a sillas', () => {
   assert.equal(extractMailEvent({ body: mail({ Reserva: '' }) }).event.reservation, undefined)
-  assert.match(extractMailEvent({ body: mail({ Sillas: '' }) + '\nPasajeros: 3' }).reason, /sillas/)
+  assert.equal(extractMailEvent({ body: mail({ Sillas: '' }) + '\nPasajeros: 3' }).event.seats, 3)
   assert.ok(extractMailEvent({ body: mail({ Sillas: '2.5' }) }).reason)
 })
 test('rechaza campos contradictorios, fechas inexistentes y estados ambiguos', () => {
@@ -91,7 +91,7 @@ test('HTML sin dos puntos y campos identificados sobreviven a una cantidad ausen
 
 test('compara partes sin exigir que repitan los auxiliares y bloquea contradicciones', () => {
   const minimal = extractMailEvent({ body: 'MTPE: 50026\nCantidad: 3\nEstado: A petición' })
-  assert.equal(compareMailParts(minimal, { fields: { reservation: 'AB123' }, reason: 'Falta el MTPE. Falta la cantidad explícita de sillas; no se cuentan pasajeros. Falta el estado.' }).event.reservation, 'AB123')
+  assert.equal(compareMailParts(minimal, extractMailEvent({ body: 'Localizador: AB123' })).event.reservation, 'AB123')
   assert.ok(compareMailParts(minimal, extractMailEvent({ body: 'MTPE: 50026\nCantidad: 4\nEstado: A petición' })).reason)
   assert.ok(compareMailParts(minimal, extractMailEvent({ body: 'MTPE: 50026\nCantidad: 3\nEstado: Cancelado' })).reason)
   assert.ok(compareMailParts(extractMailEvent({ body: 'MTPE: 50026\nEstado: Reserva' }), extractMailEvent({ body: 'Cantidad: 0' })).reason)

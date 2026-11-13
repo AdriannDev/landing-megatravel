@@ -24,6 +24,63 @@ const oldSchema = `CREATE TABLE audit_log(id INTEGER PRIMARY KEY,departure_id TE
  CREATE TABLE payload_locked_documents_rels(id INTEGER PRIMARY KEY,parent_id INTEGER NOT NULL,path TEXT NOT NULL);
  INSERT INTO payload_locked_documents_rels VALUES(1,5,'document');`
 
+test('retira solo las fijaciones con respaldo, conserva blog, relaciones, índices y triggers; arranque repetible', () => fixture(async (db, file) => {
+  db.exec(`PRAGMA foreign_keys=ON;
+    CREATE TABLE departures(id INTEGER PRIMARY KEY, program_ref_id INTEGER, departure_key TEXT);
+    INSERT INTO departures VALUES(7,NULL,'known-departure');
+    CREATE TABLE media(id INTEGER PRIMARY KEY); INSERT INTO media VALUES(12);
+    CREATE TABLE settings(id INTEGER PRIMARY KEY,contact_label TEXT NOT NULL DEFAULT 'Contacto, ventas',seats_validity_hours NUMERIC NOT NULL DEFAULT 72,custom_media_id INTEGER REFERENCES media(id),blog_last_synced_at TEXT,featured_departure1_id INTEGER,featured_departure2_id INTEGER,
+      FOREIGN KEY(featured_departure1_id) REFERENCES departures(id) ON DELETE SET NULL,
+      FOREIGN KEY(featured_departure2_id) REFERENCES departures(id) ON DELETE SET NULL);
+    CREATE INDEX settings_featured_departure1_idx ON settings(featured_departure1_id);
+    CREATE INDEX settings_featured_departure2_idx ON settings(featured_departure2_id);
+    CREATE UNIQUE INDEX settings_contact_idx ON settings(contact_label);
+    CREATE TABLE settings_blog_posts(id TEXT PRIMARY KEY,_parent_id INTEGER REFERENCES settings(id) ON DELETE CASCADE,image_id INTEGER REFERENCES media(id),image_url TEXT);
+    INSERT INTO settings VALUES(42,'Ventas',24,12,'2026-11-12T00:00:00Z',7,7);
+    INSERT INTO settings_blog_posts VALUES('blog-original',42,12,'https://example.test/blog.webp');
+    CREATE TABLE settings_updates(id INTEGER PRIMARY KEY);
+    CREATE TRIGGER settings_updated AFTER UPDATE ON settings BEGIN INSERT INTO settings_updates VALUES(NEW.id); END;`)
+  const blog = db.prepare('SELECT * FROM settings_blog_posts').all()
+  const result = await prepareLegacySqliteSchema(file)
+  assert.equal(result.columnsRemoved, 2)
+  const copy = new DatabaseSync(result.backup, { readOnly: true })
+  try { assert.equal(copy.prepare('SELECT featured_departure1_id FROM settings').get().featured_departure1_id, 7); assert.deepEqual(copy.prepare('SELECT * FROM settings_blog_posts').all(), blog) } finally { copy.close() }
+  assert.deepEqual(db.prepare('SELECT * FROM settings').get(), Object.assign(Object.create(null), { id: 42, contact_label: 'Ventas', seats_validity_hours: 24, custom_media_id: 12, blog_last_synced_at: '2026-11-12T00:00:00Z' }))
+  assert.deepEqual(db.prepare('SELECT * FROM settings_blog_posts').all(), blog)
+  assert.ok(db.prepare('PRAGMA foreign_key_list(settings)').all().some(key => key.from === 'custom_media_id' && key.table === 'media'))
+  assert.ok(db.prepare('PRAGMA index_list(settings)').all().some(index => index.name === 'settings_contact_idx' && index.unique === 1))
+  assert.equal(await prepareLegacySqliteSchema(file), null)
+  db.exec("UPDATE settings SET contact_label='Otro'")
+  assert.equal(db.prepare('SELECT id FROM settings_updates').get().id, 42)
+  assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), [])
+}))
+
+test('las excepciones de fijaciones no permiten perder otras columnas, datos ni relaciones', () => fixture(async (db, file) => {
+  db.exec(`CREATE TABLE settings(id INTEGER PRIMARY KEY,contact_label TEXT,seats_validity_hours NUMERIC DEFAULT 72);
+    INSERT INTO settings VALUES(1,'Original',24);
+    CREATE TABLE other(id INTEGER PRIMARY KEY,setting_id INTEGER REFERENCES settings(id),value TEXT);
+    INSERT INTO other VALUES(8,1,'Conservar');`)
+  await assert.rejects(applySqliteSchemaPlan(file, ['ALTER TABLE settings DROP COLUMN contact_label']), /alteró datos originales/)
+  await assert.rejects(applySqliteSchemaPlan(file, ["UPDATE other SET value='Perdido'"]), /alteró datos originales/)
+  await assert.rejects(applySqliteSchemaPlan(file, ['CREATE TABLE new_other(id INTEGER PRIMARY KEY,setting_id INTEGER,value TEXT)', 'INSERT INTO new_other SELECT * FROM other', 'DROP TABLE other', 'ALTER TABLE new_other RENAME TO other']), /relaciones/)
+  assert.equal(db.prepare('SELECT contact_label FROM settings').get().contact_label, 'Original')
+  assert.equal(db.prepare('SELECT value FROM other').get().value, 'Conservar')
+  assert.equal(db.prepare('PRAGMA foreign_key_list(other)').all().length, 1)
+}))
+
+test('una dependencia adicional de las columnas retiradas revierte toda la preparación', () => fixture(async (db, file) => {
+  db.exec(`CREATE TABLE settings(id INTEGER PRIMARY KEY,contact_label TEXT,featured_departure1_id INTEGER);
+    INSERT INTO settings VALUES(5,'Conservar',7);
+    CREATE INDEX custom_featured_idx ON settings(featured_departure1_id);`)
+  await assert.rejects(prepareLegacySqliteSchema(file), /featured_departure1_id/)
+  assert.equal(db.prepare('SELECT featured_departure1_id FROM settings').get().featured_departure1_id, 7)
+  assert.equal(db.prepare('PRAGMA table_info(settings)').all().some(c => c.name === 'seats_validity_hours'), false)
+  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name='custom_featured_idx'").get())
+  db.exec('DROP INDEX custom_featured_idx; CREATE INDEX settings_featured_departure1_idx ON settings(contact_label)')
+  await assert.rejects(prepareLegacySqliteSchema(file), /no corresponde/)
+  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name='settings_featured_departure1_idx'").get())
+}))
+
 test('prepara base antigua con WAL y reconstrucción interrumpida, conserva datos, índices y respaldo', () => fixture(async (db, file) => {
   db.exec('PRAGMA journal_mode=WAL'); db.exec(oldSchema)
   db.exec('CREATE TABLE __new_audit_log(id INTEGER PRIMARY KEY)')

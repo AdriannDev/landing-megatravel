@@ -1,14 +1,13 @@
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import type { CollectionConfig, Field, GlobalConfig } from 'payload'
-import { ValidationError } from 'payload'
 import { contentAccess, isAdmin, isEditor, never } from '../server/access'
 import { isDateOnly, safeExternalUrl } from '../lib/lifecycle'
 import { prepareDeparture, recordDepartureAudit, recordDepartureDeletion } from '../server/hooks'
 import { DEFAULT_CONTACT_URL, DEFAULT_CONTACT_LABEL } from '../lib/brand-config'
 import { prepareProgram, resolveDepartureProgram, syncProgramSnapshots } from '../server/program-hooks'
 import { departureViewWhere, parseDepartureView } from '../lib/admin-views'
-import { relationID, sharedFields } from '../lib/programs'
+import { sharedFields } from '../lib/programs'
 import { DEFAULT_SEATS_VALIDITY_HOURS, MAX_SEATS_VALIDITY_HOURS, validSeatCount } from '../lib/availability'
 import { getSeatSettings } from '../server/availability-settings'
 import { optimizeMedia } from '../server/optimize-media'
@@ -70,21 +69,21 @@ export const Banners: CollectionConfig = {
   slug: 'banners', labels: { singular: 'Banner', plural: 'Banners' }, access: contentAccess,
   admin: { group: 'Contenido', useAsTitle: 'alt', defaultColumns: ['alt', 'placement', 'enabled', 'order', 'startsAt', 'endsAt'] },
   fields: [
-    { name: 'placement', label: 'Ubicación', type: 'select', required: true, defaultValue: 'hero', options: [{ label: 'Hero', value: 'hero' }, { label: 'Rompetráfico entre resultados', value: 'between-results' }, { label: 'Final de la grilla (1 o 2 banners)', value: 'catalog-end' }, { label: 'Popup (ventana emergente)', value: 'popup' }], admin: { description: 'El rompetráfico aparece después de 6 productos; con fila destacada en escritorio, después de 2 grandes y 6 normales. Admite varios banners y los rota automáticamente sin controles. En «Final de la grilla»: si hay 1 banner ocupa todo el ancho; si hay 2, el primero es rectangular y el segundo cuadrado.' } },
+    { name: 'placement', label: 'Ubicación', type: 'select', required: true, defaultValue: 'hero', options: [{ label: 'Hero', value: 'hero' }, { label: 'Rompetráfico entre resultados', value: 'between-results' }, { label: 'Inicio de la grilla (1 o 2 banners)', value: 'catalog-end' }, { label: 'Popup (ventana emergente)', value: 'popup' }], admin: { description: 'El rompetráfico aparece después de los primeros 6 productos de cada página. Admite varios banners y los rota automáticamente sin controles. Antes del ordenamiento y del selector de lista o tarjetas: si hay 1 banner ocupa todo el ancho; si hay 2, el primero es rectangular y el segundo cuadrado.' } },
     { name: 'popupFormat', label: 'Formato del popup', type: 'select', defaultValue: 'text', options: [{ label: 'Imagen con texto', value: 'text' }, { label: 'Solo imagen', value: 'image' }], admin: { condition: data => data.placement === 'popup' } },
-    { name: 'countdownEnabled', label: 'Mostrar contador regresivo sobre el banner', type: 'checkbox', defaultValue: false, admin: { condition: data => data.placement === 'catalog-end', description: 'Ideal para el banner cuadrado al final de la grilla (por ejemplo, para destacar un programa con tiempo límite).' } },
+    { name: 'countdownEnabled', label: 'Mostrar contador regresivo sobre el banner', type: 'checkbox', defaultValue: false, admin: { condition: data => data.placement === 'catalog-end', description: 'Ideal para el banner cuadrado al inicio de la grilla (por ejemplo, para destacar un programa con tiempo límite).' } },
     { name: 'countdownEndsAt', label: 'Fecha y hora límite del contador', type: 'date', admin: { condition: data => data.placement === 'catalog-end' && data.countdownEnabled === true, date: { pickerAppearance: 'dayAndTime' }, description: 'Define hasta cuándo cuenta el reloj. Si queda vacío, usará «Visible hasta». El panel utiliza America/Lima.' } },
     { name: 'popupLabel', label: 'Etiqueta superior', type: 'text', maxLength: 120, admin: { condition: data => (data.placement === 'popup' && data.popupFormat !== 'image') || data.placement === 'catalog-end', description: 'Opcional. Aparece en pequeño encima del título.' } },
-    { name: 'title', label: 'Título', type: 'text', maxLength: 120, validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => siblingData?.placement !== 'popup' || siblingData?.popupFormat === 'image' || !!String(value || '').trim() || 'Escribe un título para el popup.', admin: { condition: data => (data.placement === 'popup' && data.popupFormat !== 'image') || data.placement === 'catalog-end', description: 'Obligatorio en popup con texto; opcional en los banners del final de la grilla.' } },
+    { name: 'title', label: 'Título', type: 'text', maxLength: 120, validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => siblingData?.placement !== 'popup' || siblingData?.popupFormat === 'image' || !!String(value || '').trim() || 'Escribe un título para el popup.', admin: { condition: data => (data.placement === 'popup' && data.popupFormat !== 'image') || data.placement === 'catalog-end', description: 'Obligatorio en popup con texto; opcional en los banners del inicio de la grilla.' } },
     { name: 'message', label: 'Texto de la noticia o promoción', type: 'textarea', maxLength: 2000, admin: { condition: data => data.placement === 'popup' && data.popupFormat !== 'image', description: 'Puedes publicar una noticia solo con título y texto, sin imagen.' } },
     { name: 'popupKind', label: 'Tipo de anuncio', type: 'select', defaultValue: 'promotion', options: [{ label: 'Promoción', value: 'promotion' }, { label: 'Noticia', value: 'news' }], admin: { condition: data => data.placement === 'popup' } },
     { name: 'buttonLabel', label: 'Texto del botón', type: 'text', maxLength: 60, defaultValue: 'Conocer más', admin: { condition: data => (data.placement === 'popup' && data.popupFormat !== 'image') || data.placement === 'catalog-end', description: 'El botón aparece cuando completas el enlace opcional.' } },
     { name: 'popupSecondaryLabel', label: 'Texto de acción secundaria', type: 'text', maxLength: 60, admin: { condition: data => data.placement === 'popup' && data.popupFormat !== 'image', description: 'Si queda vacío se mostrará «Seguir explorando».' } },
     { name: 'popupFrequency', label: 'Frecuencia del popup', type: 'select', defaultValue: 'session', options: [{ label: 'Una vez por sesión', value: 'session' }, { label: 'Una vez cada 24 horas', value: 'daily' }, { label: 'Cada visita al catálogo', value: 'always' }], admin: { condition: data => data.placement === 'popup' } },
     { name: 'popupDelay', label: 'Espera antes de abrir (segundos)', type: 'number', defaultValue: 2, min: 0, max: 60, admin: { condition: data => data.placement === 'popup' } },
-    { name: 'image', label: 'Imagen o GIF de escritorio', type: 'upload', relationTo: 'media', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => (siblingData?.placement === 'popup' && siblingData?.popupFormat !== 'image') || !!value || 'Selecciona una imagen.', admin: { description: 'Tamaños ideales: Hero 1600 × 300 px · Rompetráfico 1200 × 70 px (se muestra completo, con altura proporcional) · Final de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.' } },
+    { name: 'image', label: 'Imagen o GIF de escritorio', type: 'upload', relationTo: 'media', validate: (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) => (siblingData?.placement === 'popup' && siblingData?.popupFormat !== 'image') || !!value || 'Selecciona una imagen.', admin: { description: 'Tamaños ideales: Hero 1600 × 300 px · Rompetráfico 1200 × 70 px (se muestra completo, con altura proporcional) · Inicio de grilla: 900 × 640 px (rectangular) y 640 × 640 px (cuadrado) · Popup: 1200 × 900 px. Máximo 12 MB.' } },
     { name: 'staticImage', label: 'Alternativa estática', type: 'upload', relationTo: 'media', admin: { hidden: true } },
-    { name: 'mobileImage', label: 'Imagen para móvil (opcional)', type: 'upload', relationTo: 'media', admin: { description: 'Hero y contador: 800 × 800 px. Rompetráfico: 800 × 160 px. Hasta 760 px, los banners Hero y Rompetráfico solo aparecen si tienen imagen móvil. El banner final rectangular conserva la imagen de escritorio; los demás formatos usan escritorio si no hay imagen móvil. Máximo 12 MB.' } },
+    { name: 'mobileImage', label: 'Imagen para móvil (opcional)', type: 'upload', relationTo: 'media', admin: { description: 'Hero y contador: 800 × 800 px. Rompetráfico: 800 × 160 px. Hasta 760 px, los banners Hero y Rompetráfico solo aparecen si tienen imagen móvil. El banner rectangular de la grilla conserva la imagen de escritorio; los demás formatos usan escritorio si no hay imagen móvil. Máximo 12 MB.' } },
     { name: 'alt', label: 'Texto alternativo', type: 'text', required: true },
     { name: 'href', label: 'Enlace opcional', type: 'text', validate: urlValidation },
     { name: 'popupPreview', type: 'ui', admin: { condition: data => data.placement === 'popup', components: { Field: '/components/admin/popup-preview#PopupPreview' } } },
@@ -275,19 +274,9 @@ export const AuditLog: CollectionConfig = {
 export const Settings: GlobalConfig = {
   slug: 'settings', label: 'Configuración del catálogo', access: { read: isAdmin, update: isAdmin },
   admin: { group: 'Configuración' },
-  hooks: { beforeValidate: [({ data, originalDoc, req }) => {
-    const merged = { ...originalDoc, ...data }
-    const first = relationID(merged.featuredDeparture1), second = relationID(merged.featuredDeparture2)
-    if (first != null && second != null && String(first) === String(second)) throw new ValidationError({ global: 'settings', req, errors: [{ path: 'featuredDeparture2', message: 'Elige una salida distinta para cada espacio destacado.' }] })
-    return data
-  }] },
   fields: [
     { name: 'contactUrl', label: 'Enlace de contacto comercial', type: 'text', required: true, defaultValue: DEFAULT_CONTACT_URL, validate: urlValidation },
     { name: 'contactLabel', label: 'Texto del botón de contacto', type: 'text', required: true, defaultValue: DEFAULT_CONTACT_LABEL },
-    { type: 'collapsible', label: 'Salidas fijadas al inicio', admin: { initCollapsed: false }, fields: [
-      { name: 'featuredDeparture1', label: 'Destacada 1 (opcional)', type: 'relationship', relationTo: 'departures', maxDepth: 0, admin: { components: { Field: '/components/admin/featured-departure-field#FeaturedDepartureField' } } },
-      { name: 'featuredDeparture2', label: 'Destacada 2 (opcional)', type: 'relationship', relationTo: 'departures', maxDepth: 0, admin: { components: { Field: '/components/admin/featured-departure-field#FeaturedDepartureField' } } },
-    ] },
     { name: 'seatsValidityHours', label: 'Vigencia de cupos referenciales (horas)', type: 'number', required: true, defaultValue: DEFAULT_SEATS_VALIDITY_HOURS, min: 1, max: MAX_SEATS_VALIDITY_HOURS, validate: (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_SEATS_VALIDITY_HOURS || 'Indica horas enteras entre 1 y 720.', admin: { step: 1, description: 'Al vencer se ocultan cantidad y «Últimos cupos» hasta una nueva revisión. La salida sigue publicada.' } },
     { name: 'blogRefresh', type: 'ui', admin: { components: { Field: '/components/admin/blog-refresh#BlogRefresh' } } },
     { name: 'blogPosts', label: 'Artículos automáticos de Mega Blog', type: 'array', maxRows: 6, admin: { readOnly: true, description: 'El sistema prepara seis artículos y sus imágenes optimizadas desde Mega Blog. Puedes usar «Actualizar ahora» para buscar novedades sin esperar cinco días.' }, fields: [
