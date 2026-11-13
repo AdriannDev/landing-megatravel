@@ -1,5 +1,7 @@
 # Verificación del panel y piloto
 
+Registro histórico de la entrega del 10 de noviembre. Las reglas y el panel vigentes se verifican en [banners, popup y correos observados](verificacion-banners-correos.md); las herramientas manuales descritas aquí fueron retiradas.
+
 Verificación local realizada el 10 de noviembre de 2026, con Node 24.22.1, sin conectar buzones ni aplicar migraciones a producción.
 
 | Comprobación | Resultado |

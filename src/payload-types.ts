@@ -449,7 +449,7 @@ export interface Banner {
   image?: (number | null) | Media;
   staticImage?: (number | null) | Media;
   /**
-   * Hero y contador: 800 × 800 px. El banner final rectangular conserva su imagen de escritorio también en móvil. Rompetráfico: 800 × 160 px, con texto adaptado a móvil. Si no se agrega, se usa la imagen de escritorio. Máximo 12 MB.
+   * Hero y contador: 800 × 800 px. Rompetráfico: 800 × 160 px. Hasta 760 px, los banners Hero y Rompetráfico solo aparecen si tienen imagen móvil. El banner final rectangular conserva la imagen de escritorio; los demás formatos usan escritorio si no hay imagen móvil. Máximo 12 MB.
    */
   mobileImage?: (number | null) | Media;
   alt: string;
@@ -530,16 +530,28 @@ export interface SeatPilotReservation {
   createdAt: string;
 }
 /**
+ * Avisos que bloquearon un movimiento y advertencias de movimientos aplicados. Revisa el cuerpo completo en el buzón; no se guarda aquí.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "seat-mail-events".
  */
 export interface SeatMailEvent {
   id: number;
   messageKey: string;
+  sourceKey?: string | null;
   eventKey?: string | null;
   duplicateOf?: string | null;
   mtpe?: string | null;
   reservation?: string | null;
+  subject?: string | null;
+  sender?: string | null;
+  receivedAt?: string | null;
+  seats?: number | null;
+  status?: ('pending' | 'confirmed' | 'cancelled' | 'expired') | null;
+  travelDate?: string | null;
+  occurredAt?: string | null;
+  version?: number | null;
+  observation?: ('blocked' | 'warning') | null;
   outcome: 'proposed' | 'review' | 'duplicate';
   reason: string;
   event?:
@@ -940,10 +952,20 @@ export interface SeatPilotReservationsSelect<T extends boolean = true> {
  */
 export interface SeatMailEventsSelect<T extends boolean = true> {
   messageKey?: T;
+  sourceKey?: T;
   eventKey?: T;
   duplicateOf?: T;
   mtpe?: T;
   reservation?: T;
+  subject?: T;
+  sender?: T;
+  receivedAt?: T;
+  seats?: T;
+  status?: T;
+  travelDate?: T;
+  occurredAt?: T;
+  version?: T;
+  observation?: T;
   outcome?: T;
   reason?: T;
   event?: T;

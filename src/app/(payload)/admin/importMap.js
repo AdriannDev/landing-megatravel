@@ -10,12 +10,12 @@ import { BulkDepartureDelete as BulkDepartureDelete_b67f14c16c7d4161f37d03109cf3
 import { BulkProgramDelete as BulkProgramDelete_b67f14c16c7d4161f37d03109cf37c16 } from '../../../components/admin/delete-records'
 import { ProgramDocumentDelete as ProgramDocumentDelete_b67f14c16c7d4161f37d03109cf37c16 } from '../../../components/admin/delete-records'
 import { PopupPreview as PopupPreview_bdcaee27f9c0503162cee4876f3fd152 } from '../../../components/admin/popup-preview'
+import { MailObservationCell as MailObservationCell_aad711ae785b0725a66063356ee9beeb } from '../../../components/admin/mail-observation-cell'
 import { FeaturedDepartureField as FeaturedDepartureField_46df8f553b3ef07739a186c2fcfa4a5d } from '../../../components/admin/featured-departure-field'
 import { BlogRefresh as BlogRefresh_2198d41a938930e1bd3934cd868aedf2 } from '../../../components/admin/blog-refresh'
 import { PanelIcon as PanelIcon_8080e1ef1118adf03a39f8c4df3468b1 } from '../../../components/admin/brand'
 import { PanelLogo as PanelLogo_8080e1ef1118adf03a39f8c4df3468b1 } from '../../../components/admin/brand'
 import { PanelNavigation as PanelNavigation_143cf35d08d11e96cad4e1658483ebbf } from '../../../components/admin/panel-navigation'
-import { MailPilotView as MailPilotView_fcb16dd325a83471b2a7318c4343bbae } from '../../../components/admin/mail-pilot-view'
 import { AdminHome as AdminHome_cb47140cf1c61abcf2af833261923f85 } from '../../../components/admin/admin-home'
 import { NewDepartureView as NewDepartureView_566f6b3ace942112d6b5414cca541481 } from '../../../components/admin/new-departure-view'
 import { NewDateView as NewDateView_96938c75b0c9337db691db26bc406f25 } from '../../../components/admin/new-date-view'
@@ -35,12 +35,12 @@ export const importMap = {
   "/components/admin/delete-records#BulkProgramDelete": BulkProgramDelete_b67f14c16c7d4161f37d03109cf37c16,
   "/components/admin/delete-records#ProgramDocumentDelete": ProgramDocumentDelete_b67f14c16c7d4161f37d03109cf37c16,
   "/components/admin/popup-preview#PopupPreview": PopupPreview_bdcaee27f9c0503162cee4876f3fd152,
+  "/components/admin/mail-observation-cell#MailObservationCell": MailObservationCell_aad711ae785b0725a66063356ee9beeb,
   "/components/admin/featured-departure-field#FeaturedDepartureField": FeaturedDepartureField_46df8f553b3ef07739a186c2fcfa4a5d,
   "/components/admin/blog-refresh#BlogRefresh": BlogRefresh_2198d41a938930e1bd3934cd868aedf2,
   "/components/admin/brand#PanelIcon": PanelIcon_8080e1ef1118adf03a39f8c4df3468b1,
   "/components/admin/brand#PanelLogo": PanelLogo_8080e1ef1118adf03a39f8c4df3468b1,
   "/components/admin/panel-navigation#PanelNavigation": PanelNavigation_143cf35d08d11e96cad4e1658483ebbf,
-  "/components/admin/mail-pilot-view#MailPilotView": MailPilotView_fcb16dd325a83471b2a7318c4343bbae,
   "/components/admin/admin-home#AdminHome": AdminHome_cb47140cf1c61abcf2af833261923f85,
   "/components/admin/new-departure-view#NewDepartureView": NewDepartureView_566f6b3ace942112d6b5414cca541481,
   "/components/admin/new-date-view#NewDateView": NewDateView_96938c75b0c9337db691db26bc406f25,

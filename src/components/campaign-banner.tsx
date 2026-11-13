@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import type { Banner, BannerPlacement } from "@/lib/types";
 import { popupTimeRemaining } from "@/lib/popup";
+import { bannersForViewport } from "@/lib/banners";
+import { useMobileViewport } from "./use-mobile-viewport";
 import "./campaign-banner.css";
 
 function GridEndBannerCard({
@@ -156,7 +158,9 @@ export function CampaignBanner({
   const [reduced, setReduced] = useState(false),
     [hidden, setHidden] = useState(false),
     [ready, setReady] = useState(false);
-  const count = banners.length,
+  const mobile = useMobileViewport();
+  const visibleBanners = bannersForViewport(banners, placement, mobile === true);
+  const count = visibleBanners.length,
     current = count ? index % count : 0;
   const autoRotate =
     placement === "hero" || placement === "between-results";
@@ -209,7 +213,7 @@ export function CampaignBanner({
     );
   }
 
-  const banner = banners[current];
+  const banner = visibleBanners[current];
   const navigate = (next: number) => {
     setPaused(true);
     setIndex((next + count) % count);
@@ -255,9 +259,9 @@ export function CampaignBanner({
       />
     </picture>
   );
-  return (
+  const carousel = (
     <section
-      className={`campaign-banner banner-${placement}`}
+      className={`campaign-banner banner-${placement}${mobile === null ? " banners-await-viewport" : ""}`}
       aria-roledescription="carrusel"
       aria-label={
         placement === "hero"
@@ -330,4 +334,5 @@ export function CampaignBanner({
       )}
     </section>
   );
+  return placement === "between-results" ? <div className={`catalog-interstitial${mobile === null ? " banners-await-viewport" : ""}`}>{carousel}</div> : carousel;
 }

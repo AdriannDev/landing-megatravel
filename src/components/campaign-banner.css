@@ -258,6 +258,9 @@
 }
 
 @media (max-width: 760px) {
+  .banners-await-viewport {
+    display: none;
+  }
   .catalog-end-banners.is-pair {
     grid-template-columns: 1fr;
   }

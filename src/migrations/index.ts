@@ -13,6 +13,7 @@ import * as migration_20261110_050200_program_video from './20261110_050200_prog
 import * as migration_20261110_185708_panel_deletion_and_mail_pilot from './20261110_185708_panel_deletion_and_mail_pilot';
 import * as migration_20261110_210000_gmail_mail_cursor from './20261110_210000_gmail_mail_cursor';
 import * as migration_20261112_220707_featured_departures_and_blog_images from './20261112_220707_featured_departures_and_blog_images';
+import * as migration_20261113_161026_correos_observados from './20261113_161026_correos_observados';
 
 export const migrations = [
   {
@@ -88,6 +89,11 @@ export const migrations = [
   {
     up: migration_20261112_220707_featured_departures_and_blog_images.up,
     down: migration_20261112_220707_featured_departures_and_blog_images.down,
-    name: '20261112_220707_featured_departures_and_blog_images'
+    name: '20261112_220707_featured_departures_and_blog_images',
+  },
+  {
+    up: migration_20261113_161026_correos_observados.up,
+    down: migration_20261113_161026_correos_observados.down,
+    name: '20261113_161026_correos_observados'
   },
 ];

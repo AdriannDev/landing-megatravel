@@ -1,9 +1,9 @@
-import type { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig, Field, Where } from 'payload'
 import { isAdmin, never } from '../server/access'
 
 function readonly(slug: string, singular: string, plural: string, fields: Field[], columns: string[]): CollectionConfig {
   return { slug, labels: { singular, plural }, access: { read: isAdmin, create: never, update: never, delete: never },
-    admin: { group: 'Piloto de correo', useAsTitle: columns[0], defaultColumns: columns }, fields }
+    admin: { hidden: true, useAsTitle: columns[0], defaultColumns: columns }, fields }
 }
 export const SeatPilotPools = readonly('seat-pilot-pools', 'Saldo simulado', 'Saldos simulados', [
   { name: 'mtpe', type: 'text', required: true, unique: true, index: true },
@@ -21,19 +21,34 @@ export const SeatPilotReservations = readonly('seat-pilot-reservations', 'Reserv
   { name: 'reservation', label: 'Referencia de reserva', type: 'text', required: true },
   { name: 'state', label: 'Estado normalizado (sin pasajeros)', type: 'json', required: true },
 ], ['reservation', 'mtpe', 'updatedAt'])
-export const SeatMailEvents = readonly('seat-mail-events', 'Aviso de correo', 'Revisión de correo', [
+export const SeatMailEvents: CollectionConfig = { ...readonly('seat-mail-events', 'Correo observado', 'Correos observados', [
   { name: 'messageKey', label: 'Huella del mensaje', type: 'text', required: true, unique: true },
+  { name: 'sourceKey', label: 'Huella del identificador original', type: 'text', unique: true, admin: { hidden: true } },
   { name: 'eventKey', label: 'Huella del evento', type: 'text', unique: true },
   { name: 'duplicateOf', label: 'Evento repetido', type: 'text' },
-  { name: 'mtpe', type: 'text', index: true },
-  { name: 'reservation', label: 'Referencia de reserva', type: 'text' },
+  { name: 'mtpe', label: 'MTPE', type: 'text', index: true },
+  { name: 'reservation', label: 'Localizador', type: 'text' },
+  { name: 'subject', label: 'Asunto', type: 'text' },
+  { name: 'sender', label: 'Remitente', type: 'text' },
+  { name: 'receivedAt', label: 'Fecha del mensaje', type: 'date' },
+  { name: 'seats', label: 'Cantidad', type: 'number' },
+  { name: 'status', label: 'Estado comercial', type: 'select', options: [{ label: 'A petición / Pendiente de confirmar', value: 'pending' }, { label: 'Reserva / Confirmada', value: 'confirmed' }, { label: 'Cancelado / Anulado', value: 'cancelled' }, { label: 'Vencido', value: 'expired' }] },
+  { name: 'travelDate', label: 'Salida identificada', type: 'text' },
+  { name: 'occurredAt', label: 'Fecha comercial', type: 'date' },
+  { name: 'version', label: 'Versión comercial', type: 'number' },
+  { name: 'observation', label: 'Observación', type: 'select', options: [{ label: 'Movimiento bloqueado', value: 'blocked' }, { label: 'Advertencia: movimiento aplicado', value: 'warning' }], admin: { components: { Cell: '/components/admin/mail-observation-cell#MailObservationCell' } } },
   { name: 'outcome', label: 'Resultado', type: 'select', required: true, index: true, options: [{ label: 'Movimiento procesado', value: 'proposed' }, { label: 'Requiere revisión', value: 'review' }, { label: 'Duplicado', value: 'duplicate' }] },
   { name: 'reason', label: 'Detalle', type: 'textarea', required: true },
   { name: 'event', label: 'Evento comercial (sin pasajeros)', type: 'json' },
   { name: 'delta', label: 'Variación de cupos', type: 'number' },
   { name: 'balanceBefore', label: 'Saldo anterior', type: 'number' },
   { name: 'balanceAfter', label: 'Saldo posterior', type: 'number' },
-], ['createdAt', 'mtpe', 'reservation', 'outcome', 'delta', 'reason'])
+], []), admin: {
+  group: 'Administración', useAsTitle: 'subject',
+  description: 'Avisos que bloquearon un movimiento y advertencias de movimientos aplicados. Revisa el cuerpo completo en el buzón; no se guarda aquí.',
+  defaultColumns: ['observation', 'subject', 'sender', 'receivedAt', 'mtpe', 'reservation', 'seats', 'status', 'reason'],
+  baseFilter: (): Where => ({ or: [{ outcome: { equals: 'review' } }, { observation: { equals: 'warning' } }] }),
+} }
 export const MailSyncCursors = readonly('mail-sync-cursors', 'Lector de correo', 'Lectores de correo', [
   { name: 'key', type: 'text', required: true, unique: true },
   { name: 'provider', label: 'Proveedor', type: 'select', defaultValue: 'microsoft-graph', options: [{ label: 'Gmail (IMAP)', value: 'gmail-imap' }, { label: 'Microsoft Graph', value: 'microsoft-graph' }] },

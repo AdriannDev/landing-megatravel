@@ -622,9 +622,7 @@ export function Catalog({
                         <Fragment key={item.id}>
                           <PackageCard item={item} contactUrl={liveData.contactUrl} view={view} />
                           {betweenBanners.length > 0 && index === Math.min(5, result.items.length - 1) && (
-                            <div className="catalog-interstitial">
-                              <CampaignBanner banners={betweenBanners} placement="between-results" />
-                            </div>
+                            <CampaignBanner banners={betweenBanners} placement="between-results" />
                           )}
                         </Fragment>
                       ))}

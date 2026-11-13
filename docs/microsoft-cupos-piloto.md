@@ -2,7 +2,7 @@
 
 La opción vigente es [Gmail dedicado con Railway](gmail-cupos-piloto.md). Este conector permanece como alternativa desactivada; para usarlo hay que seleccionar explícitamente `SEAT_MAIL_PROVIDER=microsoft-graph`.
 
-La entrega funciona exclusivamente en **simulación**. En **Administración → Piloto de correo** se registra un saldo inicial y se prueban avisos anonimizados. Los saldos, reservas y avisos son privados para administradores. No se modifican los cupos públicos ni su fecha de revisión.
+Este conector funciona exclusivamente en **simulación**, sobre saldos conciliados ya existentes. Las herramientas manuales del piloto fueron retiradas; las colecciones técnicas se conservan ocultas. **Administración → Correos observados**, solo para administradores, muestra bloqueos y advertencias. Gmail mantiene la opción de cupos reales descrita en su guía.
 
 ## Comprobaciones de TI
 
@@ -33,7 +33,7 @@ Crear un servicio cron **separado** en Railway con el mismo repositorio y Postgr
 
 ## Saldo inicial y plantillas
 
-Registrar un saldo verificado y fecha de corte en el panel. Se conserva el responsable. El sistema no copia automáticamente el saldo público ni reinicia saldos existentes. Un evento anterior o igual al corte requiere revisión. También requieren revisión las modificaciones, confirmaciones y cancelaciones de reservas desconocidas.
+Se mantienen el saldo verificado, responsable y fecha de corte existentes. El sistema no copia el saldo público ni reinicia saldos. Un aviso anterior o igual al corte queda observado. Una cancelación desconocida necesita revisión; el primer estado activo puede descontar sin aviso previo de creación.
 
 Faltan correos completos **anonimizados** de reserva, modificación y cancelación para adaptar el lector al formato real. La captura parcial de MTPE-50026 no demuestra la referencia de reserva ni cómo se expresan las sillas. El extractor preparado admite texto y HTML tabular con campos explícitos como:
 
@@ -48,9 +48,9 @@ Fecha del evento: 2026-11-10T12:00:00-05:00
 Versión: 1
 ```
 
-Tipos: reserva, modificación, confirmación, cancelación y vencimiento. Estados: A petición, Confirmada, Cancelada y Vencida. Cancelación y vencimiento equivalen a cero sillas retenidas y no requieren una cantidad explícita. No se cuentan pasajeros para deducir sillas. Una confirmación que cambia la cantidad requiere revisión.
+Son obligatorios MTPE, cantidad explícita y estado. Salida, tipo, fecha comercial y versión son opcionales. A petición, Reserva y Pendiente de confirmar son activos; un cambio de cantidad aplica solo la diferencia. Cancelado y Anulado liberan únicamente cupos de una reserva conocida, con cantidad cero o igual a la conocida. Se mantienen compatibles Confirmada y Vencida. No se cuentan pasajeros.
 
-La fecha de evento exige zona horaria; no se usa la recepción o el reenvío para ordenar cambios. La versión es opcional, pero mezclar eventos con y sin versión en una misma reserva requiere revisión. El MTPE identifica un único saldo compartido por todas las fechas y orígenes. La fecha comprueba que existe una salida. Se conserva el ID original del programa para detectar borrados y reemplazos con el mismo código.
+Si existe fecha comercial, exige zona horaria. Versión y fecha comercial permiten detectar avisos antiguos; cuando faltan, se utiliza la recepción persistente de Graph. El MTPE identifica el saldo compartido por fechas y orígenes; la salida solo se comprueba si viene indicada. El localizador usa el campo `reservation` y admite etiquetas equivalentes. Sin localizador, un estado activo se aplica por mensaje con advertencia; una cancelación queda bloqueada. Se conserva la identidad original del programa para detectar borrados y reemplazos.
 
 | Evento | Saldo partiendo de 15 |
 | --- | --- |
@@ -61,7 +61,7 @@ La fecha de evento exige zona horaria; no se usa la recepción o el reenvío par
 
 Las demás reservas siguen reteniendo sus propias sillas. Se deduplican mensajes y eventos comerciales, incluidos reenvíos con otro ID. Avisos incompletos, contradictorios, antiguos, de remitentes no permitidos, sin salida coincidente o con saldos incoherentes pasan a **Revisión de correo**. Borrar un mensaje no cancela una reserva. Las incidencias se inspeccionan y concilian con operaciones; no se reinterpretan automáticamente como autorizaciones para sumar cupos.
 
-Solo se guardan campos comerciales normalizados, huellas de mensajes/eventos, motivos y saldos. Los cuerpos, asuntos, listas de pasajeros y credenciales no se almacenan en los registros del piloto.
+Se guardan asunto, remitente, recepción y campos comerciales normalizados, junto con huellas, motivos y saldos. Los cuerpos completos y adjuntos permanecen en el buzón; no se extraen listas de pasajeros ni credenciales. Consulta las [reglas compartidas de procesamiento](gmail-cupos-piloto.md#saldo-inicial-plantillas-y-validación).
 
 ## Recuperación y concurrencia
 
@@ -69,6 +69,6 @@ El cursor se guarda por tenant, buzón y carpeta. Cada página y sus eventos se 
 
 La reserva del lector dura nueve minutos y se renueva por página. PostgreSQL serializa los movimientos mediante un bloqueo transaccional entre procesos. SQLite local usa `IMMEDIATE` y una cola de escritores dentro del proceso; la contención externa falla sin avanzar el cursor.
 
-Ejecutar **siete días** de simulación desde un corte conciliado y contrastar cada movimiento con Meganet. Leer el buzón no acredita conciliación. Esta entrega no incluye una vía para activar movimientos públicos; esa etapa requiere implementación y autorización posteriores.
+Antes de usar esta alternativa, contrastar los movimientos simulados con Meganet desde un corte conciliado. Leer el buzón no acredita conciliación. El modo real sigue disponible únicamente con Gmail. Esta entrega conserva la configuración actual y no activa ni reinicia lectores o cron.
 
 Validación: `npm test`, `npm run test:integration`, `npm run test:panel-pilot`, `npm run typecheck`, `npm run build`. Las pruebas usan SQLite aislado y respuestas Graph simuladas. Validar en staging la migración `20261110_185708_panel_deletion_and_mail_pilot`, con respaldo previo. La reversión se rechaza si existen datos del piloto o auditoría ampliada para evitar perder historial.

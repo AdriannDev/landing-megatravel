@@ -66,3 +66,34 @@ test('base nueva e idempotencia; revierte errores, cambios de datos, columnas, Ã
   assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name='child_parent_idx'").get())
   assert.equal(await applySqliteSchemaPlan(file, []), undefined)
 }))
+
+test('prepara image_id del blog antes de reconstruir su fecha opcional', () => fixture(async (db, file) => {
+  db.exec(`CREATE TABLE media(id INTEGER PRIMARY KEY);
+    CREATE TABLE settings_blog_posts(id TEXT PRIMARY KEY NOT NULL,title TEXT NOT NULL,date_label TEXT NOT NULL);
+    CREATE INDEX blog_title_idx ON settings_blog_posts(title);
+    INSERT INTO settings_blog_posts VALUES('anterior','Blog anterior','07 nov, 2026');
+    CREATE TABLE __new_settings_blog_posts(id TEXT PRIMARY KEY);`)
+  const original = db.prepare('SELECT * FROM settings_blog_posts').all()
+  const result = await prepareLegacySqliteSchema(file)
+  assert.equal(result.columnsAdded, 1)
+  const copy = new DatabaseSync(result.backup, { readOnly: true })
+  try {
+    assert.deepEqual(copy.prepare('SELECT * FROM settings_blog_posts').all(), original)
+    assert.ok(copy.prepare("SELECT name FROM sqlite_master WHERE name='__new_settings_blog_posts'").get())
+  } finally { copy.close() }
+  assert.equal(db.prepare("SELECT name FROM sqlite_master WHERE name='__new_settings_blog_posts'").get(), undefined)
+  await applySqliteSchemaPlan(file, [
+    'CREATE TABLE __new_settings_blog_posts(id TEXT PRIMARY KEY NOT NULL,title TEXT NOT NULL,date_label TEXT,image_id INTEGER REFERENCES media(id) ON DELETE SET NULL)',
+    'INSERT INTO __new_settings_blog_posts SELECT id,title,date_label,image_id FROM settings_blog_posts',
+    'DROP TABLE settings_blog_posts', 'ALTER TABLE __new_settings_blog_posts RENAME TO settings_blog_posts',
+    'CREATE INDEX blog_title_idx ON settings_blog_posts(title)',
+  ])
+  assert.deepEqual(db.prepare('SELECT id,title,date_label FROM settings_blog_posts').all(), original)
+  assert.equal(db.prepare('SELECT image_id FROM settings_blog_posts').get().image_id, null)
+  db.exec("INSERT INTO media VALUES(12); UPDATE settings_blog_posts SET image_id=12,date_label=NULL")
+  assert.equal(await prepareLegacySqliteSchema(file), null)
+  assert.equal(db.prepare('SELECT image_id FROM settings_blog_posts').get().image_id, 12)
+  db.exec("CREATE TABLE __new_settings_blog_posts(id TEXT PRIMARY KEY); INSERT INTO __new_settings_blog_posts VALUES('pendiente')")
+  await assert.rejects(prepareLegacySqliteSchema(file), /temporal.*contiene datos/)
+  assert.equal(db.prepare('SELECT id FROM __new_settings_blog_posts').get().id, 'pendiente')
+}))

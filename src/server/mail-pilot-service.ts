@@ -7,6 +7,10 @@ import {
   pilotMTPE,
   proposeMovement,
   reservationKey,
+  isActiveReservation,
+  mailTimestamp,
+  type MailExtraction,
+  type MailOrder,
   type ReservationState,
 } from "../lib/mail-pilot.ts";
 import { inTransaction, lockCommercialRecords, postgresTransaction } from "./transactions.ts";
@@ -107,6 +111,11 @@ export type PilotMail = {
   html?: boolean;
   trusted: boolean;
   reviewReason?: string;
+  extraction?: MailExtraction;
+  sender?: string;
+  receivedAt?: string;
+  sourceMessageId?: string;
+  order?: MailOrder;
 };
 export type LiveMailSettings = { cutoffAt: string; mtpes: string[] };
 
@@ -115,19 +124,22 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail, liv
     await lockMailPilot(req);
     const namespace = live ? "live:" : "";
     const messageKey = digest(`${namespace}${mail.mailbox}:${mail.id}`);
+    const sourceKey = mail.trusted && !mail.reviewReason && mail.sourceMessageId ? digest(`${namespace}${mail.mailbox}:source:${mail.sourceMessageId}`) : undefined;
     const seen = await req.payload.find({
       collection: "seat-mail-events",
       req,
       overrideAccess: true,
-      where: { messageKey: { equals: messageKey } },
+      where: { or: [{ messageKey: { equals: messageKey } }, ...(sourceKey ? [{ sourceKey: { equals: sourceKey } }] : [])] },
       limit: 1,
     });
     if (seen.docs[0]) return seen.docs[0];
-    const extraction = mail.reviewReason ? { reason: mail.reviewReason } : mail.trusted
-      ? extractMailEvent(mail)
-      : { reason: "Remitente no autorizado. Revisa la procedencia del aviso." };
-    const event = extraction.event;
-    const fingerprint = event && (live ? digest(`live:${eventKey(event)}`) : eventKey(event));
+    const extraction = mail.extraction || extractMailEvent(mail);
+    const blockingReason = !mail.trusted ? mail.reviewReason || "Remitente no autorizado. Revisa la procedencia del aviso." : mail.reviewReason || extraction.reason;
+    const receivedAt = mailTimestamp(mail.receivedAt);
+    const event = extraction.event && { ...extraction.event, ...(receivedAt ? { receivedAt } : {}), ...(mail.order ? { order: mail.order } : {}) };
+    const fields = extraction.fields;
+    const businessFingerprint = event?.reservation && (event.version != null || event.occurredAt) ? eventKey(event) : messageKey;
+    const fingerprint = event && (live ? digest(`live:${businessFingerprint}`) : businessFingerprint);
     const save = (data: Record<string, unknown>) =>
       req.payload.create({
         collection: "seat-mail-events",
@@ -135,13 +147,22 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail, liv
         overrideAccess: true,
         data: {
           messageKey,
-          mtpe: event?.mtpe,
-          reservation: event?.reservation,
-          event: event && live ? { ...event, mode: "live" } : event,
+          sourceKey,
+          subject: mail.subject?.slice(0, 1000),
+          sender: mail.sender?.slice(0, 320),
+          receivedAt,
+          mtpe: fields.mtpe,
+          reservation: fields.reservation,
+          seats: fields.seats,
+          status: fields.status,
+          travelDate: fields.travelDate,
+          occurredAt: fields.occurredAt,
+          version: fields.version,
+          event: { ...(event || fields), ...(live ? { mode: "live" } : {}) },
           ...data,
         } as any,
       });
-    if (!event) return save({ outcome: "review", reason: extraction.reason });
+    if (blockingReason || !event) return save({ outcome: "review", observation: "blocked", reason: blockingReason || "Datos principales ausentes." });
     const duplicate = await req.payload.find({
       collection: "seat-mail-events",
       req,
@@ -156,14 +177,14 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail, liv
         reason: "Evento ya recibido, incluido un posible reenvío.",
       });
     const review = (reason: string) =>
-      save({ eventKey: fingerprint, outcome: "review", reason });
-    if (Date.parse(event.occurredAt) > Date.now() + 5 * 60_000)
+      save({ eventKey: fingerprint, outcome: "review", observation: "blocked", reason });
+    if (event.occurredAt && Date.parse(event.occurredAt) > Date.now() + 5 * 60_000)
       return review(
         "La fecha del evento está en el futuro; revisa su orden antes de procesarlo.",
       );
     let pool: SeatPilotPool | undefined;
     if (live) {
-      if (Date.parse(event.occurredAt) <= Date.parse(live.cutoffAt))
+      if ((event.occurredAt || receivedAt) && Date.parse((event.occurredAt || receivedAt)!) <= Date.parse(live.cutoffAt))
         return review("Aviso anterior o igual al inicio de la actualización de cupos reales.");
       if (live.mtpes.length && !live.mtpes.includes(event.mtpe))
         return review("Este MTPE está fuera del alcance de la actualización de cupos reales.");
@@ -213,36 +234,41 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail, liv
     const balanceBefore = pool?.remainingSeats ?? program.availableSeats;
     if (balanceBefore == null || !Number.isSafeInteger(balanceBefore) || balanceBefore < 0 || (live && program.seatsMigrationPending))
       return review("El programa necesita un saldo de cupos registrado y conciliado.");
-    const departures = await req.payload.count({
-      collection: "departures",
-      req,
-      overrideAccess: true,
-      where: {
-        and: [
-          { programRef: { equals: program.id } },
-          { travelDate: { equals: event.travelDate } },
-        ],
-      },
-    });
-    if (!departures.totalDocs)
-      return review("No existe una salida del programa para esta fecha.");
+    if (event.travelDate) {
+      const departures = await req.payload.count({
+        collection: "departures",
+        req,
+        overrideAccess: true,
+        where: {
+          and: [
+            { programRef: { equals: program.id } },
+            { travelDate: { equals: event.travelDate } },
+          ],
+        },
+      });
+      if (!departures.totalDocs)
+        return review("No existe una salida del programa para esta fecha.");
+    }
+    if (!event.reservation && !isActiveReservation(event.status)) return review("Cancelación sin localizador: no se puede identificar una reserva para devolver cupos.");
     const key = live ? digest(`live:${program.id}:${program.createdAt}:${reservationKey(event)}`) : reservationKey(event);
-    const reservations = await req.payload.find({
+    const reservations = event.reservation ? await req.payload.find({
       collection: "seat-pilot-reservations",
       req,
       overrideAccess: true,
       where: { key: { equals: key } },
       limit: 1,
-    });
-    const previous = reservations.docs[0];
+    }) : undefined;
+    const previous = reservations?.docs[0];
     const movement = proposeMovement(
       live ? { remainingSeats: balanceBefore, cutoffAt: live.cutoffAt } : pool!,
       previous?.state as ReservationState | undefined,
       event,
     );
     if (movement.reason) return review(movement.reason);
-    const state = { ...event, eventKey: fingerprint!, ...(live ? { mode: "live" } : {}) };
-    if (previous)
+    const previousState = previous?.state as ReservationState | undefined;
+    const active = isActiveReservation(event.status);
+    const state = { ...event, version: event.version ?? previousState?.version, occurredAt: event.occurredAt ?? previousState?.occurredAt, occupiedSeats: active ? event.seats : 0, lastActiveSeats: active ? event.seats : previousState?.lastActiveSeats ?? previousState?.seats, eventKey: fingerprint!, ...(live ? { mode: "live" } : {}) };
+    if (event.reservation && previous)
       await req.payload.update({
         collection: "seat-pilot-reservations",
         id: previous.id,
@@ -250,7 +276,7 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail, liv
         overrideAccess: true,
         data: { state },
       });
-    else
+    else if (event.reservation)
       await req.payload.create({
         collection: "seat-pilot-reservations",
         req,
@@ -279,9 +305,10 @@ export async function processPilotMail(req: PayloadRequest, mail: PilotMail, liv
     return save({
       eventKey: fingerprint,
       outcome: "proposed",
-      reason: live
+      ...(!event.reservation ? { observation: "warning" } : {}),
+      reason: (!event.reservation ? "Advertencia: sin localizador. Se aplicó por mensaje; no se vinculará automáticamente con otros avisos. " : "") + (live
         ? movement.delta ? "Movimiento aplicado a los cupos reales del programa." : "Aviso registrado. El saldo real conserva la misma cantidad."
-        : "Movimiento aplicado únicamente al saldo simulado.",
+        : "Movimiento aplicado únicamente al saldo simulado."),
       delta: movement.delta,
       balanceBefore,
       balanceAfter: movement.remainingSeats,

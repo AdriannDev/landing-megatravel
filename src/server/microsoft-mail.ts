@@ -16,6 +16,8 @@ type GraphMessage = {
   id?: string;
   from?: { emailAddress?: { address?: string } };
   subject?: string;
+  receivedDateTime?: string;
+  internetMessageId?: string;
   body?: { contentType?: string; content?: string };
   "@removed"?: unknown;
 };
@@ -167,7 +169,7 @@ export async function syncMicrosoftMailbox(
     const token = await accessToken(config, fetcher);
     let cursor =
       claimed.cursor ||
-      `${folderURL(config)}?$select=id,from,subject,body&$top=50`;
+      `${folderURL(config)}?$select=id,from,subject,body,receivedDateTime,internetMessageId&$top=50`;
     // A bounded run exits cleanly; the next run resumes the persisted nextLink.
     while (pages < 10) {
       const response = await fetcher(validateGraphCursor(cursor, config), {
@@ -214,6 +216,10 @@ export async function syncMicrosoftMailbox(
           await processPilotMail(req, {
             id: message.id,
             mailbox: key,
+            subject: message.subject,
+            sender,
+            receivedAt: message.receivedDateTime,
+            sourceMessageId: message.internetMessageId,
             body: message.body?.content || "",
             html: message.body?.contentType?.toLowerCase() === "html",
             trusted: config.senders.includes(sender),

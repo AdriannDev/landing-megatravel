@@ -68,7 +68,7 @@ try {
   await mail('other-booking', body({ Reserva: 'R-002', Sillas: '4' })); assert.equal(await balance(), 8)
   const modified = await mail('modify-1', body({ Tipo: 'modificación', Sillas: '2', Estado: 'Confirmada', Versión: '3', 'Fecha del evento': '2026-11-05T12:00:00-05:00' }))
   assert.equal(modified.delta, 1); assert.equal(await balance(), 9)
-  const cancel = body({ Tipo: 'cancelación', Estado: 'Cancelada', Sillas: '', Versión: '4', 'Fecha del evento': '2026-11-06T12:00:00-05:00' })
+  const cancel = body({ Tipo: 'cancelación', Estado: 'Cancelada', Sillas: '2', Versión: '4', 'Fecha del evento': '2026-11-06T12:00:00-05:00' })
   assert.equal((await mail('cancel-1', cancel)).delta, 2); assert.equal(await balance(), 11)
   assert.equal((await mail('cancel-forward', cancel)).outcome, 'duplicate'); assert.equal(await balance(), 11); checks++
   assert.equal((await mail('old-event', body({ Versión: '2', Sillas: '8' }))).outcome, 'review')
@@ -79,7 +79,7 @@ try {
   assert.equal((await mail('wrong-date', body({ Reserva: 'WRONG-DATE', Salida: '21 nov 2036' }))).outcome, 'review')
   assert.equal(await balance(), 11)
   assert.equal(JSON.stringify((await payload.find({ collection: 'seat-mail-events', req, pagination: false })).docs).includes('PRIVADO-NO-GUARDAR'), false); checks++
-  const expire = body({ Reserva: 'R-002', Tipo: 'vencimiento', Estado: 'Vencida', Sillas: '', Versión: '2', 'Fecha del evento': '2026-11-07T12:00:00-05:00' })
+  const expire = body({ Reserva: 'R-002', Tipo: 'vencimiento', Estado: 'Vencida', Sillas: '4', Versión: '2', 'Fecha del evento': '2026-11-07T12:00:00-05:00' })
   assert.equal((await mail('expire-2', expire)).delta, 4); assert.equal(await balance(), 15); checks++
   // Force failure after the balance update: state, balance and ledger must all roll back.
   const beforeFailure = { balance: await balance(), reservations: await count('seat-pilot-reservations'), events: await count('seat-mail-events') }
@@ -96,7 +96,10 @@ try {
   for (const collection of ['seat-pilot-pools', 'seat-pilot-reservations', 'seat-mail-events', 'mail-sync-cursors'] as const) {
     await assert.rejects(payload.find({ collection, overrideAccess: false }))
     await assert.rejects(payload.find({ collection, req: editorReq, overrideAccess: false }))
+    assert.ok((await payload.find({ collection, req, overrideAccess: false })).totalDocs >= 0)
+    if (collection !== 'seat-mail-events') assert.equal(payload.collections[collection].config.admin.hidden, true)
   }; checks++
+  assert.equal(payload.collections['seat-mail-events'].config.labels.plural, 'Correos observados')
 
   const graphConfig = { tenant: 'tenant.test', client: 'test-client', secret: 'test-secret', mailbox: 'qa@example.test', folder: 'Inbox', senders: ['reservas@example.test'] }
   const url = 'https://graph.microsoft.com/v1.0/users/qa%40example.test/mailFolders/Inbox/messages/delta'

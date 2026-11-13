@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
 import { createLocalReq, type Payload, type PayloadRequest } from 'payload'
-import { digest, eventKey, extractMailEvent } from '../lib/mail-pilot.ts'
+import { compareMailParts, digest, extractMailEvent } from '../lib/mail-pilot.ts'
 import { inTransaction } from './transactions.ts'
 import { lockMailPilot, processPilotMail, type LiveMailSettings } from './mail-pilot-service.ts'
 
@@ -33,8 +33,9 @@ export async function normalizeGmailMessage(source: Buffer, senders: string[], r
   const mail = await simpleParser(source, { skipHtmlToText: true, skipTextToHtml: true, skipImageLinks: true })
   const addresses = mail.from?.value || []
   const sender = addresses.length === 1 ? addresses[0].address?.toLowerCase() : undefined
-  const trusted = sender != null && senders.includes(sender)
-  if (trusted && requireAuthentication) {
+  let trusted = sender != null && senders.includes(sender)
+  let reviewReason: string | undefined
+  if (trusted && sender && requireAuthentication) {
     // Gmail's outer Authentication-Results precedes results from other hops.
     const header = mail.headerLines.find(line => line.key === 'authentication-results')?.line
     const [server, ...checks] = (header || '').replace(/^authentication-results:\s*/i, '').replace(/\r?\n[ \t]+/g, ' ').split(';')
@@ -42,17 +43,26 @@ export async function normalizeGmailMessage(source: Buffer, senders: string[], r
     const aligned = server.trim().toLowerCase() === 'mx.google.com' && checks.some(check =>
       /^\s*dmarc\s*=\s*pass\b/i.test(check) && check.match(/\bheader\.from\s*=\s*([a-z0-9.-]+)(?=\s|$)/i)?.[1]?.toLowerCase() === domain,
     )
-    if (!aligned) return { body: '', trusted: false, reviewReason: 'Gmail no confirmó la autenticación del remitente para aplicar cupos reales.' }
+    if (!aligned) { trusted = false; reviewReason = 'Gmail no confirmó la autenticación del remitente para aplicar cupos reales.' }
   }
-  const forwarded = mail.attachments.filter(a => a.contentType === 'message/rfc822')
-  if (forwarded.length) return { body: '', trusted, reviewReason: 'Reenvío como adjunto. Revisa el aviso completo y utiliza reenvío en línea.' }
-  const text = mail.text || '', html = mail.html || ''
-  if (text && html) {
-    const a = extractMailEvent({ body: text }), b = extractMailEvent({ body: html, html: true })
-    if (!a.event || !b.event || eventKey(a.event) !== eventKey(b.event))
-      return { body: '', trusted, reviewReason: 'Las partes de texto y HTML no identifican un único evento coincidente.' }
+  let content = mail
+  // A single attached forward is unambiguous; outer sender/authentication still
+  // controls trust. Never persist attachments or their passenger information.
+  for (let depth = 0; depth < 4; depth++) {
+    const forwarded = content.attachments.filter(a => a.contentType === 'message/rfc822')
+    if (!forwarded.length) break
+    if (forwarded.length !== 1 || depth === 3) { reviewReason ||= 'Reenvíos adjuntos múltiples o demasiado anidados; revisa el aviso.'; break }
+    content = await simpleParser(forwarded[0].content, { skipHtmlToText: true, skipTextToHtml: true, skipImageLinks: true })
   }
-  return { body: html || text, html: Boolean(html), trusted }
+  const text = content.text || '', html = content.html || ''
+  const subject = content.subject || mail.subject
+  const extraction = text && html
+    ? compareMailParts(extractMailEvent({ body: text, subject }), extractMailEvent({ body: html, html: true, subject }))
+    : extractMailEvent({ body: html || text, html: Boolean(html), subject })
+  return {
+    body: html || text, html: Boolean(html), trusted, extraction, reviewReason: reviewReason || extraction.reason,
+    subject: mail.subject, sender, receivedAt: mail.date?.toISOString(), sourceMessageId: mail.messageId,
+  }
 }
 
 export async function syncGmailMailbox(payload: Payload, config: GmailConfig = gmailMailConfig(), factory: GmailClientFactory = createGmailClient) {
@@ -88,7 +98,7 @@ export async function syncGmailMailbox(payload: Payload, config: GmailConfig = g
     }
     for (const uid of uids) {
       // PEEK from ImapFlow + EXAMINE readOnly: never set flags, move or delete.
-      const message = await client.fetchOne(uid, { uid: true, size: true, source: { start: 0, maxLength: MAX_BYTES + 1 } }, { uid: true })
+      const message = await client.fetchOne(uid, { uid: true, size: true, internalDate: true, source: { start: 0, maxLength: MAX_BYTES + 1 } }, { uid: true })
       let normalized
       if (!message) normalized = null // Expunged after search: not a business cancellation.
       else if ((message.size ?? 0) > MAX_BYTES || (message.source?.length ?? 0) > MAX_BYTES)
@@ -101,7 +111,11 @@ export async function syncGmailMailbox(payload: Payload, config: GmailConfig = g
       }
       await transact(async req => {
         await currentLease(req)
-        if (normalized) await processPilotMail(req, { ...normalized, id: `${uidValidity}:${uid}`, mailbox: key }, config.live)
+        if (normalized) await processPilotMail(req, {
+          ...normalized, id: `${uidValidity}:${uid}`, mailbox: key,
+          receivedAt: message && message.internalDate ? new Date(message.internalDate).toISOString() : 'receivedAt' in normalized ? normalized.receivedAt as string | undefined : undefined,
+          order: { scope: `${key}:${uidValidity}`, sequence: uid },
+        }, config.live)
         await payload.update({ collection: 'mail-sync-cursors', id: claimed.id, req, overrideAccess: true, data: { uidValidity, lastUid: uid, lastSuccessAt: new Date().toISOString(), leaseUntil: new Date(Date.now() + LEASE_MS).toISOString() } })
       })
       lastUid = uid

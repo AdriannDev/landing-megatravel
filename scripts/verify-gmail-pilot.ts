@@ -47,7 +47,7 @@ try {
       assert.deepEqual(options, { uid: true })
       fetched.push(uid); if (uid === failUid) throw new Error('interrupted')
       const source = messages.get(uid)
-      return source ? { uid, source: source.subarray(0, query.source.maxLength), size: source.length } : false
+      return source ? { uid, internalDate: new Date('2026-11-11T15:00:00Z'), source: source.subarray(0, query.source.maxLength), size: source.length } : false
     },
   } as unknown as GmailClient)
 
@@ -56,7 +56,7 @@ try {
   assert.equal((await state()).lastUid, 1); assert.equal(await balance(), 12); assert.equal((await state()).owner, null); checks++
   failUid = 0
   messages.set(3, mime(body({ Tipo: 'modificación', Sillas: '2', Versión: '2', 'Fecha del evento': '2026-11-04T12:00:00-05:00' })))
-  messages.set(4, mime(body({ Tipo: 'cancelación', Estado: 'Cancelada', Sillas: '', Versión: '3', 'Fecha del evento': '2026-11-05T12:00:00-05:00' })))
+  messages.set(4, mime(body({ Tipo: 'cancelación', Estado: 'Cancelada', Sillas: '2', Versión: '3', 'Fecha del evento': '2026-11-05T12:00:00-05:00' })))
   assert.equal((await syncGmailMailbox(payload, gmail, factory)).processed, 3)
   assert.equal(searched.at(-1), '2:*'); assert.equal(await balance(), 15)
   const last = await state(); assert.equal(last.provider, 'gmail-imap'); assert.equal(last.uidValidity, '123'); assert.equal(last.lastUid, 4)
@@ -101,7 +101,8 @@ try {
   assert.equal((await normalizeGmailMessage(multi(body()), gmail.senders)).reviewReason, undefined)
   assert.match((await normalizeGmailMessage(multi(body({ Sillas: '4' })), gmail.senders)).reviewReason!, /no identifican/); checks++
   const events = (await payload.find({ collection: 'seat-mail-events', req, pagination: false })).docs
-  assert.doesNotMatch(JSON.stringify(events), /PRIVATE-PASSENGER|private-secret|Aviso privado|Content-Type/)
+  assert.doesNotMatch(JSON.stringify(events), /PRIVATE-PASSENGER|private-secret|Content-Type/)
+  assert.ok(events.some(event => event.subject === 'Fwd: Aviso privado' && event.sender === 'reservas@example.test'))
   assert.equal((await payload.findByID({ collection: 'programs', id: program.programId, req })).availableSeats, 15)
   assert.equal((await payload.findByID({ collection: 'departures', id: program.created[0].id, req })).availableSeats, 15); checks++
 
@@ -184,6 +185,67 @@ try {
   assert.equal((await syncGmailMailbox(payload, live, factory)).processed, 1)
   assert.equal(await realBalance(), 6)
   assert.equal((await syncGmailMailbox(payload, live, factory)).processed, 0); checks++
+
+  // Minimal real notices: identity, quantity differences, warnings, observations
+  // and recovery use the production entry point with a simulated transport.
+  const minimalProgram = await createDepartures(payload, req, {
+    program: { program: 'QA mínimos', mtpe: '20142', destination: 'Madrid', zone: 'Europa', days: 8, availableSeats: 30, seatsConfirmed: true, bookingUrl: 'https://www.megatravel.pe/', descriptionUrl: 'https://cafe.megatravel.pe/' },
+    origin: 'Lima', departures: [{ date: '2035-11-21', price: 2000 }],
+  })
+  const minimalConfig = { ...gmail, user: 'minimos@example.test', live: { ...live.live, mtpes: ['20142'] } }
+  const minimalBalance = async () => (await payload.findByID({ collection: 'programs', id: minimalProgram.programId, req })).availableSeats
+  const minimal = (reference = '', quantity = '3', status = 'A petición', extra = '') => `MTPE: 20142\n${reference ? `Localizador: ${reference}\n` : ''}Cantidad: ${quantity}\nEstado: ${status}\n${extra}`
+  messages.clear(); let minimalUid = 0
+  const readMinimal = async (text: string, messageId = `minimal-${minimalUid + 1}`) => {
+    messages.set(++minimalUid, Buffer.concat([Buffer.from(`Message-ID: <${messageId}@example.test>\r\n`), signed(text)]))
+    await syncGmailMailbox(payload, minimalConfig, factory)
+    return (await payload.find({ collection: 'seat-mail-events', req, sort: '-id', limit: 1 })).docs[0]
+  }
+  await readMinimal(minimal('A')); assert.equal(await minimalBalance(), 27)
+  await readMinimal(minimal('A', '3', 'Reserva')); assert.equal(await minimalBalance(), 27)
+  await readMinimal(minimal('A', '5', 'Pendiente de confirmar')); assert.equal(await minimalBalance(), 25)
+  await readMinimal(minimal('A', '2', 'Reserva')); assert.equal(await minimalBalance(), 28)
+  const mismatch = await readMinimal(minimal('A', '1', 'Anulado'))
+  assert.equal(mismatch.observation, 'blocked'); assert.match(mismatch.reason, /cantidad/); assert.equal(await minimalBalance(), 28)
+  await readMinimal(minimal('A', '2', 'Cancelado')); assert.equal(await minimalBalance(), 30)
+  await readMinimal(minimal('A', '2', 'Anulado')); assert.equal(await minimalBalance(), 30)
+  await readMinimal(minimal('A', '2', 'Reserva')); assert.equal(await minimalBalance(), 28)
+  await readMinimal(minimal('A', '0', 'Cancelado')); assert.equal(await minimalBalance(), 30)
+  await readMinimal(minimal('A', '2', 'Anulado')); assert.equal(await minimalBalance(), 30)
+  assert.equal((await readMinimal(minimal('UNKNOWN', '2', 'Cancelado'))).outcome, 'review')
+  assert.equal((await readMinimal(minimal('', '2', 'Anulado'))).outcome, 'review')
+  assert.equal(await minimalBalance(), 30); checks++
+  const warning = await readMinimal(minimal('', '2'), 'without-id-1')
+  assert.equal(warning.observation, 'warning'); assert.equal(warning.outcome, 'proposed'); assert.equal(warning.delta, -2)
+  await readMinimal(minimal('', '2'), 'without-id-2'); assert.equal(await minimalBalance(), 26)
+  await readMinimal(minimal('', '2'), 'without-id-2'); assert.equal(await minimalBalance(), 26)
+  await readMinimal(minimal('B', '2')); await readMinimal(minimal('C', '2')); assert.equal(await minimalBalance(), 22)
+  const missing = await readMinimal(minimal('MISSING', '', 'Reserva') + '\nPasajero: PRIVATE-PASSENGER')
+  assert.equal(missing.mtpe, '20142'); assert.equal(missing.reservation, 'MISSING'); assert.equal(missing.status, 'confirmed')
+  assert.equal(missing.sender, 'reservas@example.test'); assert.equal(missing.subject, 'Fwd: Aviso privado')
+  assert.equal(missing.receivedAt, '2026-11-11T15:00:00.000Z'); assert.equal(missing.observation, 'blocked')
+  await readMinimal(minimal('DATE', '2', 'Reserva', 'Salida: 2035-11-22'))
+  await readMinimal(minimal('MISSING-MTPE', '2').replace('20142', '99999'))
+  await readMinimal(minimal('TOO-MANY', '99'))
+  assert.equal(await minimalBalance(), 22); checks++
+  validity = 125n // Replaying minimal, unversioned mail uses persistent Message-ID.
+  await syncGmailMailbox(payload, minimalConfig, factory); assert.equal(await minimalBalance(), 22)
+  assert.doesNotMatch(JSON.stringify((await payload.find({ collection: 'seat-mail-events', req, pagination: false })).docs), /PRIVATE-PASSENGER/); checks++
+
+  const subjectOnly = await normalizeGmailMessage(Buffer.from('From: reservas@example.test\r\nSubject: MTPE: 20142 | Localizador: SUBJECT1 | Cantidad: 2 | Estado: Reserva\r\n\r\n'), gmail.senders)
+  assert.equal(subjectOnly.extraction.event?.reservation, 'SUBJECT1')
+  const attached = Buffer.from(`From: reservas@example.test\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="fwd"\r\n\r\n--fwd\r\nContent-Type: message/rfc822\r\n\r\n${mime(minimal('ATTACHED')).toString()}\r\n--fwd--`)
+  assert.equal((await normalizeGmailMessage(attached, gmail.senders)).extraction.event?.reservation, 'ATTACHED')
+  const conflict = await normalizeGmailMessage(multi(minimal('CONFLICT', '2'), `<p>${minimal('CONFLICT', '3').replaceAll('\n', '<br>')}</p>`), gmail.senders)
+  assert.match(conflict.reviewReason!, /no identifican/); assert.equal(conflict.extraction.fields.reservation, 'CONFLICT'); checks++
+
+  const { processPilotMail } = await import('../src/server/mail-pilot-service')
+  const concurrentMinimal = await Promise.all(['RACE1', 'RACE2'].map(async reference => processPilotMail(await createLocalReq({}, payload), {
+    id: reference, mailbox: 'minimal-race', trusted: true, receivedAt: '2026-11-11T15:00:00Z', body: minimal(reference, '14', 'Reserva'),
+  }, minimalConfig.live)))
+  assert.equal(concurrentMinimal.filter(event => event.outcome === 'proposed').length, 1)
+  assert.equal(concurrentMinimal.filter(event => event.outcome === 'review').length, 1)
+  assert.equal(await minimalBalance(), 8); checks++
 
   process.env.SEAT_MAIL_PILOT_ENABLED = 'false'; process.env.SEAT_MAIL_PROVIDER = 'unsupported'
   process.env.SEAT_MAIL_MODE = 'simulation'

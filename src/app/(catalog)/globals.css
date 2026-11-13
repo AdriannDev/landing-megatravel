@@ -530,9 +530,9 @@ svg {
   font-weight: 550;
 }
 .campaign-tabs > button.selected {
-  background: var(--blue);
+  background: var(--blue-light);
   color: #fff;
-  border-color: var(--blue);
+  border-color: var(--blue-light);
 }
 .campaign-tabs > button:hover:not(.selected) {
   border-color: var(--blue);
@@ -1038,8 +1038,8 @@ svg {
   color: #657b96;
 }
 .pagination button[aria-current="page"] {
-  background: var(--blue);
-  border-color: var(--blue);
+  background: var(--blue-light);
+  border-color: var(--blue-light);
   color: white;
 }
 .pagination-ellipsis {
@@ -2331,7 +2331,8 @@ svg {
 .campaign-popup {
   padding: 0;
   width: min(520px, calc(100vw - 32px));
-  border: 1px solid #e0e7ef;
+  border: 0;
+  gap: 0;
   border-radius: 8px;
   overscroll-behavior: contain;
 }
@@ -2345,8 +2346,8 @@ svg {
 }
 .campaign-popup-image-only {
   display: block;
-  width: min(680px, calc(100vw - 32px));
-  overflow: hidden;
+  width: fit-content;
+  max-width: min(680px, calc(100vw - 32px));
 }
 .campaign-popup-image-only .popup-art {
   min-height: 0;
@@ -2357,8 +2358,12 @@ svg {
 }
 .campaign-popup-image-only .popup-art img {
   position: relative;
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 32px);
   height: auto;
-  object-fit: initial;
+  object-fit: contain;
 }
 .campaign-popup .dialog-close {
   width: 40px;
@@ -2377,10 +2382,11 @@ svg {
 .popup-art {
   display: block;
   position: relative;
-  min-height: 460px;
+  min-height: 0;
   background: transparent;
 }
 .popup-art img {
+  display: block;
   position: absolute;
   inset: 0;
   width: 100%;
@@ -2519,7 +2525,11 @@ svg {
   }
   .popup-art {
     min-height: 0;
-    height: clamp(160px, 30dvh, 260px);
+    height: auto;
+  }
+  .popup-art img {
+    position: relative;
+    height: auto;
   }
   .popup-copy {
     padding: 44px 26px 20px;

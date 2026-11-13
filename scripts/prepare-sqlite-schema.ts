@@ -41,7 +41,8 @@ export async function prepareLegacySqliteSchema(filename: string) {
       banners: { placement: "text DEFAULT 'hero'", title: 'text', message: 'text', button_label: 'text', popup_kind: "text DEFAULT 'promotion'", popup_frequency: "text DEFAULT 'session'", popup_delay: 'numeric DEFAULT 2' },
       payload_locked_documents_rels: { programs_id: 'integer', seat_pilot_pools_id: 'integer', seat_pilot_reservations_id: 'integer', seat_mail_events_id: 'integer', mail_sync_cursors_id: 'integer' },
       audit_log: { entity_type: "text DEFAULT 'departure'", program_id: 'text' },
-      settings: { seats_validity_hours: 'numeric DEFAULT 72 NOT NULL' },
+      settings: { seats_validity_hours: 'numeric DEFAULT 72 NOT NULL', featured_departure1_id: 'integer', featured_departure2_id: 'integer' },
+      settings_blog_posts: { image_id: 'integer' },
     }
     const statements: string[] = []
     for (const [table, fields] of Object.entries(additions)) {
@@ -49,7 +50,7 @@ export async function prepareLegacySqliteSchema(filename: string) {
       if (!columns.length) continue
       for (const [column, type] of Object.entries(fields)) if (!columns.includes(column)) statements.push(`ALTER TABLE "${table}" ADD COLUMN "${column}" ${type}`)
     }
-    const temporaryTables = ['__new_departures', '__new__departures_v', '__new_banners', '__new_payload_locked_documents_rels', '__new_audit_log']
+    const temporaryTables = ['__new_departures', '__new__departures_v', '__new_banners', '__new_payload_locked_documents_rels', '__new_audit_log', '__new_settings_blog_posts']
       .filter(table => db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table))
     if (!statements.length && !temporaryTables.length) return null
     await mkdir('backups', { recursive: true })

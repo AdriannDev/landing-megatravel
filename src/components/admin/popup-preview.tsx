@@ -48,7 +48,8 @@ export function PopupPreview() {
         Así se verá aproximadamente con la imagen y el contenido seleccionados.
       </p>
       <div className={styles.stage}>
-        <div className={`${styles.box} ${imageOnly ? styles.imageOnly : ""}`}>
+        <div className={`${styles.box}${imageOnly ? ` ${styles.imageOnly}` : imageUrl ? ` ${styles.withImage}` : ""}`}>
+          <span className={styles.close} aria-hidden="true">×</span>
           {(imageUrl || imageOnly) && (
             <div className={styles.art}>
               {imageUrl ? (

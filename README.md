@@ -51,6 +51,8 @@ Abre `http://localhost:3000`. `CATALOG_SOURCE=workbook` activa explícitamente l
 
 Para probar el CMS completo con SQLite local, deja `DATABASE_URL` vacío, cambia `USE_SQLITE=true` y `CATALOG_SOURCE=cms`. Para PostgreSQL local, usa `docker compose up -d`, deja `USE_SQLITE=false` y configura `DATABASE_URL` como en el ejemplo.
 
+`npm run dev` prepara el esquema de SQLite antes de iniciar Next.js. En bases anteriores, añade `settings_blog_posts.image_id` antes de reconstruir la tabla para admitir artículos sin fecha. También prepara las columnas de salidas destacadas para completar sus relaciones en esa misma actualización. Guarda un respaldo en `backups/` y comprueba que se conserven datos, índices e integridad; no borres la base si aparece `no such column: "image_id"`. Puedes verificar este proceso con `npm run test:local-schema`, que utiliza una base aislada en `.qa/`.
+
 El procedimiento completo de primera cuenta, variables privadas, importación, acceso y archivos está en [configuración del CMS](docs/cms.md). Cada parte desarrollada debe actualizar su documentación y sus resultados de validación; ver [mantenimiento](docs/mantenimiento.md#documentación-de-cada-cambio).
 
 ```powershell

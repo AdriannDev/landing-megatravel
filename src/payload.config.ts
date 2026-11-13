@@ -28,12 +28,12 @@ export default buildConfig({
   admin: {
     user: 'users', theme: 'light', importMap: { baseDir: dirname },
     meta: { titleSuffix: ' | Equipo Megatravel', icons: { icon: '/favicon-megatravel.png' } },
-    components: { graphics: { Logo: '/components/admin/brand#PanelLogo', Icon: '/components/admin/brand#PanelIcon' }, beforeNavLinks: ['/components/admin/panel-navigation#PanelNavigation'], views: { mailPilot: { Component: '/components/admin/mail-pilot-view#MailPilotView', path: '/seat-mail-pilot', exact: true }, dashboard: { Component: '/components/admin/admin-home#AdminHome' }, newDeparture: { Component: '/components/admin/new-departure-view#NewDepartureView', path: '/new-departure', exact: true }, newDate: { Component: '/components/admin/new-date-view#NewDateView', path: '/new-date', exact: true } } },
+    components: { graphics: { Logo: '/components/admin/brand#PanelLogo', Icon: '/components/admin/brand#PanelIcon' }, beforeNavLinks: ['/components/admin/panel-navigation#PanelNavigation'], views: { dashboard: { Component: '/components/admin/admin-home#AdminHome' }, newDeparture: { Component: '/components/admin/new-departure-view#NewDepartureView', path: '/new-departure', exact: true }, newDate: { Component: '/components/admin/new-date-view#NewDateView', path: '/new-date', exact: true } } },
     dateFormat: 'dd/MM/yyyy HH:mm',
     timezones: { defaultTimezone: 'America/Lima', supportedTimezones: [{ label: 'Lima (UTC−05:00)', value: 'America/Lima' }] },
   },
   i18n: { fallbackLanguage: 'es', supportedLanguages: { es } },
-  collections: [Users, Departures, Programs, Media, Campaigns, Banners, Destinations, Origins, CruiseLines, AuditLog, SeatPilotPools, SeatPilotReservations, SeatMailEvents, MailSyncCursors].map(collection => ['users', 'destinations', 'origins', 'cruise-lines', 'audit-log'].includes(collection.slug) ? {
+  collections: [Users, Departures, Programs, Media, Campaigns, Banners, Destinations, Origins, CruiseLines, AuditLog, SeatPilotPools, SeatPilotReservations, SeatMailEvents, MailSyncCursors].map(collection => ['users', 'destinations', 'origins', 'cruise-lines', 'audit-log', 'seat-mail-events'].includes(collection.slug) ? {
     ...collection,
     admin: { ...collection.admin, components: { ...collection.admin?.components, beforeList: ['/components/admin/panel-navigation#ManagementTabs', ...(collection.admin?.components?.beforeList || [])] } },
   } : collection),
