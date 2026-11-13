@@ -1,0 +1,148 @@
+/* Flash Sale follows the site's bright orange palette, with a warm golden finish. */
+:is(.package-card, .mt-preview-card).package-card--flash-sale {
+  --flash-ink: #fff;
+  --flash-accent: #ffffff29;
+  border: 0;
+  background: linear-gradient(125deg, #ff7420 0%, #ff8325 65%, #ffa338 100%);
+  color: var(--flash-ink);
+  box-shadow: 0 8px 26px #ff742073, 0 3px 9px #ff742042;
+  text-shadow: 0 1px 2px #b9440026;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale:hover {
+  box-shadow: 0 12px 30px #ff74208c, 0 4px 12px #ff74205c;
+}
+
+:is(.package-card, .mt-preview-card).package-card--flash-sale .package-body h3,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-details h3,
+:is(.package-card, .mt-preview-card).package-card--flash-sale.mt-preview-card h4 {
+  color: #fff;
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .price strong,
+:is(.package-card, .mt-preview-card).package-card--flash-sale.mt-preview-card > div > strong {
+  color: #fff;
+}
+
+:is(.package-card, .mt-preview-card).package-card--flash-sale .region-label,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .mtpe,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .route,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-route,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .price-from,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .price-condition,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-price-condition,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .seat-availability .seat-quantity,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .seat-availability .seat-confirmation,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .seat-quantity > svg,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .seat-confirmation a,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .route-origin svg,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .route-destination svg,
+:is(.package-card, .mt-preview-card).package-card--flash-sale.mt-preview-card small,
+:is(.package-card, .mt-preview-card).package-card--flash-sale.mt-preview-card > div > p {
+  color: var(--flash-ink);
+}
+
+:is(.package-card, .mt-preview-card).package-card--flash-sale .duration-pill,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-duration,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .mt-preview-duration {
+  background: var(--card-blue, #0049fc);
+  color: #fff;
+  box-shadow: 0 2px 6px #0049fc33;
+}
+
+:is(.package-card, .mt-preview-card).package-card--flash-sale .departure-meta,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-departure,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .mt-preview-departure {
+  align-self: stretch;
+  border: 0;
+  border-radius: 5px;
+  padding: 9px 10px;
+  background: var(--flash-accent);
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .departure-meta > .departure-date,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .departure-date > svg,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-departure,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-departure svg,
+:is(.package-card, .mt-preview-card).package-card--flash-sale.mt-preview-card .mt-preview-departure {
+  color: #fff;
+}
+
+:is(.package-card, .mt-preview-card).package-card--flash-sale .package-body > .button-primary,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-actions > .button-primary,
+:is(.package-card, .mt-preview-card).package-card--flash-sale.mt-preview-card .mt-fake-button {
+  background: var(--card-blue, #0049fc);
+  color: #fff;
+  text-shadow: none;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .package-body > .button-primary:hover:not(:disabled),
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-actions > .button-primary:hover:not(:disabled) {
+  background: var(--card-blue-hover, #0039c7);
+  color: #fff;
+  box-shadow: 0 3px 10px #ff742033;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .package-body > .button-primary:active:not(:disabled) {
+  background: #0032ae;
+}
+
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-video-link {
+  color: var(--flash-ink);
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-video-link:hover {
+  color: var(--flash-ink);
+  text-decoration: underline;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .description-link {
+  color: #051d2e;
+  text-shadow: none;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .description-link:hover {
+  color: #051d2e;
+  text-decoration: underline;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .description-link:focus-visible,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-video-link:focus-visible,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .seat-confirmation a:focus-visible,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .button-primary:focus-visible {
+  outline-color: var(--flash-ink);
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .promo-label {
+  border: 0;
+  background: #ffffff29;
+  color: #fff;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .promo-ticket-icon {
+  border-right-color: #ffffff66;
+  color: #fff;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .promo-label-new-year::before,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .promo-label-new-year::after {
+  border: 0;
+  background: #ff8325;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .last-seats-badge {
+  background: #ffffff29;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .last-seats-icon,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .last-seats-copy > strong,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .last-seats-copy > span {
+  color: #fff;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .new-badge,
+:is(.package-card, .mt-preview-card).package-card--flash-sale .list-mobile-new {
+  animation-name: flash-sale-new-badge;
+}
+:is(.package-card, .mt-preview-card).package-card--flash-sale .mt-preview-new {
+  background: #ff7420;
+  color: #fff;
+}
+@keyframes flash-sale-new-badge {
+  0%, 100% {
+    background: #ff7420;
+    color: #fff;
+  }
+  50% {
+    background: #ff9a32;
+    color: #fff;
+  }
+}

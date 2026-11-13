@@ -11,6 +11,53 @@
   --card-ink: #051d2e;
 }
 
+.package-card .flyer-image {
+  border: 0;
+  line-height: 0;
+}
+.package-card .flyer-image > img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.package-card.package-list-card .list-media-image {
+  object-fit: cover;
+}
+
+.package-card .route {
+  justify-content: space-between;
+  gap: 8px;
+}
+.package-card .list-route {
+  width: 100%;
+}
+.package-card .route-origin,
+.package-card .route-destination {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  width: auto;
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+  overflow-wrap: anywhere;
+}
+.package-card .route-destination {
+  margin-left: auto;
+  justify-content: flex-end;
+  text-align: right;
+}
+.package-card .route-origin svg,
+.package-card .route-destination svg {
+  flex-shrink: 0;
+  color: #7d8ea3;
+}
+
 .package-card .package-video-overlay {
   position: absolute;
   right: 12px;

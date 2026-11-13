@@ -14,6 +14,7 @@ import { Button } from "./ui/button";
 import { track } from "@/lib/analytics";
 import { DEFAULT_FLYER } from "@/lib/flyer";
 import { DEFAULT_CONTACT_URL } from "@/lib/brand-config";
+import { hasFlashSale } from "@/lib/promotions";
 import {
   LastSeatsBadge,
   SeatAvailability,
@@ -22,6 +23,22 @@ import {
 import { PromotionLabels } from "./promotion-labels";
 import { NewBadge, durationLabel } from "./new-badge";
 import "./package-card.css";
+import "./flash-sale.css";
+
+function PackageRoute({ item, list = false }: { item: PublicPackage; list?: boolean }) {
+  return (
+    <div className={list ? "list-route" : "route"}>
+      <span className="route-origin">
+        <Plane size={13} aria-hidden="true" />
+        Desde {titleCase(item.origin)}
+      </span>
+      <span className="route-destination">
+        <MapPin size={14} aria-hidden="true" />
+        {titleCase(item.destination)}
+      </span>
+    </div>
+  );
+}
 
 function VideoLink({ item, compact = false }: { item: PublicPackage; compact?: boolean }) {
   if (!item.videoUrl) return null;
@@ -98,13 +115,14 @@ export function PackageCard({
 }) {
   const [failedUrl, setFailedUrl] = useState("");
   const availability = useSeatAvailability(item.availability);
+  const promotionClass = hasFlashSale(item.promotions) ? " package-card--flash-sale" : "";
   const imageUrl =
     item.flyerUrl && failedUrl !== item.flyerUrl
       ? item.flyerUrl
       : DEFAULT_FLYER;
   if (view === "list") {
     return (
-      <article className="package-card package-list-card">
+      <article className={`package-card package-list-card${promotionClass}`}>
         <div className="list-media">
           <img
             className="list-media-background"
@@ -137,10 +155,7 @@ export function PackageCard({
             <h3>{titleCase(item.program)}</h3>
             <VideoLink item={item} compact />
             <PromotionLabels promotions={item.promotions} />
-            <div className="list-route">
-              <span><MapPin size={14} aria-hidden="true" />{titleCase(item.destination)}</span>
-              <span><Plane size={13} aria-hidden="true" />Desde {titleCase(item.origin)}</span>
-            </div>
+            <PackageRoute item={item} list />
             <div className="list-departure">
               <CalendarDays size={15} aria-hidden="true" />
               <strong>Salida:</strong>
@@ -170,7 +185,7 @@ export function PackageCard({
     );
   }
   return (
-    <article className="package-card">
+    <article className={`package-card${promotionClass}`}>
       <div className="package-visual">
         <div className="flyer-image">
           <img
@@ -198,14 +213,7 @@ export function PackageCard({
         </div>
         <PromotionLabels promotions={item.promotions} />
         <h3>{titleCase(item.program)}</h3>
-        <div className="route">
-          <MapPin size={14} />
-          <span>{titleCase(item.destination)}</span>
-          <span className="route-origin">
-            <Plane size={13} />
-            Desde {titleCase(item.origin)}
-          </span>
-        </div>
+        <PackageRoute item={item} />
         <div className="departure-meta">
           <span className="departure-date">
             <CalendarDays size={15} aria-hidden="true" />

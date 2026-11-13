@@ -5,6 +5,7 @@ import { retirementAt, isActivePeriod } from "@/lib/lifecycle";
 import { formatDate, formatMoney, titleCase } from "@/lib/catalog";
 import { DEFAULT_FLYER } from "@/lib/flyer";
 import { DEFAULT_CONTACT_URL } from "@/lib/brand-config";
+import { hasFlashSale } from "@/lib/promotions";
 import {
   DEFAULT_SEATS_VALIDITY_HOURS,
   prepareSeatReference,
@@ -19,6 +20,7 @@ import { PromotionLabels } from "../promotion-labels";
 import { durationLabel } from "../new-badge";
 import { newBadgeTextSize, programBadgeSnapshot, publicNewBadge } from "@/lib/new-badge";
 import type { Promotion } from "@/lib/types";
+import "../flash-sale.css";
 const previewKeys = [
   "programRef",
   "program",
@@ -192,7 +194,7 @@ export function CardPreview() {
       <p>
         Revisa los cupos y la etiqueta de esta fecha y origen antes de guardar.
       </p>
-      <div className="mt-preview-card">
+      <div className={`mt-preview-card${hasFlashSale(promotions) ? " package-card--flash-sale" : ""}`}>
         <figure className="mt-preview-media">
           <img
             src={imageUrl}
